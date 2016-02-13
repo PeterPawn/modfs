@@ -1,0 +1,84 @@
+# MODFS_MODSCRIPT
+# SUPPORTS precheck postcheck install language(en,de)
+# NAME install dectcmds hook
+# DESCRIPTION en
+# modify /bin/picconv.sh to call the dectcmds_lib.sh shell file while processing 
+# media player picture conversion
+# DESCRIPTION de
+# die Datei /bin/picconv.sh wird um einen Aufruf des dectcmds_lib.sh-Skripts erweitert, 
+# das ist Voraussetzung fuer den Start eigener Kommandos ueber ein FRITZFon, es sind
+# weitere Vorbereitungen notwendig
+# EOH
+#
+# process parameters
+#
+language=$1
+rootdir=$2
+mode=$3
+step=$4
+[ ${#4} -eq 0 ] && exit 59 # invalid call
+#
+# execute the requested step
+#
+rc=0
+hookfile=bin/picconv.sh
+hookexec=/var/media/ftp/dectcmds/dectcmds_lib.sh
+detect=dectcmds
+tmpfile=/var/tmp/dectcmds_mod_input.txt
+install_hook()
+{
+	cd $rootdir
+	local line=$(sed -n -e "/^ *https:/=" $hookfile)
+	[ ${#line} -eq 0 ] && return 1 # anchor line not found
+	line=$(( line - 2 ))
+	cat >$tmpfile <<EOT
+	dectcmds_lib="$hookexec"
+	if [ -r "\$dectcmds_lib" ]; then
+		source \$dectcmds_lib
+		in="\$(dectcmds_command "\$in")"
+	fi
+EOT
+	sed -e "${line}r $tmpfile" -i $hookfile
+}
+case $step in
+	precheck)
+		grep -q $detect $rootdir/$hookfile 2>/dev/null 1>&2
+		if [ $? -eq 0 ]; then
+			case "$language" in
+				de)
+					echo "Die Modifikation wurde bereit angewendet." 1>&2
+					;;
+				*)
+					echo "The hook is already installed." 1>&2
+					;;
+			esac
+			rc=1
+		else
+			rc=0
+		fi
+		;;
+	postcheck)
+		grep -q $detect $rootdir/$hookfile 2>/dev/null 1>&2
+		if [ $? -ne 0 ]; then
+			case "$language" in
+				de)
+					echo "Die Modifikation war nicht erfolgreich." 1>&2
+					;;
+				*)
+					echo "The hook could not be installed." 1>&2
+					;;
+			esac
+			rc=1
+		fi
+		;;
+	install)
+		opwd=$(pwd)
+		install_hook
+		rc=$?
+		cd $opwd
+		;;
+	*)
+		rc=59
+		;;
+esac
+exit $rc

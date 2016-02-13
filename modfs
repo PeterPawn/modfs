@@ -993,7 +993,7 @@ modify_rootfs()
 		lrc=$?
 		[ $lrc -gt $rc ] && rc=$lrc
 	done
-	[ $line -gt 0 ] && sed -f "$donelist" -i "$filelist"
+	[ $line -gt 0 -a -s "$donelist" ] && sed -f "$donelist" -i "$filelist"
 	[ -s "$filelist" ] && lines=$(sed -n -e "\$=" "$filelist") || lines=0
 	line=0
 	while [ $line -lt $lines ]; do
@@ -2471,11 +2471,16 @@ if [ x$1 == xundo ]; then
 	exit $rc
 else
 	undo_switch=0
+	create_image_only=0
 	if [ x$1 == xupdate ]; then
 		noversioncheck=1
 		if ! [ -z $2 ]; then
 			firmware_update_file="$2"
 			update_file_provided=1
+			if [ ! -z $3 ]; then
+				create_image_only=1
+				target_image_name="$3"
+			fi
 		else
 			update_file_provided=0
 		fi
@@ -2935,58 +2940,72 @@ if [ $rc -eq 0 ]; then
 	fi
 	debug "modfs: packing done, rc=$rc"
 fi
-if [ $rc -eq 0 -a $noversioncheck -eq 1 ]; then
-	# update wrapper file system too, it should match the expected version for the new kernel
-	progress 1 196
-	copy_wrapper_filesystem "$wrapperimage" 
-	rc=$?
+if [ $create_image_only -eq 1 ]; then
 	if [ $rc -eq 0 ]; then
-		progress 3 96
-	else
-		progress 3 97
-		echo -e "$(get_localized $lang $rc)" 1>&2
+		progress 1 202
+		rc=$?
+		if [ $rc -eq 0 ]; then
+			progress 3 96
+		else
+			progress 3 97
+			echo -e "$(get_localized $lang $rc)" 1>&2
+		fi
+		debug "modfs: copying image file done, rc=$rc"
 	fi
-	debug "modfs: update wrapper filesystem done, rc=$rc"
-fi
-if [ $rc -eq 0 ]; then
-	# copy new root file system
-	progress 1 147
-	copy_new_root_filesystem "$unpack_directory/newroot.squashfs"
-	rc=$?
+else
+	if [ $rc -eq 0 -a $noversioncheck -eq 1 ]; then
+		# update wrapper file system too, it should match the expected version for the new kernel
+		progress 1 196
+		copy_wrapper_filesystem "$wrapperimage" 
+		rc=$?
+		if [ $rc -eq 0 ]; then
+			progress 3 96
+		else
+			progress 3 97
+			echo -e "$(get_localized $lang $rc)" 1>&2
+		fi
+		debug "modfs: update wrapper filesystem done, rc=$rc"
+	fi
 	if [ $rc -eq 0 ]; then
-		progress 3 96
-	else
-		progress 3 97
-		echo -e "$(get_localized $lang $rc)" 1>&2
+		# copy new root file system
+		progress 1 147
+		copy_new_root_filesystem "$unpack_directory/newroot.squashfs"
+		rc=$?
+		if [ $rc -eq 0 ]; then
+			progress 3 96
+		else
+			progress 3 97
+			echo -e "$(get_localized $lang $rc)" 1>&2
+		fi
+		debug "modfs: copying new filesystem done, rc=$rc"
 	fi
-	debug "modfs: copying new filesystem done, rc=$rc"
-fi
-if [ $rc -eq 0 -a $noversioncheck -eq 1 ]; then
-	# update kernel partition too
-	progress 1 198
-	copy_kernel_image "$newkernelimage"
-	rc=$?
+	if [ $rc -eq 0 -a $noversioncheck -eq 1 ]; then
+		# update kernel partition too
+		progress 1 198
+		copy_kernel_image "$newkernelimage"
+		rc=$?
+		if [ $rc -eq 0 ]; then
+			progress 3 96
+		else
+			progress 3 97
+			echo -e "$(get_localized $lang $rc)" 1>&2
+		fi
+		debug "modfs: update kernel done, rc=$rc"
+	fi
 	if [ $rc -eq 0 ]; then
-		progress 3 96
-	else
-		progress 3 97
-		echo -e "$(get_localized $lang $rc)" 1>&2
+		# switch system start partition
+		progress 1 148
+		switch_system_to alternative
+		rc=$?
+		if [ $rc -eq 0 ]; then
+			progress 3 96
+			echo -e "$(get_localized $lang 149)" 1>&2
+		else
+			progress 3 97
+			echo -e "$(get_localized $lang $rc)" 1>&2
+		fi
+		debug "modfs: switching system done, rc=$rc"
 	fi
-	debug "modfs: update kernel done, rc=$rc"
-fi
-if [ $rc -eq 0 ]; then
-	# switch system start partition
-	progress 1 148
-	switch_system_to alternative
-	rc=$?
-	if [ $rc -eq 0 ]; then
-		progress 3 96
-		echo -e "$(get_localized $lang 149)" 1>&2
-	else
-		progress 3 97
-		echo -e "$(get_localized $lang $rc)" 1>&2
-	fi
-	debug "modfs: switching system done, rc=$rc"
 fi
 if [ $loopback_used -eq 1 ]; then
 	# unmount and remove loopback partition, if it was used
