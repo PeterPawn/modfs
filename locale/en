@@ -137,4 +137,5 @@
 199=Using the specified file '%{bold}%s%{normal}' as update source.
 200=The specified file '%{error}%s%{normal}' is missing or not a valid firmware image.
 201=You've specified 'update' operation and provided the file name of the new firmware image.\nNo version check will be performed and it's your own responsibility to ensure that settings\nare compatible or to clean up any previous settings manually.
+202=Copying the created image file to '%s' ...
 222=Error detecting filesystem on image file.

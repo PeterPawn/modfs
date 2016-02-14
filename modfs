@@ -2489,7 +2489,8 @@ else
 		update_file_provided=0
 	fi
 	debug "modfs: noversioncheck=$noversioncheck, update_file_provided=$update_file_provided"
-	[ $update_file_provided -eq 1 ] && debug "modfs: firmware_update_file=$firmware_update_file" 
+	[ $update_file_provided -eq 1 ] && debug "modfs: firmware_update_file=$firmware_update_file"
+	[ $create_image_ony -eq 1 ] && debug "modfs: create_image_only=1, target_image_name=$target_image_name"
 fi
 #
 # check prerequisites first, any further action depends on them
@@ -2942,7 +2943,8 @@ if [ $rc -eq 0 ]; then
 fi
 if [ $create_image_only -eq 1 ]; then
 	if [ $rc -eq 0 ]; then
-		progress 1 202
+		progress 1 202 "$target_image_name"	
+		cp -a "$unpack_directory/newroot.squashfs" "$target_image_name"
 		rc=$?
 		if [ $rc -eq 0 ]; then
 			progress 3 96

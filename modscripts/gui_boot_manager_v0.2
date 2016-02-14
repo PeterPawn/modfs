@@ -1,12 +1,12 @@
 # MODFS_MODSCRIPT
 # SUPPORTS precheck postcheck install language(en,de)
-# NAME enable system and branding selection from GUI (v0.2)
+# NAME enable system and branding selection from GUI \(v0.2\)
 # DESCRIPTION en
 # add the option to switch between available systems and to change to branding
 # to a supported value for the target system to GUI's 'restart' tab
 # DESCRIPTION de
 # Hinzufügen der Auswahl des beim nächsten Start zu ladenden Systems und des zu
-* verwendenden Brandings zum 'Neustart'-Tab des Webinterfaces
+# verwendenden Brandings zum 'Neustart'-Tab des Webinterfaces
 # EOH
 #
 # process parameters
@@ -27,13 +27,14 @@ get_brandings()
 }
 rc=0
 brandings="$(get_brandings "$rootdir")"
+branding="$(sed -n -e 's/^firmware_version\t\(.*\)/\1/p' /proc/sys/urlader/environment)"
 luafile="$rootdir/usr/www/\$branding/system/reboot.lua"
 binfile="/usr/bin/guibootmanager"
 cmdfile="$rootdir$binfile"
 find_line()
 {
 	local line rc=0
-	line="$(grep linux_fs_start $luafile)"
+	line="$(grep linux_fs_start $(eval echo $luafile))"
 	[ ${#line} -gt 0 ] && rc=0 || rc=1
 	return $rc
 }
@@ -514,7 +515,7 @@ case $step in
 if box.post.linux_fs_start then\\
 local linux_fs_start = box.post.linux_fs_start\\
 local branding = box.post[linux_fs_start..\"_branding\"]\\
-os.execute(\"$binfile switch_to \"..box.post.linux_fs_start.." "..branding)\\
+os.execute(\"$binfile switch_to \"..linux_fs_start..\" \"..branding)\\
 end
 /^<form action/a\\
 <div id=\"managed_reboot\" class=\"reboot_managed\">\\
