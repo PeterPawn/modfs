@@ -2490,7 +2490,7 @@ else
 	fi
 	debug "modfs: noversioncheck=$noversioncheck, update_file_provided=$update_file_provided"
 	[ $update_file_provided -eq 1 ] && debug "modfs: firmware_update_file=$firmware_update_file"
-	[ $create_image_ony -eq 1 ] && debug "modfs: create_image_only=1, target_image_name=$target_image_name"
+	[ $create_image_only -eq 1 ] && debug "modfs: create_image_only=1, target_image_name=$target_image_name"
 fi
 #
 # check prerequisites first, any further action depends on them
