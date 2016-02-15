@@ -438,8 +438,8 @@ case "$action" in
 			echo "function initBootManager() {"
 			echo "jxl.addEventHandler(\"radioRunning\",\"click\",onBootManagerClick);"
 			echo "jxl.addEventHandler(\"radioAlternative\",\"click\",onBootManagerClick);"
-			echo "jxl.display(\"running_branding\", $( [ $show_running -eq 0 ] && printf true || printf false ));"
-			echo "jxl.display(\"alternative_branding\", $( [ $show_running -eq 1 ] && printf true || printf false ));"
+			echo "jxl.display(\"running_branding\", $( [ $show_running -eq 1 ] && printf true || printf false ));"
+			echo "jxl.display(\"alternative_branding\", $( [ $show_running -eq 0 ] && printf true || printf false ));"
 			echo "}"
 			echo "</script>"
 			rc=0
