@@ -21,13 +21,14 @@ step=$4
 #
 get_brandings()
 {
-	local mp="$1" rc=0 path
+	local mp="$1" rc=0 path brandings
 	path=$(find $mp/etc -type d -name "default.*" | sed -e "\|$mp/etc/default.[0-9]*\$|d")
-	find $path -type d -maxdepth 1 | sed -n -e "s|$path[/]*||p" | sed -e "/^\$/d"
+	brandings=$(find $path -type d -maxdepth 1 | sed -n -e "s|$path[/]*||p" | sed -e "/^\$/d")
+	echo $brandings
 }
 rc=0
 brandings="$(get_brandings "$rootdir")"
-branding="$(sed -n -e 's/^firmware_version\t\(.*\)/\1/p' /proc/sys/urlader/environment)"
+branding="$(echo "$brandings" | sed -n -e 's/^\([^ ]*\).*/\1/p')"
 luafile="$rootdir/usr/www/\$branding/system/reboot.lua"
 binfile="/usr/bin/guibootmanager"
 cmdfile="$rootdir$binfile"
