@@ -1,0 +1,15 @@
+= t d
+1       Compress the current directory to be published on yourfritz.de
+	version=$(cat .version)
+	Files="bin files locale modscripts README* LICENSE modfs"
+	busybox tar cf - $Files | gzip -c9 > "modfs-$version.tgz"
+	cp modfs-$version.tgz /ssh/source/srv/www/vhosts/www.yourfritz.de/
+	opwd=$(pwd)
+	cd /ssh/source/srv/www/vhosts/www.yourfritz.de
+	rm modfs.tgz
+	ln -s modfs-$version.tgz modfs.tgz
+	cp modfs-$version.tgz 7490/
+	chmod 644 modfs-$version.tgz 7490/modfs-$version.tgz
+	chown wwwrun:www modfs-$version.tgz 7490/modfs-$version.tgz
+	cd $opwd
+
