@@ -12,4 +12,6 @@
 	chmod 644 modfs-$version.tgz 7490/modfs-$version.tgz
 	chown wwwrun:www modfs-$version.tgz 7490/modfs-$version.tgz
 	cd $opwd
+	echo "Created (and linked) modfs version $version on yourfritz.de"
+	tar tvf modfs-$version.tgz
 
