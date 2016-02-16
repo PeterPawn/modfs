@@ -23,7 +23,7 @@ get_brandings()
 {
 	local mp="$1" rc=0 path brandings
 	path=$(find $mp/etc -type d -name "default.*" | sed -e "\|$mp/etc/default.[0-9]*\$|d")
-	brandings=$(find $path -type d -maxdepth 1 | sed -n -e "s|$path[/]*||p" | sed -e "/^\$/d")
+	brandings=$(find $path -maxdepth 1 -type d | sed -n -e "s|$path[/]*||p" | sed -e "/^\$/d")
 	echo $brandings
 }
 rc=0
