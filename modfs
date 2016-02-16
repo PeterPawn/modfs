@@ -2471,26 +2471,50 @@ if [ x$1 == xundo ]; then
 	exit $rc
 else
 	undo_switch=0
+	noversioncheck=0
+	update_file_provided=0
 	create_image_only=0
-	if [ x$1 == xupdate ]; then
-		noversioncheck=1
-		if ! [ -z $2 ]; then
-			firmware_update_file="$2"
-			update_file_provided=1
-			if [ ! -z $3 ]; then
-				create_image_only=1
-				target_image_name="$3"
+	install_image_only=0
+	install_no_wrapper=0
+	install_no_kernel=0
+	case $1 in
+		update)
+			noversioncheck=1
+			if ! [ -z $2 ]; then
+				firmware_update_file="$2"
+				update_file_provided=1
+				if ! [ -z $3 ]; then
+					create_image_only=1
+					target_image_name="$3"
+				fi
 			fi
-		else
-			update_file_provided=0
-		fi
-	else
-		noversioncheck=0
-		update_file_provided=0
-	fi
+			;;
+		install|installfs|installroot)
+			update_file_provided=1
+			noversioncheck=1
+			install_image_only=1
+			if [ -z $2 ]; then
+				echo "Missing name of image file to be installed." 1>&2
+				exit 1
+			else
+				firmware_update_file="$2"
+			fi
+			if [ x$1 == xinstallfs -o x$1 == xinstallroot ]; then
+				install_no_kernel=1	
+			fi
+			if [ x$1 == xinstallroot ]; then
+				install_no_wrapper=1	
+			fi
+			;;
+		*)
+			echo "Unknown parameter '$1'." 1>&2
+			exit 1
+			
+	esac
 	debug "modfs: noversioncheck=$noversioncheck, update_file_provided=$update_file_provided"
 	[ $update_file_provided -eq 1 ] && debug "modfs: firmware_update_file=$firmware_update_file"
 	[ $create_image_only -eq 1 ] && debug "modfs: create_image_only=1, target_image_name=$target_image_name"
+	[ $install_image_only -eq 1 ] && debug "modfs: install_image_only=1, firmware_update_file=$firmware_update_file, install_no_kernel=$install_no_kernel, install_no_wrapper=$install_no_wrapper"
 fi
 #
 # check prerequisites first, any further action depends on them
@@ -2514,23 +2538,27 @@ if [ $prerc -eq 32 ]; then
 fi
 [ $prerc -ne 0 ] && exit $prerc
 echo -e "$(get_localized $lang 107 "$(get_system_version)")\n" 1>&2
-if [ $noversioncheck -eq 1 ]; then
-	if [ $update_file_provided -eq 0 ]; then
-		echo -e "$(get_localized $lang 186)" 1>&2
-	else
-		echo -e "$(get_localized $lang 201)" 1>&2
-	fi
-fi
-if [ $noversioncheck -eq 1 ]; then
-	if [ $update_file_provided -eq 1 ]; then
-		source="file_update"
-	else
-		source="download_update"
-	fi
+if [ $install_image_only -eq 1 ]; then
+	source="file_update"
 else
-	echo -e "$(get_localized $lang 108)" 1>&2
-	echo -e "$(get_localized $lang 109)" 1>&2
-	source=$(get_source)
+	if [ $noversioncheck -eq 1 ]; then
+		if [ $update_file_provided -eq 0 ]; then
+			echo -e "$(get_localized $lang 186)" 1>&2
+		else
+			echo -e "$(get_localized $lang 201)" 1>&2
+		fi
+	fi
+	if [ $noversioncheck -eq 1 ]; then
+		if [ $update_file_provided -eq 1 ]; then
+			source="file_update"
+		else
+			source="download_update"
+		fi
+	else
+		echo -e "$(get_localized $lang 108)" 1>&2
+		echo -e "$(get_localized $lang 109)" 1>&2
+		source=$(get_source)
+	fi
 fi
 debug "modfs: source=$source"
 if [ $source == quit ]; then
@@ -2804,87 +2832,89 @@ case $source in
 esac
 if [ $rc -eq 0 ]; then
 	debug "modfs: initialization done"
-	# find a mountpoint with enough free storage for unpacking of squashfs
-	# check current working directory (if any) first
-	if [ ${#working_directory} -gt 0 ]; then
-		path="$(echo "$working_directory" | check_space $free_space_for_unpack)"
-		if [ ${#path} -gt 0 ]; then
-			# current working directory seems to be suitable
-			unpack_directory="$working_directory"
+	if [ $install_image_only -eq 0 ]; then
+		# find a mountpoint with enough free storage for unpacking of squashfs
+		# check current working directory (if any) first
+		if [ ${#working_directory} -gt 0 ]; then
+			path="$(echo "$working_directory" | check_space $free_space_for_unpack)"
+			if [ ${#path} -gt 0 ]; then
+				# current working directory seems to be suitable
+				unpack_directory="$working_directory"
+			fi
+		else
+			# no working directory selected yet
+			unpack_directory=""
 		fi
-	else
-		# no working directory selected yet
-		unpack_directory=""
-	fi
-	if [ ${#unpack_directory} -eq 0 ]; then
-		# we need (a new) working directory with enough free space
-		unpack_directory="$(get_working_directory $free_space_for_unpack_tmpfs "tmpfs")"
-		rc=$?
-		if [ $rc -ne 0 ]; then
-			# not enough space on tmpfs, try non-volatile storage now
-			unpack_directory="$(get_working_directory $free_space_for_unpack "nand storage")"
+		if [ ${#unpack_directory} -eq 0 ]; then
+			# we need (a new) working directory with enough free space
+			unpack_directory="$(get_working_directory $free_space_for_unpack_tmpfs "tmpfs")"
 			rc=$?
 			if [ $rc -ne 0 ]; then
-				echo -e "$(get_localized $lang $rc)" 1>&2
-				exit $rc
+				# not enough space on tmpfs, try non-volatile storage now
+				unpack_directory="$(get_working_directory $free_space_for_unpack "nand storage")"
+				rc=$?
+				if [ $rc -ne 0 ]; then
+					echo -e "$(get_localized $lang $rc)" 1>&2
+					exit $rc
+				fi
 			fi
 		fi
-	fi
-	debug "modfs: unpack directory=$unpack_directory"
-	if [ $rc -eq 0 ]; then
-		if [ ${#unpack_directory} -eq 0 ]; then
-			echo -e "$(get_localized $lang 58)" 1>&2
-			rc=58
+		debug "modfs: unpack directory=$unpack_directory"
+		if [ $rc -eq 0 ]; then
+			if [ ${#unpack_directory} -eq 0 ]; then
+				echo -e "$(get_localized $lang 58)" 1>&2
+				rc=58
+			fi
 		fi
-	fi
-	if [ $rc -eq 0 ]; then
-		# check file system at mount point - we need a native one
-		fs="$(sed -n -e "s|^[^ \t]* $unpack_directory \(.*\) .* . .|\1|p" /proc/mounts)"
-		if [ ${#fs} -eq 0 ]; then
-			fs="$(sed -n -e "s|^[^ \t]* $(get_mountpoint $unpack_directory) \(.*\) .* . .|\1|p" /proc/mounts)"
-		fi
-		index_of_item $fs "$nativefilesystems" 1>/dev/null
-		ind=$?
-		if [ $ind -eq 1 ]; then
-			debug "modfs: using loopback device with ext3 image for unpacking"
-			# we'll use a loopback device to mount our ext3 image
-			progress 1 140
-			unpack_directory="$unpack_directory/$(date +%s)"
-			mkdir -p "$unpack_directory"
-			echo "rm -r $unpack_directory" >>$tempfilelist
-			gunzip -c "$(filesdir)/$packedpartition" >"$unpack_directory/loopback"
-			rc=$?
-			if [ $rc -eq 0 ]; then
-				progress 3 96
-				progress 1 141
-				loopback_host="$unpack_directory/loopback"
-				tmp="$(get_temp_dir)"
-				mount -o loop $loopback_host $tmp
+		if [ $rc -eq 0 ]; then
+			# check file system at mount point - we need a native one
+			fs="$(sed -n -e "s|^[^ \t]* $unpack_directory \(.*\) .* . .|\1|p" /proc/mounts)"
+			if [ ${#fs} -eq 0 ]; then
+				fs="$(sed -n -e "s|^[^ \t]* $(get_mountpoint $unpack_directory) \(.*\) .* . .|\1|p" /proc/mounts)"
+			fi
+			index_of_item $fs "$nativefilesystems" 1>/dev/null
+			ind=$?
+			if [ $ind -eq 1 ]; then
+				debug "modfs: using loopback device with ext3 image for unpacking"
+				# we'll use a loopback device to mount our ext3 image
+				progress 1 140
+				unpack_directory="$unpack_directory/$(date +%s)"
+				mkdir -p "$unpack_directory"
+				echo "rm -r $unpack_directory" >>$tempfilelist
+				gunzip -c "$(filesdir)/$packedpartition" >"$unpack_directory/loopback"
+				rc=$?
 				if [ $rc -eq 0 ]; then
 					progress 3 96
-					loopback_used=1
-					unpack_directory="$tmp"
+					progress 1 141
+					loopback_host="$unpack_directory/loopback"
+					tmp="$(get_temp_dir)"
+					mount -o loop $loopback_host $tmp
+					if [ $rc -eq 0 ]; then
+						progress 3 96
+						loopback_used=1
+						unpack_directory="$tmp"
+					else
+						progress 3 97
+						echo -e "$(get_localized $lang 55)" 1>&2
+						rc=55
+					fi
 				else
 					progress 3 97
-					echo -e "$(get_localized $lang 55)" 1>&2
-					rc=55
+					echo -e "$(get_localized $lang 54)" 1>&2
+					rc=54
 				fi
+				debug "modfs: unpack directory=$unpack_directory"
 			else
-				progress 3 97
-				echo -e "$(get_localized $lang 54)" 1>&2
-				rc=54
+				debug "modfs: using a native filesystem for unpacking"
+				loopback_used=0
+				unpack_directory="$unpack_directory/$(date +%s)"
+				mkdir -p $unpack_directory
+				echo "rm -r $unpack_directory" >>$tempfilelist
 			fi
-			debug "modfs: unpack directory=$unpack_directory"
-		else
-			debug "modfs: using a native filesystem for unpacking"
-			loopback_used=0
-			unpack_directory="$unpack_directory/$(date +%s)"
-			mkdir -p $unpack_directory
-			echo "rm -r $unpack_directory" >>$tempfilelist
 		fi
 	fi
 fi
-if [ $rc -eq 0 ]; then
+if [ $rc -eq 0 -a $install_image_only -eq 0 ]; then
 	# unpack squashfs root image
 	progress 1 144
 	spinner "$tmpdirbase" unpack_squashfs "$baseimage" "$unpack_directory" 
@@ -2905,7 +2935,7 @@ if [ $rc -eq 0 ]; then
 	fi
 	debug "modfs: unpacking SquashFS image done, rc=$rc"
 fi
-if [ $rc -eq 0 ]; then
+if [ $rc -eq 0 -a $install_image_only -eq 0 ]; then
 	# modify root file system
 	modify_rootfs "$unpack_directory/$squashfsdirname" "$scriptpath/modscripts"
 	rc=$?
@@ -2928,7 +2958,7 @@ if [ $rc -eq 0 ]; then
 	fi
 	debug "modfs: modifications done, rc=$rc"
 fi
-if [ $rc -eq 0 ]; then
+if [ $rc -eq 0 -a $install_image_only -eq 0 ]; then
 	# pack new root file system
 	progress 1 146
 	spinner "$unpack_directory" pack_squashfs "$unpack_directory" "$unpack_directory/newroot.squashfs" $squashfs_endianess $squashfs_blocksize $sq_version
@@ -2955,7 +2985,7 @@ if [ $create_image_only -eq 1 ]; then
 		debug "modfs: copying image file done, rc=$rc"
 	fi
 else
-	if [ $rc -eq 0 -a $noversioncheck -eq 1 ]; then
+	if [ $rc -eq 0 -a $noversioncheck -eq 1 -a $install_no_wrapper -eq 0 ]; then
 		# update wrapper file system too, it should match the expected version for the new kernel
 		progress 1 196
 		copy_wrapper_filesystem "$wrapperimage" 
@@ -2981,7 +3011,7 @@ else
 		fi
 		debug "modfs: copying new filesystem done, rc=$rc"
 	fi
-	if [ $rc -eq 0 -a $noversioncheck -eq 1 ]; then
+	if [ $rc -eq 0 -a $noversioncheck -eq 1 -a $install_no_kernel -eq 0 ]; then
 		# update kernel partition too
 		progress 1 198
 		copy_kernel_image "$newkernelimage"
@@ -2995,18 +3025,25 @@ else
 		debug "modfs: update kernel done, rc=$rc"
 	fi
 	if [ $rc -eq 0 ]; then
-		# switch system start partition
-		progress 1 148
-		switch_system_to alternative
-		rc=$?
-		if [ $rc -eq 0 ]; then
-			progress 3 96
-			echo -e "$(get_localized $lang 149)" 1>&2
+		if [ $install_image_only -eq 1 ]; then
+			switch=$(ask_yes_or_no n "$(get_localized $lang 203)")
 		else
-			progress 3 97
-			echo -e "$(get_localized $lang $rc)" 1>&2
+			switch=Y
 		fi
-		debug "modfs: switching system done, rc=$rc"
+		if [ x$switch == xY ]; then
+			# switch system start partition
+			progress 1 148
+			switch_system_to alternative
+			rc=$?
+			if [ $rc -eq 0 ]; then
+				progress 3 96
+				echo -e "$(get_localized $lang 149)" 1>&2
+			else
+				progress 3 97
+				echo -e "$(get_localized $lang $rc)" 1>&2
+			fi
+			debug "modfs: switching system done, rc=$rc"
+		fi
 	fi
 fi
 if [ $loopback_used -eq 1 ]; then
