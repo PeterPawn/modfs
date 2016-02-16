@@ -94,7 +94,7 @@
 154=\n%{bold}The running system will be started again at next reboot of your device.%{normal}
 155=\n%{error}Execution aborted, the file system at the inactive partition remains unchanged.%{normal}
 156=You may use a complete firmware image (%s) from manufacturer and the script will extract\nthe contained squashfs image for further processing. Or you may use an already extracted squashfs\nimage (%s) from a previous run.\n\nThe shown file names will be looked up at the root directory of the selected volume. If your source has a\ndifferent name and/or is stored at a subdirectory, you have to specify the file name with option 'p' below.\n\nThere is more than one place to load the image file from.
-157=Where is your image file located ?
+157=Where is your image file located?
 158=%s - %s (filesystem %s) mounted as %s
 159=p - enter the file name yourself (no edit capabilities due to missing readline support)
 160=q - abort selection, terminate processing
@@ -127,9 +127,9 @@
 189=Found a newer version (%{bold}%s%{normal}) at the FTP server.
 190=Unable to find a newer version than %s at the FTP server, update aborted.
 191=Error %d comparing version number '%s' with '%s', aborting.
-192=Do you want to copy the running system to the alternative partitions too ?\n\nWarning: Your system will be restarted without any further questions, after the copy process completed.\n\nExecute the copy process now ?
-193=\nDo you want to save the downloaded root image for later use ?
-194=\nDo you want to undo the selection of the alternative system at next reboot ?
+192=Do you want to copy the running system to the alternative partitions too?\n\nWarning: Your system will be restarted without any further questions, after the copy process completed.\n\nExecute the copy process now?
+193=\nDo you want to save the downloaded root image for later use?
+194=\nDo you want to undo the selection of the alternative system at next reboot?
 195=Extracting kernel image from firmware image ...
 196=Creating new wrapper file system ...
 197=Error writing wrapper file system to yaffs2 partition, aborting.
@@ -138,4 +138,5 @@
 200=The specified file '%{error}%s%{normal}' is missing or not a valid firmware image.
 201=You've specified 'update' operation and provided the file name of the new firmware image.\nNo version check will be performed and it's your own responsibility to ensure that settings\nare compatible or to clean up any previous settings manually.
 202=Copying the created image file to '%s' ...
+203=\nDo you want to use the newly installed system at next reboot?
 222=Error detecting filesystem on image file.

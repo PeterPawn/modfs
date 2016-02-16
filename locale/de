@@ -94,7 +94,7 @@
 154=\n%{bold}Beim nächsten Start der Box wird erneut das aktuell laufende System gestartet.%{normal}
 155=\n%{error}Ausführung abgebrochen, das Dateisystem in der inaktiven Partition bleibt unverändert.%{normal}
 156=Als Ausgangsbasis kann entweder ein komplettes Firmware-Image dienen (%s), aus dem dann\ndas enthaltene root-Dateisystem extrahiert wird oder es kann auch gleich ein bereits extrahiertes\nSquashFS-Image (%s) verwendet werden.\n\nDie angegebenen Dateinamen werden jeweils im Wurzelverzeichnis eines Volumes gesucht. Wenn die Datei\nanders benannt sein sollte oder sich nicht im Wurzelverzeichnis des Datenträgers befindet, muss unten\ndie Option 'p' gewählt werden.\n\nEs gibt mehrere Speicherlaufwerke in dieser Box.
-157=Wo ist das als Ausgangspunkt zu verwendende Image gespeichert ?
+157=Wo ist das als Ausgangspunkt zu verwendende Image gespeichert?
 158=%s - %s (Dateisystem %s) eingebunden unter %s
 159=p - den Pfad zur Datei direkt eingeben
 160=q - Auswahl abbrechen
@@ -119,7 +119,7 @@
 179=Überprüfen des Erfolgs der Modifikation ...
 180=\nDie Modifikation '%s' wurde angewendet, Fehlercode = %d.
 181=keine Beschreibung vorhanden
-182=Soll die Modifikation '%s' mit folgender Beschreibung\n%{bold}%s%{normal}\nangewendet werden ?
+182=Soll die Modifikation '%s' mit folgender Beschreibung\n%{bold}%s%{normal}\nangewendet werden?
 183=System kopiert, das Gerät wird jetzt neu gestartet ...
 186=Die Auswahl des 'update'-Modus erfordert eine neuere Firmware-Version vom\nFTP-Server des Herstellers.
 187=Die neueste Versionsnummer auf dem FTP-Server kann nicht ermittelt werden, Abbruch.
@@ -127,9 +127,9 @@
 189=Es wurde eine neuere Version (%{bold}%s%{normal}) auf dem FTP-Server gefunden.
 190=Es wurde keine neuere Version als %s auf dem FTP-Server gefunden, Abbruch.
 191=Fehler %d bei Vergleich der Versionnummer '%s' mit '%s', Abbruch.
-192=Soll das laufende System in die inaktiven Partitionen kopiert werden ?\n\nAchtung: Nachdem der Kopiervorgang abgeschlossen ist, wird die Box ohne weitere\nNachfrage neu gestartet.\n\nSoll der Kopiervorgang ausgeführt werden ?
-193=\nSoll das extrahierte root-Dateisystem für die wiederholte Verwendung aufbewahrt werden ?
-194=\nSoll die Auswahl des alternativen Systems beim nächsten Start der Box rückgängig gemacht werden ?
+192=Soll das laufende System in die inaktiven Partitionen kopiert werden?\n\nAchtung: Nachdem der Kopiervorgang abgeschlossen ist, wird die Box ohne weitere\nNachfrage neu gestartet.\n\nSoll der Kopiervorgang ausgeführt werden?
+193=\nSoll das extrahierte root-Dateisystem für die wiederholte Verwendung aufbewahrt werden?
+194=\nSoll die Auswahl des alternativen Systems beim nächsten Start der Box rückgängig gemacht werden?
 195=Extrahieren des neuen Kernel-Images aus dem Firmware-Image ...
 196=Erstellen eines neuen 'äußeren Dateisystems' ...
 197=Fehler beim Schreiben des äußeren Dateisystems in die YAFFS2-Partition, Abbruch.
@@ -138,4 +138,5 @@
 200=Die angegebene Datei '%{error}%s%{normal}' ist nicht vorhanden oder kein gültiges Firmware-Image.
 201=Die Angabe einer Datei nach dem 'update'-Parameter unterbindet jede Versionprüfung.\nSomit ist jeder selbst dafür zuständig, die Kompatibilität der vorhandenen Einstellungen\nmit dem verwendeten System sicherzustellen, speziell wenn ein Downgrade ausgeführt wurde\noder ggf. die 'Werkseinstellungen' wiederherzustellen.
 202=Die erzeugte Image-Datei wird nach '%s' kopiert ...
+203=\nSoll das alternative System beim nächsten Start verwendet werden?
 222=Fehler beim Ermitteln des Dateisystemtyps der Image-Datei.
