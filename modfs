@@ -3021,8 +3021,8 @@ if [ $rc -eq 0 -a $install_image_only -eq 0 ]; then
 	else
 		progress 3 97
 		echo -e "$(get_localized $lang $rc)" 1>&2
-		newimage="$unpack_directory/newroot.squashfs"
 	fi
+	newimage="$unpack_directory/newroot.squashfs"
 	debug "modfs: packing done, rc=$rc"
 fi
 if [ $create_image_only -eq 1 ]; then
