@@ -2,11 +2,9 @@
 # SUPPORTS precheck postcheck install language(en,de)
 # NAME mount by label
 # DESCRIPTION en
-# modify /etc/hotplug/udev-mount-sd to mount a volume with it's label as path 
-# inside /var/media/ftp
+# mount USB volumes with their label as mountpoint
 # DESCRIPTION de
-# Modifizieren von '/etc/hotplug/udev-mount-sd', um die Bezeichnung eines Datenträger
-# als Pfad zu diesem Volume (/var/media/ftp/<volume_label>) zu verwenden.
+# USB-Volumes mit ihrem Label als Mountpoint einbinden
 # EOH
 #
 # process parameters
@@ -21,19 +19,28 @@ step=$4
 #
 rc=0
 modfile="$rootdir/etc/hotplug/udev-mount-sd"
+line_version="USE_VOLUME_LABELS="
+line_new="USE_VOLUME_LABELS='yes'"
+line_rep="s/USE_VOLUME_LABELS=`echo usbhost.volume_labels|usbcfgctl -s`/USE_VOLUME_LABELS='yes'/"
 line1="local \$(/sbin/blkid /dev/\\\${1}\\\${3} | sed -n -e 's/^[^ ]* \\\(.*\\\)/\\\1/p');[ \${#LABEL} -gt 0 ] && eval echo \$LABEL && return"
 line2="[ \${#device_info} -eq 0 ] && device_info=\$(/bin/busybox blkid \$DEVNODE)"
 find_line()
 {
-	local line rc=0
-	line="$(sed -n -e "\\%$line2%p" $modfile)"
+	local needle="$1" rc=0
+	line="$(sed -n -e "\\%$needle%p" $modfile)"
 	[ ${#line} -gt 0 ] && rc=0 || rc=1
 	return $rc
 }
 case $step in
 	precheck)
-		find_line
-		rc=$?
+		find_line "$line_version"
+		if [ $? -eq 0 ]; then
+			find_line "$line_new"
+			rc=$?		
+		else
+			find_line "$line2"
+			rc=$?
+		fi
 		if [ $rc -eq 0 ]; then
 			case "$language" in
 				de)
@@ -49,8 +56,14 @@ case $step in
 		fi
 		;;
 	postcheck)
-		find_line
-		rc=$?
+		find_line "$line_version"
+		if [ $? -eq 0 ]; then
+			find_line "$line_new"
+			rc=$?		
+		else
+			find_line "$line2"
+			rc=$?
+		fi
 		if [ $rc -eq 1 ]; then
 			case "$language" in
 				de)
@@ -64,8 +77,14 @@ case $step in
 		fi
 		;;
 	install)
-		sed -e "/^nicename/a$line1" -e "/^device_info=/a$line2" -i "$modfile"
-		rc=0
+		find_line "$line_version"
+		if [ $? -eq 0 ]; then
+			sed -e "$line_rep" -i "$modfile"
+			rc=0
+		else
+			sed -e "/^nicename/a$line1" -e "/^device_info=/a$line2" -i "$modfile"
+			rc=0
+		fi
 		;;
 	*)
 		rc=59
