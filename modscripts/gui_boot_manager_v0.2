@@ -431,6 +431,7 @@ case "$action" in
 			echo "jxl.display(\"running_branding\", $( [ $show_running -eq 1 ] && printf true || printf false ));"
 			echo "jxl.display(\"alternative_branding\", $( [ $show_running -eq 0 ] && printf true || printf false ));"
 			echo "}"
+			echo "ready.onReady(initBootManager);"
 			echo "</script>"
 			rc=0
 		fi
@@ -516,8 +517,6 @@ pipe:close()\\
 box.out(line)\\
 ?>\\
 </div>
-/^jsl\.writeDataLabel/a\\
-initBootManager();
 "
 		done
 		install_script
