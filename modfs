@@ -26,46 +26,46 @@
 # AVM "constants"
 #
 # procfs of MTD driver
-procmtd="/proc/mtd" 
+procmtd="/proc/mtd"
 # device name of MTD partition for access with character oriented I/O
-mtdprefix="mtd" 
+mtdprefix="mtd"
 # device name of MTD partitions for access with block oriented I/O
-mtdblockname="mtdblock" 
+mtdblockname="mtdblock"
 # prefix for inactive partition names
-reservedprefix="reserved-" 
+reservedprefix="reserved-"
 # name of kernel partition
-kernelname="kernel" 
+kernelname="kernel"
 # name of file system partition
-filesystemname="filesystem" 
+filesystemname="filesystem"
 # name of the partition with NAND flash available to the user
-nandname="nand-filesystem" 
+nandname="nand-filesystem"
 # environment file name within the TFFS procfs
-envpathname="/proc/sys/urlader/environment" 
+envpathname="/proc/sys/urlader/environment"
 # variable used to switch between boot time systems
-fsvarname="linux_fs_start" 
+fsvarname="linux_fs_start"
 # hardware revision variable name
-hwrevname="HWRevision" 
+hwrevname="HWRevision"
 # supported hardware revisions
 # 3370, 7362SL, 3390, 7490, 3490
-hwrevs_supported="175 185 193 203 212" 
+hwrevs_supported="175 185 193 203 212"
 # AVM's binary to modify the NAND based partitions (busybox has it's own tools, but not ooB on a device with original firmware)
-update_kernel_binary="/sbin/update_kernel" 
+update_kernel_binary="/sbin/update_kernel"
 # where is the wrapper mounted at the running system ?
-wrapperdir="/wrapper" 
+wrapperdir="/wrapper"
 # the file name of the root file system image
-rootfsname="filesystem_core.squashfs" 
+rootfsname="filesystem_core.squashfs"
 # the name of a firmware image, it will be renamed during download
-firmwarestoragename="firmware.image" 
+firmwarestoragename="firmware.image"
 # the kernel image name within a firmware image
-firmware_kernel_image="./var/tmp/kernel.image" 
+firmware_kernel_image="./var/tmp/kernel.image"
 # the wrapper file system image name within a firmware image
-firmware_filesystem_image="./var/tmp/filesystem.image" 
+firmware_filesystem_image="./var/tmp/filesystem.image"
 # wrapper file system image file name
 wrapperimagename="filesystem.image"
 # kernel image file name
 kernelfilename="kernel.image"
 # the name of the file, which can be used to determine the version of the system within a squashfs image
-versionfilename="/etc/version" 
+versionfilename="/etc/version"
 # the name of the shell on the box
 shl="/bin/sh"
 # blkid executable path
@@ -84,28 +84,28 @@ ftp_path_185="/fritz.box/fritzbox.7490/firmware/deutsch/FRITZ.Box_7490.\$version
 ftp_path_193="/fritz.box/fritzbox.wlan_3390/firmware/deutsch/FRITZ.Box_3390.\$version.image"
 ftp_path_203="/fritz.box/fritzbox.7362_sl/firmware/deutsch/FRITZ.Box_7362_SL.\$version.image"
 ftp_path_212="/fritz.box/fritzbox.3490/firmware/deutsch/FRITZ.Box_3490.\$version.image"
-# some more values which have to be changed, if AVM modifies its firmware 
+# some more values which have to be changed, if AVM modifies its firmware
 #
 # 128MB ext3 image plus 5 percent
-free_space_for_unpack="134M" 
+free_space_for_unpack="134M"
 # 32 MB (23 MB at this time) for packed and double space for unpacked image
-free_space_for_unpack_tmpfs="96M" 
+free_space_for_unpack_tmpfs="96M"
 # even with a small amount of RAM at all, there should be a minimum of free space
-free_space_at_tmpfs="24M" 
+free_space_at_tmpfs="24M"
 # that's really low on space, better restart the box again
-warning_space_at_tmpfs="10M" 
+warning_space_at_tmpfs="10M"
 # one more time the space needed for our ext3 container + 5%
-free_space_at_nand="134M" 
+free_space_at_nand="134M"
 # the estimated space needed to store an extracted squashfs image at NAND
-warning_space_at_nand="64M" 
+warning_space_at_nand="64M"
 # the estimated space needed to download a firmware image from the FTP server
-download_space_needed="32M" 
+download_space_needed="32M"
 # the estimated space needed to extract a wrapper file system from a firmware image
-extract_space_needed="32M" 
+extract_space_needed="32M"
 # the "normal" base for temporary files and directories
-tmpfsbasedir="/var/tmp" 
+tmpfsbasedir="/var/tmp"
 # known native file system types, we can use them without a container
-nativefilesystems="tmpfs ext2 ext3 ext4 yaffs2" 
+nativefilesystems="tmpfs ext2 ext3 ext4 yaffs2"
 #
 # error codes
 #
@@ -225,7 +225,7 @@ remove_directory()
 #
 # get temporary directory name
 #
-get_temp_dir() 
+get_temp_dir()
 {
 	local name="$tmpdirbase/$$_$(date +%s)"
 	mkdir -p "$name"
@@ -238,8 +238,8 @@ get_temp_dir()
 # get temporary file name
 # $1 - optional base directory name
 #
-get_temp_file() 
-{ 
+get_temp_file()
+{
 	local name="$1" dir out
 	dir="$(get_temp_dir)"
 	[ -z "$name" ] && out="$dir/$(date +%s)" || out="$dir/$name"
@@ -251,10 +251,10 @@ get_temp_file()
 #
 # write to debug ring buffer
 # stdin -> lines to append to the buffer
-# 
-debug() 
-{ 
-	[ $MODFS_DEBUG -ne 1 ] && return 
+#
+debug()
+{
+	[ $MODFS_DEBUG -ne 1 ] && return
 	echo -e "$@" | sed -e ':x;$!N;s/\n/{LF}/;tx' | $debugoutput
 }
 #
@@ -266,7 +266,7 @@ get_system_switch() { sed -n -e "s/^$fsvarname\t\([01]\)/\1/p" $envpathname; }
 #
 get_hardware_revision() { sed -n -e "s/^$hwrevname\t\(.*\)/\1/p" $envpathname; }
 #
-# check, if the specified hardware revision is supported 
+# check, if the specified hardware revision is supported
 # $1 - hardware revision
 #
 check_hardware_revision() { return $(index_of_item "$1" "$hwrevs_supported"); }
@@ -311,7 +311,7 @@ uppercase() { echo "$@" | tr 'abcdefghijklmnopqrstuvwxyzäöü' 'ABCDEFGHIJKLMNO
 escape_regexp() { echo "$@" | sed -e 's/\./\\./g'; }
 #
 # get localized strings (to make it easier for german users)
-# - the message text may contain the macros '%{error}', '%{ok}', '%{warning}' and 
+# - the message text may contain the macros '%{error}', '%{ok}', '%{warning}' and
 #   '%{normal}' to change text color
 # - to insert variable parts into the text, the 'printf' command will be used with
 #   the specified parameters (shifted two times to remove our own arguments)
@@ -474,7 +474,7 @@ sq_unsquashfs()
 #
 # switch system selection variable to other value
 #
-switch_system() 
+switch_system()
 {
 	local newval
 	newval=$(( ( $(get_system_switch) + 1 ) % 2 ))
@@ -517,7 +517,7 @@ detect_image_filesystem()
 			fstype=$($blkid -o value -s TYPE -p -O 256 $src)
 			if [ ${#fstype} -gt 0 ]; then
 				fstype="sqfs_dummy256_$fstype"
-			fi 
+			fi
 		else
 			fstype=$fstype$major
 		fi
@@ -680,7 +680,7 @@ copy_new_root_filesystem()
 # get squash file system block size
 # $1 - source file system name
 #
-get_squashfs_blocksize() 
+get_squashfs_blocksize()
 {
 	local bs sq_version
 	sq_version=$(get_squashfs_tools_version "$1")
@@ -694,7 +694,7 @@ get_squashfs_blocksize()
 # $1 - source file system name
 #
 get_squashfs_endianess()
-{ 
+{
 	local endianess=0 endian sq_version
 	sq_version=$(get_squashfs_tools_version "$1")
 	debug "get_squashfs_endianess: using SquashFS version $sq_version"
@@ -719,7 +719,7 @@ unpack_squashfs()
 		[ -z $files ] || files="-e $files"
 		popd="$(pwd)"
 		cd "$target"
-		sq_unsquashfs -info "$src" $files 
+		sq_unsquashfs -info "$src" $files
 		rc=$?
 		cd "$popd"
 	else
@@ -791,7 +791,7 @@ execute_modscript()
 		if [ ${#name} -gt 0 -a ${#supports} -gt 0 ]; then
 			if [ x"$mode" == xauto ]; then
 				echo -e "$(get_localized $lang 172 "$name")" 1>&2
-				progress 1 173	
+				progress 1 173
 			fi
 			language="$(is_supported 'language' "$supports")"
 			if [ $? -eq 1 ]; then
@@ -918,7 +918,7 @@ execute_optional_modscript()
 		name="${name// /\\ }"
 		if [ ${#name} -gt 0 -a ${#supports} -gt 0 ]; then
 			echo -e "$(get_localized $lang 172 "$name")" 1>&2
-			progress 1 173	
+			progress 1 173
 			language="$(is_supported 'language' "$supports")"
 			if [ $? -eq 1 ]; then
 				languages="${language##language(}"
@@ -951,7 +951,7 @@ execute_optional_modscript()
 			doit=$(ask_yes_or_no n "$msg")
 			if [ x$doit == xY ]; then
 				execute_modscript "$script" "$rootdir" onrequest
-			fi 
+			fi
 		else
 			echo -e "$(get_localized $lang 60 "${scriptname}")" 1>&2
 			rc=60
@@ -1199,10 +1199,10 @@ extract_filesystem()
 # get system version
 # $1 - system root
 #
-get_system_version() 
-{ 
+get_system_version()
+{
 	local vf="$1$versionfilename" version subversion
-	subversion=$($shl "$1$versionfilename" --subversion) 
+	subversion=$($shl "$1$versionfilename" --subversion)
 	version=$($shl "$1$versionfilename" --version)
 	[ ${#subversion} -gt 0 ] && echo "$version-$subversion" || echo "$version"
 }
@@ -1294,7 +1294,7 @@ check_free_tmpfs()
 #
 is_tmpfs()
 {
-	local path="$1" 
+	local path="$1"
 	type=$(stat -c %T -f "$path")
 	if [ x$type == x"tmpfs" ]; then
 		echo 1
@@ -1308,7 +1308,7 @@ is_tmpfs()
 #
 get_nand_mountpoint()
 {
-	local rc=0 nandmajor nandminor device mountpoint type options x y 
+	local rc=0 nandmajor nandminor device mountpoint type options x y
 	if [ $CONFIG_NAND == y ]; then
 		nandminor=$(get_mtd_by_name $nandname)
 		if [ ${#nandminor} -gt 0 ]; then
@@ -1544,7 +1544,7 @@ get_path_selection()
 				if [ ${#selection} -gt 0 ]; then
 					if [ $(expr index $selection $answers$(uppercase $answers)) -gt 0 ]; then
 						break
-					fi 
+					fi
 				fi
 				echo -e "$selection\n$(get_localized $lang $msg6)" 1>&2
 				continue
@@ -1607,11 +1607,11 @@ find_free_space()
 					if [ $count -gt 1 ]; then
 						path=$(get_path_selection "$path" "122 123 124 125 126 127 131")
 						rc=$?
-						if [ $rc -eq 0 ]; then	
+						if [ $rc -eq 0 ]; then
 							echo ${path%%:*}
 							debug "find_free_space: storage=$path"
 							break
-						fi						
+						fi
 					else
 						debug "find_free_space: storage=$path"
 						echo ${path%%:*}
@@ -1663,10 +1663,10 @@ get_persistent_path()
 		if [ $count -gt 1 ]; then
 			path=$(get_path_selection "$path" "136 137 124 138 126 127 139")
 			rc=$?
-			if [ $rc -eq 0 ]; then	
+			if [ $rc -eq 0 ]; then
 				echo ${path%%:*}
 				debug "get_persistent_path: $path"
-			fi						
+			fi
 		else
 			echo ${path%%:*}
 			debug "get_persistent_path: $path"
@@ -1743,7 +1743,7 @@ check_firmware_image()
 		extract_rootfs_from_firmware "$firmwareimage" "$image_directory/$rootfsname"
 		rc=$?
 		if [ $rc -ne 0 ]; then
-			progress 3 97	
+			progress 3 97
 			echo -e "$(get_localized $lang 163 "$firmwareimage")" 1>&2
 			rc=1
 		else
@@ -1805,7 +1805,7 @@ check_squashfs_file_version()
 #
 find_image_file()
 {
-	local mp="$1" squashfsimage firmwareimage rc=0 image_directory working_directory 
+	local mp="$1" squashfsimage firmwareimage rc=0 image_directory working_directory
 	debug "find_image_file: mp=$mp"
 	if [ -f "$mp/$rootfsname" ]; then
 		# possibly a squashfs as pattern
@@ -1899,7 +1899,7 @@ get_input_image_path()
 								if [ ${#selection} -gt 0 ]; then
 									if [ $(expr index $selection $answers$(uppercase $answers)) -gt 0 ]; then
 										breaknow=1
-									fi 
+									fi
 								else
 									echo -e "$selection\n$(get_localized $lang 127)" 1>&2
 									continue
@@ -1937,7 +1937,7 @@ get_input_image_path()
 						else
 							# the probed path will be removed from the list
 							newpath=""$newpath" "$mp""
-						fi	
+						fi
 						let index+=1
 					done
 					if [ $rc -ne 0 ]; then
@@ -2040,7 +2040,7 @@ check_prerequisites()
 			else
 				debug "check_prerequisites: system switch value is $nxt"
   				progress 3 96
-				# check, if system is modified already 
+				# check, if system is modified already
 				progress 1 101
 				if is_switched; then
 					if [ $undo_switch -eq 1 ]; then
@@ -2084,7 +2084,7 @@ check_prerequisites()
 							progress 3 96
 							progress 1 104
 							if [ $noversioncheck -eq 1 ]; then
-								progress 3 95	
+								progress 3 95
 								rc=0
 							else
 								# compare kernel versions
@@ -2119,7 +2119,7 @@ check_prerequisites()
 									else
 										debug "check_prerequisites: alternative filesystem device is /dev/$mtdblockname$f2"
 										progress 3 96
-										# check free space at tmpfs 
+										# check free space at tmpfs
 										progress 1 117
 										check_free_tmpfs $free_space_at_tmpfs $warning_space_at_tmpfs
 										rc=$?
@@ -2294,7 +2294,7 @@ get_latest_version_from_ftp()
 		is_newer_version "$version"
 		rc=$?
 		if [ $rc -eq 0 ]; then
-			progress 3 189 $version	
+			progress 3 189 $version
 			echo "$version"
 		else
 			if [ $rc -eq 1 ]; then
@@ -2466,7 +2466,7 @@ if [ x$1 == xundo ]; then
 	else
 		echo -e "$(get_localized $lang 151)" 1>&2
 		debug "modfs: undo finished, error $rc checking prerequisites"
-		exit 1		
+		exit 1
 	fi
 	exit $rc
 else
@@ -2500,16 +2500,16 @@ else
 				firmware_update_file="$2"
 			fi
 			if [ x$1 == xinstallfs -o x$1 == xinstallroot ]; then
-				install_no_kernel=1	
+				install_no_kernel=1
 			fi
 			if [ x$1 == xinstallroot ]; then
-				install_no_wrapper=1	
+				install_no_wrapper=1
 			fi
 			;;
 		*)
 			echo "Unknown parameter '$1'." 1>&2
 			exit 1
-			
+
 	esac
 	debug "modfs: noversioncheck=$noversioncheck, update_file_provided=$update_file_provided"
 	[ $update_file_provided -eq 1 ] && debug "modfs: firmware_update_file=$firmware_update_file"
@@ -2766,7 +2766,7 @@ case $source in
 			# no file name selected means abort execution, an error message was already displayed
 			[ ${#baseimage} -eq 0 ] && rc=1
 			debug "modfs: file_update mode, file selection canceled"
-		else	
+		else
 			debug "modfs: firmware update file=$firmware_update_file"
 			if ! [ -r "$firmware_update_file" ]; then
 				progress 3 200 "$firmware_update_file"
@@ -2912,12 +2912,14 @@ if [ $rc -eq 0 ]; then
 				echo "rm -r $unpack_directory" >>$tempfilelist
 			fi
 		fi
+	else
+		newimage="$baseimage"
 	fi
 fi
 if [ $rc -eq 0 -a $install_image_only -eq 0 ]; then
 	# unpack squashfs root image
 	progress 1 144
-	spinner "$tmpdirbase" unpack_squashfs "$baseimage" "$unpack_directory" 
+	spinner "$tmpdirbase" unpack_squashfs "$baseimage" "$unpack_directory"
 	rc=$?
 	if [ $rc -eq 0 ]; then
 		progress 3 96
@@ -2968,12 +2970,13 @@ if [ $rc -eq 0 -a $install_image_only -eq 0 ]; then
 	else
 		progress 3 97
 		echo -e "$(get_localized $lang $rc)" 1>&2
+		newimage="$unpack_directory/newroot.squashfs"
 	fi
 	debug "modfs: packing done, rc=$rc"
 fi
 if [ $create_image_only -eq 1 ]; then
 	if [ $rc -eq 0 ]; then
-		progress 1 202 "$target_image_name"	
+		progress 1 202 "$target_image_name"
 		cp -a "$unpack_directory/newroot.squashfs" "$target_image_name"
 		rc=$?
 		if [ $rc -eq 0 ]; then
@@ -2988,7 +2991,7 @@ else
 	if [ $rc -eq 0 -a $noversioncheck -eq 1 -a $install_no_wrapper -eq 0 ]; then
 		# update wrapper file system too, it should match the expected version for the new kernel
 		progress 1 196
-		copy_wrapper_filesystem "$wrapperimage" 
+		copy_wrapper_filesystem "$wrapperimage"
 		rc=$?
 		if [ $rc -eq 0 ]; then
 			progress 3 96
@@ -3001,7 +3004,7 @@ else
 	if [ $rc -eq 0 ]; then
 		# copy new root file system
 		progress 1 147
-		copy_new_root_filesystem "$unpack_directory/newroot.squashfs"
+		copy_new_root_filesystem "$newimage"
 		rc=$?
 		if [ $rc -eq 0 ]; then
 			progress 3 96
@@ -3043,6 +3046,8 @@ else
 				echo -e "$(get_localized $lang $rc)" 1>&2
 			fi
 			debug "modfs: switching system done, rc=$rc"
+		else
+			echo -e "$(get_localized $lang 204)" 1>&2
 		fi
 	fi
 fi
