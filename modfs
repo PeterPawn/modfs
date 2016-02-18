@@ -774,6 +774,31 @@ is_supported()
 	return $rc
 }
 #
+# get the kernel version from target system
+# $1 - target directory
+get_target_kernel_version()
+{
+	local rootdir="$1" default_version="3.10.73" version rc=0
+	version="$(cd "$rootdir/lib/modules";find -maxdepth 1 -type d | sed -n -e "s/.*\([0-9]\+\.[0-9]\+\.[0-9]\+\).*/\1/p")"
+	rc=$?
+	[ $rc -ne 0 ] && version="$default_version"
+	debug "get_target_kernel_version: result=$version, rc=$rc"
+	echo "TARGET_KERNEL_VERSION=\"$version\""
+}
+#
+# get the FRITZ!OS version from target system
+# $1 - target directory
+get_target_system_version()
+{
+	local rootdir="$1" version subversion date rc=0 var
+	version_major="$(sed -n -e "s/^export CONFIG_VERSION_MAJOR=\"\(.*\)\"\$/\1/p" "$rootdir/etc/init.d/rc.conf" | sed -n -e "\$p")"
+	for var in version subversion date; do
+		eval "$(sed -n -e "s/^export FIRMWARE_$(uppercase $var)=\"\?\([^\"]*\)\"\?\$/$var=\"\1\"/p" "$rootdir/etc/version" | sed -e "s/CONFIG_VERSION_MAJOR/version_major/")"
+	done
+	debug "get_target_system_version: version=\"$version\", subversion=\"$subversion\", date=\"$date\", rc=$rc"
+	echo "TARGET_SYSTEM_VERSION=\"$version\" TARGET_SYSTEM_SUBVERSION=\"$subversion\" TARGET_SYSTEM_DATE=\"$date\""
+}
+#
 # execute a modscript without further user interaction
 # $1 - script name
 # $2 - root file system directory
@@ -812,7 +837,7 @@ execute_modscript()
 			opt=$(is_supported 'precheck' "$supports")
 			if [ $?	-eq 1 ]; then
 				# execute pre check
-				msg="$($shl $script $uselang $rootdir $mode precheck 2>&1)"
+				msg="$(eval export $FRITZOS_VERSION $KERNEL_VERSION;$shl $script $uselang $rootdir $mode precheck 2>&1)"
 				rc=$?
 				if [ $rc -gt 0 ]; then
 					progress 3 177 $rc
@@ -826,7 +851,7 @@ execute_modscript()
 			fi
 			if [ $rc -eq 0 ]; then
 				progress 1 178
-				msg="$($shl $script $uselang $rootdir $mode install 2>&1)"
+				msg="$(eval export $FRITZOS_VERSION $KERNEL_VERSION;$shl $script $uselang $rootdir $mode install 2>&1)"
 				rc=$?
 				if [ $rc -gt 0 ]; then
 					progress 3 177 $rc
@@ -838,7 +863,7 @@ execute_modscript()
 					opt=$(is_supported 'postcheck' "$supports")
 					if [ $?	-eq 1 ]; then
 						# execute post check
-						msg="$($shl $script $uselang $rootdir $mode postcheck 2>&1)"
+						msg="$(eval export $FRITZOS_VERSION $KERNEL_VERSION;$shl $script $uselang $rootdir $mode postcheck 2>&1)"
 						rc=$?
 						if [ $rc -gt 0 ]; then
 							progress 3 177 $rc
@@ -977,6 +1002,8 @@ modify_rootfs()
 	# short stop to ensure an unique temporary directory name (contains the unix time)
 	sleep 1
 	debug "modify_rootfs: starting, target=$target, scripts=$scripts"
+	FRITZOS_VERSION="$(get_target_system_version "$target")"
+	KERNEL_VERSION="$(get_target_kernel_version "$target")"
 	filelist="$tmpdir/scripts"
 	donelist="$tmpdir/executed"
 	find "$scripts" -follow -xdev -type f | sort >"$filelist"
