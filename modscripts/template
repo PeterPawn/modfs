@@ -18,7 +18,6 @@ step=$4
 # execute the requested step
 #
 rc=0
-set -x
 env="TARGET_KERNEL_VERSION TARGET_SYSTEM_VERSION TARGET_SYSTEM_SUBVERSION TARGET_SYSTEM_DATE TARGET_BRANDINGS TARGET_BRANDING"
 echo "Language=$language"
 echo "rootdir=$rootdir"

@@ -4,6 +4,7 @@
 # DESCRIPTION en
 # create symlink to execute busybox telnetd applet 
 # DESCRIPTION de
+# Busybox-Symlink für den Telnet-Daemon erstellen
 # EOH
 #
 # process parameters

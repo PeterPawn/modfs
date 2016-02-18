@@ -5,7 +5,6 @@
 # execute commands from TFFS node 98 at system startup
 # DESCRIPTION de
 # Kommandos aus dem TFFS-Node 98 beim Systemstart ausführen
-# rc.user/debug.cfg wieder einzuschließen
 # EOH
 #
 # process parameters

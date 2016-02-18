@@ -21,7 +21,7 @@ rc=0
 modfile="$rootdir/etc/hotplug/udev-mount-sd"
 line_version="USE_VOLUME_LABELS="
 line_new="USE_VOLUME_LABELS='yes'"
-line_rep="s/USE_VOLUME_LABELS=`echo usbhost.volume_labels|usbcfgctl -s`/USE_VOLUME_LABELS='yes'/"
+line_rep="s/USE_VOLUME_LABELS=\(.*\)\$/USE_VOLUME_LABELS='yes'/"
 line1="local \$(/sbin/blkid /dev/\\\${1}\\\${3} | sed -n -e 's/^[^ ]* \\\(.*\\\)/\\\1/p');[ \${#LABEL} -gt 0 ] && eval echo \$LABEL && return"
 line2="[ \${#device_info} -eq 0 ] && device_info=\$(/bin/busybox blkid \$DEVNODE)"
 find_line()

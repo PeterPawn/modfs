@@ -1,11 +1,10 @@
 # MODFS_MODSCRIPT
 # SUPPORTS precheck postcheck install language(en,de)
-# NAME \(re\)enable telnet daemon
+# NAME unhide MAC by default
 # DESCRIPTION en
-# create symlink to execute busybox telnetd applet 
+# display MAC address of home network client by default 
 # DESCRIPTION de
-# Erstellen eines Symlinks, um die Ausführung des telnetd-Applets der
-# Busybox wieder zu ermöglicen
+# Anzeige von Heimnetz-Clients mit MAC-Adresse als Standard
 # EOH
 #
 # process parameters
@@ -19,20 +18,8 @@ step=$4
 # variables
 #
 rc=0
-check_filename="$rootdir/usr/www/avm/net/net_overview.js"
+check_filename="$rootdir/usr/www/$TARGET_BRANDING/net/net_overview.js"
 unchanged="newclasses = \"port ip properties four_column\";"
-#
-# support multiple brandings
-#
-get_brandings()
-{
-	local rc=0 path brandings
-	path=$(find $rootdir/etc -type d -name "default.*" | sed -e "\|$rootdir/etc/default.[0-9]*\$|d")
-	brandings=$(find $path -maxdepth 1 -type d | sed -n -e "s|$path[/]*||p" | sed -e "/^\$/d")
-	echo $brandings
-}
-brandings="$(get_brandings "$rootdir")"
-branding="$(echo "$brandings" | sed -n -e 's/^\([^ ]*\).*/\1/p')"
 #
 # apply
 #
@@ -40,9 +27,9 @@ patch_file()
 {
 	local home=$(pwd)
 	cd $rootdir
-	$home/bin/$HWRevision/busybox patch <'EOT'
---- usr/www/$branding/net/net_overview.js
-+++ usr/www/$branding/net/net_overview.js
+	$home/bin/$HWRevision/busybox patch -p0 2>/dev/null <<EOT
+--- usr/www/$TARGET_BRANDING/net/net_overview.js
++++ usr/www/$TARGET_BRANDING/net/net_overview.js
 @@ -59,7 +59,7 @@
  var oldclasses, newclasses, basediv;
  basediv = main.contentBox;
@@ -53,11 +40,11 @@ patch_file()
  jsl.addClass(basediv, newclasses);
  lib.updateView("name", 1);
 EOT
+	cd $home
 }
 #
 # execute steps
 #
-set -x
 case $step in
 	precheck)
 		grep -q "$unchanged" $check_filename 2>/dev/null 1>&2
@@ -79,7 +66,7 @@ case $step in
 	postcheck)
 		grep -q "$unchanged" $check_filename 2>/dev/null 1>&2
 		rc=$?
-		if [ $rc -ne 0 ]; then
+		if [ $rc -eq 0 ]; then
 			case "$language" in
 				de)
 					echo "Die Modifikation war nicht erfolgreich." 1>&2
@@ -94,8 +81,10 @@ case $step in
 		fi
 		;;
 	install)
-		patch_file	
-		rc=$?
+		for TARGET_BRANDING in $TARGET_BRANDINGS; do
+			patch_file	
+		done
+		rc=0
 		;;
 	*)
 		rc=59
