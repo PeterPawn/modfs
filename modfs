@@ -3,7 +3,7 @@
 #                                                                              #
 # Modify root file system directly at an AVM FRITZ!Box router device           #
 #                                                                              #
-# Copyright (C) 2014 P.Haemmerlein (http://www.yourfritz.de)                   #
+# Copyright (C) 2014-2016 P.Hämmerlein (http://www.yourfritz.de)               #
 #                                                                              #
 # This program is free software; you can redistribute it and/or                #
 # modify it under the terms of the GNU General Public License                  #
@@ -162,7 +162,7 @@ msgtext_CR="\r\x1B[K"
 #
 # name and relative path of squashfs tools
 #
-sq_version=3 # default version
+sq_version=4 # default version
 sq_pack="\$(bindir)/mksquashfs\${sq_version}"
 sq_unpack="\$(bindir)/unsquashfs\${sq_version}"
 #
