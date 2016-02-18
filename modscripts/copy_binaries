@@ -18,22 +18,16 @@ step=$4
 # execute the requested step
 #
 rc=0
-srcfile=files/binaries_7490_\$version.tgz
+srcfile=files/binaries_${TARGET_SYSTEM_VERSION%%.*}_\$TARGET_KERNEL_VERSION.tgz
 case $step in
 	install)
-		version=$(cd $rootdir/lib/modules;find -type d -maxdepth 1 | sed -n -e "s/.*\([0-9]\+\.[0-9]\+\.[0-9]\+\).*/\1/p")
-		if [ ${#version} -eq 0 ]; then
-			echo "Unable to detect kernel version."
-			rc=2
+		eval srcfile=$srcfile
+		if [ -r $srcfile ]; then
+			gunzip -c $srcfile | tar x -C $rootdir
+			rc=0
 		else
-			eval srcfile=$srcfile
-			if [ -r $srcfile ]; then
-				gunzip -c $srcfile | tar x -C $rootdir
-				rc=0
-			else
-				echo "Unable to find binaries file for kernel version $version."
-				rc=3
-			fi
+			echo "Unable to find binaries file '$srcfile' to be unpacked."
+			rc=3
 		fi
 		;;
 	*)
