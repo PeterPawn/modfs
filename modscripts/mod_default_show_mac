@@ -1,0 +1,104 @@
+# MODFS_MODSCRIPT
+# SUPPORTS precheck postcheck install language(en,de)
+# NAME \(re\)enable telnet daemon
+# DESCRIPTION en
+# create symlink to execute busybox telnetd applet 
+# DESCRIPTION de
+# Erstellen eines Symlinks, um die Ausführung des telnetd-Applets der
+# Busybox wieder zu ermöglicen
+# EOH
+#
+# process parameters
+#
+language=$1
+rootdir=$2
+mode=$3
+step=$4
+[ ${#4} -eq 0 ] && exit 59 # invalid call
+#
+# variables
+#
+rc=0
+check_filename="$rootdir/usr/www/avm/net/net_overview.js"
+unchanged="newclasses = \"port ip properties four_column\";"
+#
+# support multiple brandings
+#
+get_brandings()
+{
+	local rc=0 path brandings
+	path=$(find $rootdir/etc -type d -name "default.*" | sed -e "\|$rootdir/etc/default.[0-9]*\$|d")
+	brandings=$(find $path -maxdepth 1 -type d | sed -n -e "s|$path[/]*||p" | sed -e "/^\$/d")
+	echo $brandings
+}
+brandings="$(get_brandings "$rootdir")"
+branding="$(echo "$brandings" | sed -n -e 's/^\([^ ]*\).*/\1/p')"
+#
+# apply
+#
+patch_file()
+{
+	local home=$(pwd)
+	cd $rootdir
+	$home/bin/$HWRevision/busybox patch <'EOT'
+--- usr/www/$branding/net/net_overview.js
++++ usr/www/$branding/net/net_overview.js
+@@ -59,7 +59,7 @@
+ var oldclasses, newclasses, basediv;
+ basediv = main.contentBox;
+ oldclasses = "port ip mac properties";
+-newclasses = "port ip properties four_column";
++newclasses = "port ip mac properties five_column";
+ jsl.removeClass(basediv, oldclasses);
+ jsl.addClass(basediv, newclasses);
+ lib.updateView("name", 1);
+EOT
+}
+#
+# execute steps
+#
+set -x
+case $step in
+	precheck)
+		grep -q "$unchanged" $check_filename 2>/dev/null 1>&2
+		rc=$?
+		if [ $rc -ne 0 ]; then
+			case "$language" in
+				de)
+					echo "Die Modifikation wurde bereits angewendet oder ist nicht erforderlich." 1>&2
+					;;
+				*)
+					echo "The startup file is modified already or modification isn't necessary." 1>&2
+					;;
+			esac
+			rc=1
+		else
+			rc=0
+		fi
+		;;
+	postcheck)
+		grep -q "$unchanged" $check_filename 2>/dev/null 1>&2
+		rc=$?
+		if [ $rc -ne 0 ]; then
+			case "$language" in
+				de)
+					echo "Die Modifikation war nicht erfolgreich." 1>&2
+					;;
+				*)
+					echo "The startup file seems to be unmodified." 1>&2
+					;;
+			esac
+			rc=1
+		else
+			rc=0
+		fi
+		;;
+	install)
+		patch_file	
+		rc=$?
+		;;
+	*)
+		rc=59
+		;;
+esac
+exit $rc

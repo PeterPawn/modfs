@@ -2,9 +2,9 @@
 # SUPPORTS precheck postcheck install language(en,de)
 # NAME enable rc.user execution
 # DESCRIPTION en
-# modify /etc/rc.tail.sh to execute the commands at TFFS node 98, if it's not empty
+# execute commands from TFFS node 98 at system startup
 # DESCRIPTION de
-# /etc/init.d/rc.tail.sh modifizieren, um die Abarbeitung der Kommandos in 
+# Kommandos aus dem TFFS-Node 98 beim Systemstart ausführen
 # rc.user/debug.cfg wieder einzuschließen
 # EOH
 #

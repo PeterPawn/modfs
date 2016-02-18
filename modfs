@@ -799,6 +799,27 @@ get_target_system_version()
 	echo "TARGET_SYSTEM_VERSION=\"$version\" TARGET_SYSTEM_SUBVERSION=\"$subversion\" TARGET_SYSTEM_DATE=\"$date\""
 }
 #
+# get the FRITZ!OS brandings from target system
+# $1 - target directory
+get_target_brandings()
+{
+	local rootdir="$1" rc=0 path brandings
+	path=$(find $rootdir/etc -type d -name "default.*" | sed -e "\|$rootdir/etc/default.[0-9]*\$|d")
+	brandings=$(find $path -maxdepth 1 -type d | sed -n -e "s|$path[/]*||p" | sed -e "/^\$/d")
+	echo $brandings
+}
+#
+# get the FRITZ!OS brandings from target system
+# $1 - target directory
+get_first_branding()
+{
+	local brandings="$1"
+	for branding in $brandings; do
+		echo "$branding"
+		return
+	done
+}
+#
 # execute a modscript without further user interaction
 # $1 - script name
 # $2 - root file system directory
@@ -837,7 +858,7 @@ execute_modscript()
 			opt=$(is_supported 'precheck' "$supports")
 			if [ $?	-eq 1 ]; then
 				# execute pre check
-				msg="$(eval export $FRITZOS_VERSION $KERNEL_VERSION;$shl $script $uselang $rootdir $mode precheck 2>&1)"
+				msg="$(eval export $MODSCRIPT_ENV;$shl $script $uselang $rootdir $mode precheck 2>&1)"
 				rc=$?
 				if [ $rc -gt 0 ]; then
 					progress 3 177 $rc
@@ -851,7 +872,7 @@ execute_modscript()
 			fi
 			if [ $rc -eq 0 ]; then
 				progress 1 178
-				msg="$(eval export $FRITZOS_VERSION $KERNEL_VERSION;$shl $script $uselang $rootdir $mode install 2>&1)"
+				msg="$(eval export $MODSCRIPT_ENV;$shl $script $uselang $rootdir $mode install 2>&1)"
 				rc=$?
 				if [ $rc -gt 0 ]; then
 					progress 3 177 $rc
@@ -863,7 +884,7 @@ execute_modscript()
 					opt=$(is_supported 'postcheck' "$supports")
 					if [ $?	-eq 1 ]; then
 						# execute post check
-						msg="$(eval export $FRITZOS_VERSION $KERNEL_VERSION;$shl $script $uselang $rootdir $mode postcheck 2>&1)"
+						msg="$(eval export $MODSCRIPT_ENV;$shl $script $uselang $rootdir $mode postcheck 2>&1)"
 						rc=$?
 						if [ $rc -gt 0 ]; then
 							progress 3 177 $rc
@@ -1004,6 +1025,9 @@ modify_rootfs()
 	debug "modify_rootfs: starting, target=$target, scripts=$scripts"
 	FRITZOS_VERSION="$(get_target_system_version "$target")"
 	KERNEL_VERSION="$(get_target_kernel_version "$target")"
+	BRANDINGS="$(get_target_brandings)"
+	BRANDING="$(get_first_branding "$BRANDINGS")"
+	MODSCRIPT_ENV="$KERNEL_VERSION $FRITZOS_VERSION TARGET_BRANDINGS=\"$BRANDINGS\" TARGET_BRANDING=\"$BRANDING\""
 	filelist="$tmpdir/scripts"
 	donelist="$tmpdir/executed"
 	find "$scripts" -follow -xdev -type f | sort >"$filelist"

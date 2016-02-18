@@ -2,10 +2,9 @@
 # SUPPORTS precheck postcheck install language(en,de)
 # NAME enable custom profile extension
 # DESCRIPTION en
-# modify /etc/profile to include file /var/custom/profile, if it exists
+# include /var/custom/etc/profile in /etc/profile
 # DESCRIPTION de
-# /etc/profile modifizieren, um die Kommandos in /var/custom/profile am Ende
-# zusätzlich auszuführen, wenn diese Datei existiert
+# Kommandos in /var/custom/etc/profile in /etc/profile einschließen
 # EOH
 #
 # process parameters
@@ -20,7 +19,7 @@ step=$4
 #
 rc=0
 modfile="$rootdir/etc/profile"
-insertline="[ -f /var/custom/profile ] && . /var/custom/profile"
+insertline="[ -f /var/custom/etc/profile ] && . /var/custom/etc/profile"
 find_line()
 {
 	local line rc=0

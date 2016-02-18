@@ -2,12 +2,9 @@
 # SUPPORTS precheck postcheck install language(en,de)
 # NAME install dectcmds hook
 # DESCRIPTION en
-# modify /bin/picconv.sh to call the dectcmds_lib.sh shell file while processing 
-# media player picture conversion
+# execute commands using the media player of a FRITZ!Fon  
 # DESCRIPTION de
-# die Datei /bin/picconv.sh wird um einen Aufruf des dectcmds_lib.sh-Skripts erweitert, 
-# das ist Voraussetzung fuer den Start eigener Kommandos ueber ein FRITZFon, es sind
-# weitere Vorbereitungen notwendig
+# Ausführen von Kommandos über den Media-Player eines FRITZ!Fon-Handsets 
 # EOH
 #
 # process parameters

@@ -2,11 +2,9 @@
 # SUPPORTS precheck postcheck install language(en,de)
 # NAME create edit_rcuser command
 # DESCRIPTION en
-# create an additional command to edit 'rc.user' file without any hassle
+# create a command to edit 'rc.user' file content 
 # DESCRIPTION de
-# Es wird ein zusätzliches Kommando 'edit_rcuser' erzeugt, mit dem die Kommandos
-# in der Datei 'rc.user' sicher bearbeitet werden können, ohne daß man sich um
-# die Besonderheiten des TFFS kümmern muß.
+# Kommando zum Bearbeiten der Datei 'rc.user' hinzufügen
 # EOH
 #
 # process parameters

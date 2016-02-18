@@ -1,0 +1,30 @@
+# MODFS_MODSCRIPT
+# SUPPORTS precheck postcheck install language(en,de)
+# NAME modscript template
+# DESCRIPTION en
+# show modscript environment settings
+# DESCRIPTION de
+# Anzeigen der Umgebungsvariablen für modfs-Skripte
+# EOH
+#
+# process parameters
+#
+language=$1
+rootdir=$2
+mode=$3
+step=$4
+[ ${#4} -eq 0 ] && exit 59 # invalid call
+#
+# execute the requested step
+#
+rc=0
+set -x
+env="TARGET_KERNEL_VERSION TARGET_SYSTEM_VERSION TARGET_SYSTEM_SUBVERSION TARGET_SYSTEM_DATE TARGET_BRANDINGS TARGET_BRANDING"
+echo "Language=$language"
+echo "rootdir=$rootdir"
+echo "mode=$mode"
+echo "step=$step"
+for var in $env; do
+	eval echo "$var=\$$var"
+done
+exit $rc

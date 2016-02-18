@@ -1,11 +1,9 @@
 # MODFS_MODSCRIPT
 # SUPPORTS precheck postcheck install language(en,de)
-# NAME \(re\)enable telnet daemon
+# NAME enable telnet daemon
 # DESCRIPTION en
 # create symlink to execute busybox telnetd applet 
 # DESCRIPTION de
-# Erstellen eines Symlinks, um die Ausführung des telnetd-Applets der
-# Busybox wieder zu ermöglicen
 # EOH
 #
 # process parameters

@@ -2,12 +2,9 @@
 # SUPPORTS precheck postcheck install language(en,de)
 # NAME install YourFritz hooks
 # DESCRIPTION en
-# modify various startup and shutdown scripts to get hooks to execute own commands
-# inside /var/media/ftp
+# modify various startup and shutdown scripts to get hooks for the YourFritz framework
 # DESCRIPTION de
-# Modifizieren verschiedener Start- und Shutdown-Skripte, um bei diversen Events     
-# mit eigenen Kommandos reagieren zu können, ist als Basis für die korrekte Funktion
-# des YourFritz-Frameworks erforderlich
+# Ändern diverser Start- und Shutdown-Skripte, um die YourFritz-Modifikationen zu verwenden
 # EOH
 #
 # process parameters
@@ -22,17 +19,14 @@ step=$4
 #
 rc=0
 inithook=/etc/init.d/E19-yourfritz
-yourfritz_dir=/wrapper/custom
+yourfritz_dir=/wrapper/yourfritz
 wrapper=/wrapper
 mount=/var/yourfritz
 hookdir=/var/yourfritz/hooks
 tmpfile=/var/tmp/yourfritz_mod_input.txt
 cmdfile=/var/tmp/yourfritz_mod_cmd.txt
-OEM=${OEM:-avm}
 install_hooks()
 {
-	set -x
-	
 	# we need a better equipped busybox
 	cp files/busybox $rootdir/bin/busybox
 	
@@ -148,18 +142,8 @@ yourfritz_reboot_hook finished
 	ln -s /bin/busybox usr/sbin/runsvdir
 	ln -s /bin/busybox usr/sbin/svlogd
 
-	# create GUI subdirectory
-	oems=""
-	for dir in $(ls usr/www); do
-		case $dir in
-			cgi-bin|css|html|js|kids)
-				:
-				;;
-			*)
-				oems="$oems $dir"
-				mkdir usr/www/$dir/yourfritz
-				;;
-		esac
+	for dir in $TARGET_BRANDINGS; do
+		mkdir usr/www/$dir/yourfritz
 	done
 
 	# modify page header templates to include yourfritz menu if necessary
@@ -174,7 +158,7 @@ r $tmpfile
 d
 }
 EOT
-	for dir in $oems; do
+	for dir in $TARGET_BRANDINGS; do
 		sed -f $cmdfile -i usr/www/$dir/templates/menu_page_head.html
 	done
 

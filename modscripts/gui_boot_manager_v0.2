@@ -2,11 +2,9 @@
 # SUPPORTS precheck postcheck install language(en,de)
 # NAME enable system and branding selection from GUI \(v0.2\)
 # DESCRIPTION en
-# add the option to switch between available systems and to change to branding
-# to a supported value for the target system to GUI's 'restart' tab
+# extent the "restart" page of FRITZ!OS to select system version and branding
 # DESCRIPTION de
-# Hinzufügen der Auswahl des beim nächsten Start zu ladenden Systems und des zu
-# verwendenden Brandings zum 'Neustart'-Tab des Webinterfaces
+# Auswahl des zu startenden Systems und des Brandings in der "Neustart"-Seite
 # EOH
 #
 # process parameters
@@ -19,17 +17,8 @@ step=$4
 #
 # execute the requested step
 #
-get_brandings()
-{
-	local mp="$1" rc=0 path brandings
-	path=$(find $mp/etc -type d -name "default.*" | sed -e "\|$mp/etc/default.[0-9]*\$|d")
-	brandings=$(find $path -maxdepth 1 -type d | sed -n -e "s|$path[/]*||p" | sed -e "/^\$/d")
-	echo $brandings
-}
 rc=0
-brandings="$(get_brandings "$rootdir")"
-branding="$(echo "$brandings" | sed -n -e 's/^\([^ ]*\).*/\1/p')"
-luafile="$rootdir/usr/www/\$branding/system/reboot.lua"
+luafile="$rootdir/usr/www/\$TARGET_BRANDING/system/reboot.lua"
 binfile="/usr/bin/guibootmanager"
 cmdfile="$rootdir$binfile"
 find_line()
@@ -509,7 +498,7 @@ case $step in
 		fi
 		;;
 	install)
-		for branding in $brandings; do
+		for TARGET_BRANDING in $TARGET_BRANDINGS; do
 			file="$(eval echo $luafile)"
 			sed -i "$file" -e "
 /^local savecookie/a\\
