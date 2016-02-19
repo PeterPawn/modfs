@@ -33,26 +33,38 @@ find_line()
 }
 case $step in
 	precheck)
-		find_line "$line_version"
-		if [ $? -eq 0 ]; then
-			find_line "$line_new"
-			rc=$?		
+		if [ -e $modfile ]; then
+			find_line "$line_version"
+			if [ $? -eq 0 ]; then
+				find_line "$line_new"
+				rc=$?		
+			else
+				find_line "$line2"
+				rc=$?
+			fi
+			if [ $rc -eq 0 ]; then
+				case "$language" in
+					de)
+						echo "Die Modifikation wurde bereit angewendet." 1>&2
+						;;
+					*)
+						echo "The startup file is modified already." 1>&2
+						;;
+				esac
+				rc=1
+			else
+				rc=0
+			fi
 		else
-			find_line "$line2"
-			rc=$?
-		fi
-		if [ $rc -eq 0 ]; then
 			case "$language" in
 				de)
-					echo "Die Modifikation wurde bereit angewendet." 1>&2
+					echo "Die Modifikation ist für diese Version nicht möglich." 1>&2
 					;;
 				*)
-					echo "The startup file is modified already." 1>&2
+					echo "Wrong system version for this modification." 1>&2
 					;;
 			esac
 			rc=1
-		else
-			rc=0
 		fi
 		;;
 	postcheck)
