@@ -1025,7 +1025,7 @@ modify_rootfs()
 	debug "modify_rootfs: starting, target=$target, scripts=$scripts"
 	FRITZOS_VERSION="$(get_target_system_version "$target")"
 	KERNEL_VERSION="$(get_target_kernel_version "$target")"
-	BRANDINGS="$(get_target_brandings)"
+	BRANDINGS="$(get_target_brandings "$target")"
 	BRANDING="$(get_first_branding "$BRANDINGS")"
 	MODSCRIPT_ENV="$KERNEL_VERSION $FRITZOS_VERSION TARGET_BRANDINGS=\"$BRANDINGS\" TARGET_BRANDING=\"$BRANDING\""
 	filelist="$tmpdir/scripts"
