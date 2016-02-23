@@ -63,7 +63,7 @@ case $step in
 			tmpdir=/var/tmp/${0##*/}_$$
 			mkdir -p "$tmpdir"
 			mkconfigfile "$tmpdir/tffs" $minor
-			cat "$tmpdir/tffs" >"$tmpdir/content"
+			cat "$tmpdir/tffs" >"$tmpdir/content" 2>/dev/null
 			if [ ! -s "$tmpdir/content" ]; then
 				case "$language" in
 					de)
