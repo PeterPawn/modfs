@@ -2557,6 +2557,9 @@ else
 				install_no_wrapper=1
 			fi
 			;;
+		'')
+			: # no parameter specified
+			;;
 		*)
 			echo "Unknown parameter '$1'." 1>&2
 			exit 1
