@@ -1,7 +1,7 @@
 #! /bin/sh
 ################################################################################
 #                                                                              #
-# Modify root file system directly at an AVM FRITZ!Box router device           #
+# an alternative approach to modify firmware images for AVM FRITZ!Box routers  #
 #                                                                              #
 # Copyright (C) 2014-2016 P.Hämmerlein (http://www.yourfritz.de)               #
 #                                                                              #
@@ -141,8 +141,8 @@ nativefilesystems="tmpfs ext2 ext3 ext4 yaffs2"
 #
 # our "internal" constants
 #
-modfs_version=0.3.1-01082015
-modfs_comment="first version from new branch with integrated debug logging"
+modfs_version=0.3.3-23022016
+modfs_comment="please look at https://github.com/PeterPawn/modfs for further info"
 bindirname="bin"
 localedirname="locale"
 filesdirname="files"
