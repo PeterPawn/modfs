@@ -74,6 +74,8 @@ blkid="/usr/sbin/blkid"
 debugoutput="/bin/showshringbuf -i \$scriptname"
 # our debug ring buffer file name
 ringbufferfile="/var/.srb_\$scriptname"
+# our custom modscript selection file name
+custom_selection_file="custom_modscripts"
 #
 # the correct FTP download path is model and version dependent
 # one path entry is required for every supported hardware revision (ftp_path_${hwrev})
@@ -1010,6 +1012,42 @@ execute_optional_modscript()
 	return $rc
 }
 #
+# prepare the executable flags of modscripts listed in a custom selection file
+#
+prepare_custom_modscripts_selection()
+{
+	local rc=0 line state scriptname flags
+	debug "prepare_custom_modscripts_selection: looking for custom selection file"
+	if [ -f "$scriptpath/$custom_selection_file" ]; then
+		while read line; do
+			state="${line:0:1}"
+			scriptname="${line:1}"
+			debug "prepare_custom_modscripts_selection: found line with state '$state' for file '$scriptname'"
+			# state is mandatory
+			[ ${#state} -eq 0 ] && continue
+			# state has to be + (autoexec), ? (optional) or - (ignore/do not use)
+			[ x"$state" != x"+" -a x"$state" != x"-" -a x"$state" != '?' ] && continue
+			# scriptname missing
+			[ ${#scriptname} -eq 0 ] && continue
+			# file exists?
+			[ -f "$scripts/$scriptname" ] || continue
+			flags="a-x"
+			if [ "$state" == "+" ]; then
+				flags="a+x"
+			elif [ "$state" == '?' ]; then
+				flags="ug+x"
+			fi
+			chmod "$flags" "$scripts/$scriptname"
+			rc=$?
+			debug "prepare_custom_modscripts_selection: chmod done for '$scriptname' (flags='$flags'), rc=$rc"
+		done <"$scriptpath/$custom_selection_file"
+		rc=0
+		debug "prepare_custom_modscripts_selection: done"
+	else
+		debug "prepare_custom_modscripts_selection: done, no custom file found"
+	fi
+}
+#
 # execute modification scripts
 # - only execute scripts, which are "world-executable", while in batch mode
 # - execute the other scripts in a 2nd step, asking the user to confirm each one
@@ -1028,6 +1066,7 @@ modify_rootfs()
 	BRANDINGS="$(get_target_brandings "$target")"
 	BRANDING="$(get_first_branding "$BRANDINGS")"
 	MODSCRIPT_ENV="$KERNEL_VERSION $FRITZOS_VERSION TARGET_BRANDINGS=\"$BRANDINGS\" TARGET_BRANDING=\"$BRANDING\""
+	prepare_custom_modscripts_selection
 	filelist="$tmpdir/scripts"
 	donelist="$tmpdir/executed"
 	find "$scripts" -follow -xdev -type f | sort >"$filelist"
