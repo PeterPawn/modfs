@@ -1026,7 +1026,7 @@ prepare_custom_modscripts_selection()
 			# state is mandatory
 			[ ${#state} -eq 0 ] && continue
 			# state has to be + (autoexec), ? (optional) or - (ignore/do not use)
-			[ x"$state" != x"+" -a x"$state" != x"-" -a x"$state" != '?' ] && continue
+			[ x"$state" != x"+" -a x"$state" != x"-" -a x"$state" != x'?' ] && continue
 			# scriptname missing
 			[ ${#scriptname} -eq 0 ] && continue
 			# file exists?
