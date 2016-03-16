@@ -1117,20 +1117,47 @@ extract_rootfs_from_firmware()
 		rc=39
 	else
 		sleep 1 # "hack" to ensure unique tempdir name
-		mp="$(get_temp_dir)"
-		mount "$tmp" "$mp"
+		mkdir "$tmpdir/mp"
+		fstype=$(detect_image_filesystem "$tmp")
 		rc=$?
-		if [ $rc -ne 0 ]; then
-			rc=40
-		else
-			cp -a "$mp/$rootfsname" "$target"
-			rc=$?
-			if [ $rc -ne 0 ]; then
-				rc=41
+		if [ $rc -eq 0 ]; then
+			if [ "$fstype" == "ext2" -o "$fstype" == "sqfs_dummy256_ext2" ]; then
+				# ext2 image with AVM's dummy header
+				mount_ext2_image "$tmp" "$tmpdir/mp" "$fstype"
+				rc=$?
+			else
+				mount "$tmp" "$tmpdir/mp" 2>/dev/null
+				rc=$?
+				if [ $rc -ne 0 ]; then
+					# try to extract with unsquashfs3, if this is a 3.xx kernel based
+					# system without knowledge about SquashFS3 format while mounting
+					kernelversion=$(uname -r)
+					kernelversion=${kernelversion%%.*}
+					if [ $kernelversion -eq 3 -a x"$fstype" == x"squashfs3" ]; then
+						unpack_squashfs "$tmp" "${target%/*}" "$rootfsname" 2>&1 >/dev/null
+						rc=$?
+						if [ $rc -eq 0 ]; then
+							mv "${target%/*}/$squashfsdirname/$rootfsname" "${target}"
+							rc=$?
+							rmdir "${target%/*}/$squashfsdirname"
+							remove_directory "$tmpdir"
+							debug "extract_rootfs_from_firmware: exiting, rc=$rc"
+							return $rc
+						fi
+					fi
+				fi
 			fi
-			umount "$mp"
+			if [ $rc -ne 0 ]; then
+				rc=40
+			else
+				cp -a "$tmpdir/mp/$rootfsname" "$target"
+				rc=$?
+				if [ $rc -ne 0 ]; then
+					rc=41
+				fi
+				umount "$tmpdir/mp"
+			fi
 		fi
-		remove_directory "$mp"
 	fi
 	rm $tmp 2>/dev/null
 	remove_directory "$tmpdir"
