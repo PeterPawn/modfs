@@ -1116,7 +1116,6 @@ extract_rootfs_from_firmware()
 	if [ $rc -ne 0 ]; then
 		rc=39
 	else
-		sleep 1 # "hack" to ensure unique tempdir name
 		mkdir "$tmpdir/mp"
 		fstype=$(detect_image_filesystem "$tmp")
 		rc=$?
