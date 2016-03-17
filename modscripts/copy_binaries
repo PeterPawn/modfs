@@ -1,5 +1,5 @@
 # MODFS_MODSCRIPT
-# SUPPORTS install 
+# SUPPORTS install language(en,de)
 # NAME own files
 # DESCRIPTION en
 # add/replace some binaries at the target system
