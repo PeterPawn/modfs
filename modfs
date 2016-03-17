@@ -68,8 +68,8 @@ kernelfilename="kernel.image"
 versionfilename="/etc/version"
 # the name of the shell on the box
 shl="/bin/sh"
-# blkid executable path
-blkid="/usr/sbin/blkid"
+# the name of vendor utility to "spy" into files
+testvalue="/bin/testvalue"
 # the name of the ring buffer utility from the vendor
 debugoutput="/bin/showshringbuf -i \$scriptname"
 # our debug ring buffer file name
@@ -524,23 +524,35 @@ switch_system_to()
 #
 detect_image_filesystem()
 {
-	local src="$1" rc=222 fstype major
-	fstype=$($blkid -o value -s TYPE -p $src)
-	if [ x"$fstype" == x"squashfs" ]; then
-		major=$(testvalue $src 2 28)
-		if [ $major -eq 0 ]; then
-			# dummy header
-			fstype=$($blkid -o value -s TYPE -p -O 256 $src)
-			if [ ${#fstype} -gt 0 ]; then
-				fstype="sqfs_dummy256_$fstype"
-			fi
+	local src="$1" rc=222 fstype major sig offset=${2:-0}
+	# do not use blkid anymore to avoid confusions from different versions
+	# instead we'll probe at different offsets to detect/guess the right type
+	[ -f "$src" ] || return $rc
+	sig=$($testvalue "$src" 4 $offset)
+	[ $? -ne 0 ] && return $rc
+	major=$($testvalue "$src" 2 $(( offset + 28 )))
+	[ $? -ne 0 ] && return $rc
+	if [ $sig == 1936814952 ]; then
+		# sqsh signature found at offset 0
+		if [ $major -ne 0 ]; then
+			fstype="squashfs$major"
 		else
-			fstype=$fstype$major
+			if [ $offset -eq 0 ]; then
+				sig="$(detect_image_filesystem "$src" 256)"
+				if [ $? -eq 0 ]; then
+					fstype="sqfs_dummy256_$sig"
+				fi
+			fi	
+		fi
+	else
+		sig=$($testvalue "$src" 2 $(( offset + 1080 )))
+		if [ $sig -eq 21487 ]; then
+			fstype="ext2"
 		fi
 	fi
 	[ ${#fstype} -gt 0 ] && rc=0
 	echo $fstype
-	debug "detect_image_filesystem: src=$src, fstype=$fstype, rc=$rc"
+	debug "detect_image_filesystem: src=$src, offset=$offset, fstype=$fstype, rc=$rc"
 	return $rc
 }
 #
