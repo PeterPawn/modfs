@@ -1,0 +1,144 @@
+Sollte die FRITZ!Box aus irgendeinem Grund mit dem neuen System nicht erfolgreich gestartet werden,
+kann man mit einem einfachen FTP-Client jederzeit wieder auf das System in dem zweiten Satz von
+Partitionen umschalten.
+
+Die FRITZ!Box-Modelle, für die "modfs" funktioniert, haben alle jeweils eine aktive und eine inaktive
+Partition für den "harten Kern" des Betriebssystems (die Kernfunktionen - oder auf englisch: den 
+"kernel") und ebenso eine aktive und eine inaktive Partition für das "Dateisystem" (im Englischen
+"filesystem"), in dem die diversen Programme, Einstellungen und auch die Dateien für das Benutzer-
+interface enthalten sind.
+
+Die Auswahl zwischen diesen beiden "Sätzen" von Partitionen (es gehören immer ein "kernel" und ein
+"filesystem" zusammen) erfolgt über eine Variable mit dem Namen "linux_fs_start" in der "Umgebung"
+(englisch "environment") des Bootloaders. 
+
+Dieser nennt sich (in Anlehnung an das ursprünglich mal von der Firma Texas Instruments vor sehr 
+langer Zeit entwickelte Original mit dem Namen ADAM) bei AVM inzwischen EVA ... wenn also jemand 
+vom Zugriff auf "EVA" schreibt oder spricht, meint er im Kontext einer FRITZ!Box in der Regel diesen
+Bootloader, den man entweder über eine serielle Schnittstelle steuern kann (das braucht entsprechende 
+Lötarbeiten und Bauteile (Pegelwandler), weil diese Schnittstelle bei einer FRITZ!Box normalerweise 
+nicht bestückt ist und man sogar erst die passende Steckerleiste anbringen müßte, wenn man nicht 
+direkt das Kabel für die Schnittstelle fest anlöten will) oder - und das ist die leichtere Alternative
+- in den ersten 5 Sekunden nach dem "Einschalten" der FRITZ!Box (das ist ja in aller Regel das 
+Einstecken der Stromversorgung) regiert dieser Teil des Bootloaders auch auf den Start einer 
+FTP-Sitzung über ein LAN-Kabel. Dabei ist es egal, an welchem LAN-Port das Kabel angeschlossen wird, 
+zu diesem Zeitpunkt wird da noch nicht in "Gastnetz" oder "VPN-Zugang" (ipsecbrX) oder "LAN" 
+unterschieden.
+
+Es ist zwar nicht ganz simpel, das richtige Timing für den Start so einer FTP-Sitzung zu finden, aber
+das muß man auch nicht unbedingt "von Hand" machen. Bei der Verwendung eines Windows-PCs bietet es 
+sich an, für diesen Zweck ein Recovery-Programm von AVM zu "mißbrauchen" und zwar eines, das nicht
+zum Modell der eigenen FRITZ!Box paßt. Dieses Recovery-Programm leitet dann auch den ungeübten 
+Benutzer ziemlich gut durch die Vorbereitungsarbeiten (es gibt auch passende Erläuterungen bei AVM
+im Internet) und es streicht erst dann die Segel, wenn es in der erfolgreich aufgebauten FTP-
+Sitzung zur FRITZ!Box dann feststellen kann, daß es sich nicht um das richtige Modell handelt.
+Netterweise bleibt aber die FRITZ!Box anschließend im "FTP-Modus" stehen und man hat anstelle der
+bereits angesprochenen fünf Sekunden nun alle Zeit der Welt für die eigenen Aktivitäten.
+
+Wer anstelle eines Windows-PCs nur einen Linux-Host sein eigen nennt oder zu den Kunden der Firma
+mit der angebissenen Ananas gehört, der kann auf das Shell-Skript "eva_discover" unter der URL
+https://github.com/PeterPawn/YourFritz/blob/master/eva_tools/eva_discover zurückgreifen, das außer
+einer passenden Shell und dem Programm "socat" (http://www.dest-unreach.org/socat/), das es mit
+hoher Wahrscheinlichkeit auch fertig für das Zielsystem gibt, keine weiteren Voraussetzungen 
+benötigt ... außer natürlich ebenfalls eine kabelbasierte LAN-Verbindung zu der betreffenden
+FRITZ!Box. Nach dem Start des Skripts (Genaueres steht dann im GitHub-Repository) dann einfach 
+die Box durch Einstecken der Stromversorgung starten und wenn dann die FRITZ!Box gefunden wurde,
+bleibt sie (bei geeigneter Parametrierung von "eva_discover") genauso im FTP-Modus stehen, wie bei
+der Verwendung des falschen Recovery-Programms ... und hier treffen die beiden "Zweige" dann auch 
+wieder aufeinander und es geht identisch weiter.
+
+Jetzt geht man hin und startet (bei Windows aus einer "Eingabeaufforderung" heraus, was eine - für
+meine Begriffe jedenfalls - ziemlich schwache Übersetzung für "command prompt" ist und bei den 
+anderen Systemen eben aus einer "command shell" heraus) eine FTP-Sitzung zur FRITZ!Box. Die
+konkrete IP-Adresse entnimmt man entweder den letzten Zuckungen des Fensters im Recovery-Programm
+von AVM oder der Anzeige von "eva_discover".
+
+ftp 192.168.178.1
+
+Wer ohnehin unter Linux oder OS X arbeitet, kann auch gleich auf "nc" oder erneut auf "socat" 
+zurückgreifen (letzteres hat ja "eva_discover" auch schon verwendet). Das wäre dann ein Aufruf von 
+
+nc 192.168.178.1 21
+
+oder 
+
+socat STDIN TCP:192.168.178.1:21
+
+Egal was man auch verwendet, irgendwie sollte die Anzeige der Antworten von der FRITZ!Box u.a. die
+Zeichenkette
+
+220 ADAM2 FTP Server ready
+
+enthalten. Sieht man diese, ist die Box im FTP-Modus und man kann mit der Anmeldung (die ist eher
+"pro forma", aber irgendjemand hielt das wohl (A) für notwendig und (B) für eine gute Idee. Mir
+ist allerdings bis heute noch nicht klar, was damit bezweckt wird ... ein echter Schutz vor
+unberechtigtem Zugriff kann es kaum sein, der dürfte ja dann nicht mit solchen "Standardwerten"
+arbeiten.
+
+Der Einfachheit halber (und weil Windows-Benutzer meist etwas unbeholfener sind an dieser Stelle
+als Linux-User - nur Ananas-Benutzer sind da meist noch schlimmer als die Fenstergucker) nehmen
+wir mal an, wir würden die Windows-Variante mit dem FTP-Client von Microsoft verwenden.
+
+=====================================================
+
+C:\Windows\system32>ftp 192.168.178.1
+Connected to 192.168.178.1.
+220 ADAM2 FTP Server ready
+User (192.168.178.1:(none)): adam2
+331 Password required for adam2
+Password:
+230 User adam2 successfully logged in
+ftp> quote GETENV linux_fs_start
+linux_fs_start        1
+
+200 GETENV command successful
+ftp> quote SETENV linux_fs_start 0
+200 SETENV command successful
+ftp> quote REBOOT
+221 Thank you for using the FTP service on ADAM2
+221 Goodbye.
+Connection closed by remote host.
+ftp> bye
+
+C:\Windows\system32>
+
+=====================================================
+
+Wir sehen also nach dem Start des FTP-Clients die Antworten der FRITZ!Box, die u.a. darauf
+hinweisen, daß eine Anmeldung erforderlich wäre, woraus der FTP-Client die aufdringliche
+Frage nach dem Benutzernamen ableitet. Dieser ist einfach "adam2" und das ist auch das super-
+geheime Kennwort, das anschließend noch abgefragt wird.
+
+Im Anschluß kann man hingehen und mit dem GETENV-Kommando den aktuellen Wert der Einstellung
+"linux_fs_start" auslesen. Wir hatten diese schon weiter oben erwähnt, als es um die Auswahl
+von Kernel und Dateisystem des zu startenden Systems ging. Da so eine FRITZ!Box (zumindest
+derzeit) nur zwei verschiedene Systeme verwalten kann, hat diese Variable entweder den Wert
+0 oder den Wert 1 - sollte sie aus irgendeinem Grund mal nicht gesetzt sein, wäre das gleich-
+bedeutend mit dem Wert 0.
+
+Will man nun auf das andere System umschalten, muß man den Kopf etwas anstrengen und versuchen
+zu ermitteln, was der jeweils andere Wert denn sein könnte. Diesen gibt man dann einfach in
+einem SETENV-Kommando an und startet anschließend die FRITZ!Box durch das REBOOT-Kommando neu.
+
+Diese merkwürdigen "quote"-Kommandos vor dem eigentlichen Befehl an die FRITZ!Box sind nur der
+Tatsache geschuldet, daß wir im oben stehenden Beispiel einen FTP-Client verwenden und der 
+seinerseits eigene "lokale Kommandos" kennt, aus denen er dann passende Kommandos für den 
+(entfernten) FTP-Server ableitet. Da der Client aber unsere Kommandos an den Server ohnehin 
+nicht versteht, senden wir diese in unserer Beispielsitzung mit dem "quote"-Kommando direkt
+an den Server. Wer gleich mit "nc" oder "socat" arbeitet, der muß zwar die Anmeldung "von
+Hand" machen ("user adam2", gefolgt von "pass adam2"), aber als Entschädigung darf er dann
+wieder diese "quote"-Ansagen auslassen und die Kommandos direkt eingeben.
+
+Nun ist es sogar ein leichtes, dieses "Umschalten" der Variablen auch noch zu automatisieren,
+denn zur der Entscheidung, aus einer "0" eine "1" zu machen oder aus einer "1" eben eine "0",
+ist auch ein Computer problemlos in der Lage.
+
+Sollte ich jemals das "eva_discover"-Skript inkl. aller Parameter-Auswertungen zu einem Ende
+bringen, mache ich daraus sicherlich noch ein zweites Skript, das dann gleich die notwendigen
+FTP-Kommandos auch noch ausführt und auch das Erstellen eines passenden PowerShell-Skripts, 
+das praktisch jede Windows-Version seit Windows 8 ausführen kann, ist eigentlich keine große
+Kunst ... das kostet halt nur alles Zeit und wäre ja sowas von großartig geeignet für "erste
+Schritte", wenn jemand programmieren lernen will ... vielleicht findet sich ja jemand - an 
+Unterstützung bei Fragen soll es nicht scheitern.
+
+
