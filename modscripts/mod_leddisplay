@@ -1,0 +1,160 @@
+# MODFS_MODSCRIPT
+# SUPPORTS precheck postcheck install language(en,de)
+# NAME add led display tab
+# DESCRIPTION en
+# re-add the missing led_display.lua page to vendor's GUI
+# DESCRIPTION de
+# Wiederbeleben der GUI-Seite zur Steuerung der LED-Anzeige
+# EOH
+#
+# look at
+# http://www.ip-phone-forum.de/showthread.php?t=273304&p=2150146&viewfull=1#post2150146
+# for a short discussion and further info
+#
+# due to missing an attachment ready to be copied to the modscripts directory, I wrote
+# my own version, which may (intentionally) differ slightly in some aspects
+#
+# process parameters
+#
+language=$1
+rootdir=$2
+mode=$3
+step=$4
+[ ${#4} -eq 0 ] && exit 59 # invalid call
+#
+# variables
+#
+rc=0
+check_filename="$rootdir/usr/www/$TARGET_BRANDING/menus/menu_data.lua"
+check_trigger="led_display\.lua"
+#
+# apply
+#
+patch_file()
+{
+	local home=$(pwd)
+	cd $rootdir
+	$home/bin/$HWRevision/busybox patch -p0 2>/dev/null <<EOT
+--- usr/www/$TARGET_BRANDING/menus/menu_data.lua
++++ usr/www/$TARGET_BRANDING/menus/menu_data.lua
+@@ -1215,6 +1215,11 @@
+ ["wiz"] = true,
+ ["lua"] = "developer.lua"
+ } or nil
++pageData["led"] = {
++["show"] = true,
++["lua"] = "system/led_display.lua",
++["help"] = forLuaOnly and "hilfe_system_anzeige"
++} or nil
+ local lnkTv = box.query("box:settings/iptv_url")
+ pageData["liveTv"] = ("string" == type(lnkTv) and "non-emu" ~= lnkTv and "" ~= lnkTv) and {
+ ["show"] = true,
+--- usr/www/$TARGET_BRANDING/system/led_display.lua
++++ usr/www/$TARGET_BRANDING/system/led_display.lua
+@@ -10,19 +10,18 @@
+ prog = [[
+ ]]
+ }
+-g_led_display="0"
+ function read_box_values()
+-g_led_display =box.query("box:settings/led_display")
++g_led_display = box.query("box:settings/led_display")
+ end
+ function refill_user_input_from_post()
+-g_led_display =box.post.led_display
++g_led_display = box.post.led_display
+ end
+ function refill_user_input_from_get()
+ g_led_display =box.get.led_display
+ end
++read_box_values()
+ if next(box.post) then
+ if box.post.apply then
+-read_box_values()
+ refill_user_input_from_post()
+ local saveset = {}
+ cmtable.add_var(saveset, "box:settings/led_display" ,tostring(g_led_display))
+@@ -37,8 +36,6 @@
+ http.redirect(href.get(g_back_to_page))
+ return
+ end
+-else
+-read_box_values()
+ end
+ function write_led_selected(current)
+ if (g_led_display==current) then
+@@ -84,12 +81,18 @@
+ </p>
+ <div class="formular">
+ <p>
+-<input type="radio" name="led_display" id="uiViewLedDisplay0" value="0" onchange="OnChangeLedDisplay('0')" <?lua write_led_selected("0")?>><label for="uiViewLedDisplay0">{?9839:27?}</label>
++<input type="radio" name="led_display" id="uiViewLedDisplay0" value="0" onchange="OnChangeLedDisplay('0')" <?lua write_led_selected("0")?>><label for="uiViewLedDisplay0">LED-Anzeige st&auml;ndig an</label>
+ </p>
+ <p>
+-<input type="radio" name="led_display" id="uiViewLedDisplay2" value="2" onchange="OnChangeLedDisplay('1')" <?lua write_led_selected("2")?>><label for="uiViewLedDisplay2">{?9839:655?}</label>
++<input type="radio" name="led_display" id="uiViewLedDisplay2" value="2" onchange="OnChangeLedDisplay('2')" <?lua write_led_selected("2")?>><label for="uiViewLedDisplay2">LED-Anzeige aus</label>
+ <p class="form_input_explain">
+-{?9839:649?}
++Die LED-Anzeige wird ausgeschaltet, sobald die FRITZ!Box erfolgreich gestartet wurde.
++</p>
++</p>
++<p>
++<input type="radio" name="led_display" id="uiViewLedDisplay1" value="1" onchange="OnChangeLedDisplay('1')" <?lua write_led_selected("1")?>><label for="uiViewLedDisplay1">LED-Anzeige verz&ouml;gert aus</label>
++<p class="form_input_explain">
++Die LED-Anzeige wird ca. 90 Sekunden nach dem erfolgreichen Start der FRITZ!Box ausgeschaltet, damit ist z.B. eine erfolgreiche DSL-Synchronisation in dieser Zeit noch ersichtlich anhand der Anzeige.
+ </p>
+ </p>
+ </div>
+
+EOT
+	cd $home
+}
+#
+# execute steps
+#
+case $step in
+	precheck)
+		grep -q "$check_trigger" $check_filename 2>/dev/null 1>&2
+		rc=$?
+		if [ $rc -eq 0 ]; then
+			case "$language" in
+				de)
+					echo "Die Modifikation wurde bereits angewendet." 1>&2
+					;;
+				*)
+					echo "The modification is already present." 1>&2
+					;;
+			esac
+			rc=1
+		else
+			rc=0
+		fi
+		;;
+	postcheck)
+		grep -q "$check_trigger" $check_filename 2>/dev/null 1>&2
+		rc=$?
+		if [ $rc -eq 1 ]; then
+			case "$language" in
+				de)
+					echo "Die Modifikation war nicht erfolgreich." 1>&2
+					;;
+				*)
+					echo "The menu file seems to be unmodified." 1>&2
+					;;
+			esac
+			rc=1
+		else
+			rc=0
+		fi
+		;;
+	install)
+		for TARGET_BRANDING in $TARGET_BRANDINGS; do
+			patch_file	
+		done
+		rc=0
+		;;
+	*)
+		rc=59
+		;;
+esac
+exit $rc
