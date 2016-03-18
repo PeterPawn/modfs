@@ -66,8 +66,10 @@ wrapperimagename="filesystem.image"
 kernelfilename="kernel.image"
 # the name of the file, which can be used to determine the version of the system within a squashfs image
 versionfilename="/etc/version"
+# the name of the busybox to be used, will be changed later
+bb="/bin/busybox"
 # the name of the shell on the box
-shl="/bin/sh"
+shl="$bb sh"
 # the name of vendor utility to "spy" into files
 testvalue="/bin/testvalue"
 # the name of the ring buffer utility from the vendor
@@ -157,7 +159,7 @@ nativefilesystems="tmpfs ext2 ext3 ext4 yaffs2"
 #
 # our "internal" constants
 #
-modfs_version=0.3.3-16032016
+modfs_version=0.3.3-18032016
 modfs_comment="please look at https://github.com/PeterPawn/modfs for further info"
 bindirname="bin"
 localedirname="locale"
@@ -218,9 +220,9 @@ remove_temp_file()
 	local rc
 	[ -z "$1" ] && return 127
 	[ ${#1} -lt 10 ] && return 127
-	rm "$1" 2>/dev/null
+	$bb rm "$1" 2>/dev/null
 	rc=$?
-	sed -e "\|^rm *$1\$|d" -i $tempfilelist
+	$bb sed -e "\|^rm *$1\$|d" -i $tempfilelist
 	debug "remove_temp_file: file=$1, rc=$rc"
 	return 0
 }
@@ -232,9 +234,9 @@ remove_directory()
 {
 	local dir="$1" rc
 	[ ${#1} -lt 10 ] && return 127
-	rm -r $dir 2>/dev/null
+	$bb rm -r $dir 2>/dev/null
 	rc=$?
-	sed -e "\|^rm -r *$dir\$|d" -i $tempfilelist
+	$bb sed -e "\|^rm -r *$dir\$|d" -i $tempfilelist
 	debug "remove_directory: directory=$1, rc=$rc"
 	return 0
 }
@@ -243,8 +245,8 @@ remove_directory()
 #
 get_temp_dir()
 {
-	local name="$tmpdirbase/$$_$(date +%s)"
-	mkdir -p "$name"
+	local name="$tmpdirbase/$$_$($bb date +%s)"
+	$bb mkdir -p "$name"
 	echo "rm -r $name" >>$tempfilelist
 	debug "get_temp_dir: directory=$name"
 	echo "$name"
@@ -258,7 +260,7 @@ get_temp_file()
 {
 	local name="$1" dir out
 	dir="$(get_temp_dir)"
-	[ -z "$name" ] && out="$dir/$(date +%s)" || out="$dir/$name"
+	[ -z "$name" ] && out="$dir/$($bb date +%s)" || out="$dir/$name"
 	echo "rm $out" >>$tempfilelist
 	debug "get_temp_file: file=$out"
 	echo "$out"
@@ -271,16 +273,16 @@ get_temp_file()
 debug()
 {
 	[ $MODFS_DEBUG -ne 1 ] && return
-	echo -e "$@" | sed -e ':x;$!N;s/\n/{LF}/;tx' | $debugoutput
+	echo -e "$@" | $bb sed -e ':x;$!N;s/\n/{LF}/;tx' | $debugoutput
 }
 #
 # get next system index from environment
 #
-get_system_switch() { sed -n -e "s/^$fsvarname\t\([01]\)/\1/p" $envpathname; }
+get_system_switch() { $bb sed -n -e "s/^$fsvarname\t\([01]\)/\1/p" $envpathname; }
 #
 # get hardware revision from environment (it has not to be a number !)
 #
-get_hardware_revision() { sed -n -e "s/^$hwrevname\t\(.*\)/\1/p" $envpathname; }
+get_hardware_revision() { $bb sed -n -e "s/^$hwrevname\t\(.*\)/\1/p" $envpathname; }
 #
 # check, if the specified hardware revision is supported
 # $1 - hardware revision
@@ -291,17 +293,17 @@ check_hardware_revision() { return $(index_of_item "$1" "$hwrevs_supported"); }
 # $1 - MTD index number
 # $2 - expected MTD name from /proc/mtd
 #
-check_mtd() { grep "$mtdprefix$1: [0-9a-f]* [0-9a-f]* \"\($reservedprefix\)*$2\"" $procmtd; }
+check_mtd() { $bb grep "$mtdprefix$1: [0-9a-f]* [0-9a-f]* \"\($reservedprefix\)*$2\"" $procmtd; }
 #
 # get MTD number by name
 # $1 - requested MTD partition name
 #
-get_mtd_by_name() { sed -n -e "s|$mtdprefix\([0-9]\{1,2\}\): [0-9a-f]\{8\} [0-9a-f]\{8\} \"$1\"|\1|p" $procmtd; }
+get_mtd_by_name() { $bb sed -n -e "s|$mtdprefix\([0-9]\{1,2\}\): [0-9a-f]\{8\} [0-9a-f]\{8\} \"$1\"|\1|p" $procmtd; }
 #
 # get MTD name by number
 # $1 - requested MTD partition number
 #
-get_mtd_by_number() { sed -n -e "s|$mtdprefix$1: [0-9a-f]\{8\} [0-9a-f]\{8\} \"\(.*\)\"|\1|p" $procmtd; }
+get_mtd_by_number() { $bb sed -n -e "s|$mtdprefix$1: [0-9a-f]\{8\} [0-9a-f]\{8\} \"\(.*\)\"|\1|p" $procmtd; }
 #
 # build MTD partition groups
 #
@@ -320,11 +322,11 @@ build_partitions()
 # convert string to upper case
 # $@ - string(s) to convert
 #
-uppercase() { echo "$@" | tr 'abcdefghijklmnopqrstuvwxyzäöü' 'ABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÜ'; }
+uppercase() { echo "$@" | $bb tr 'abcdefghijklmnopqrstuvwxyzäöü' 'ABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÜ'; }
 #
 # escape a string to use it within a regular expression without any hassle
 #
-escape_regexp() { echo "$@" | sed -e 's/\./\\./g'; }
+escape_regexp() { echo "$@" | $bb sed -e 's/\./\\./g'; }
 #
 # get localized strings (to make it easier for german users)
 # - the message text may contain the macros '%{error}', '%{ok}', '%{warning}' and
@@ -339,7 +341,7 @@ get_localized()
 {
 	local lang=$1 lcfile=$(localedir)/$lang msgno=$2 rc=0 msg
 	shift 2
-	msg=$(sed -n -e "/^$msgno=/s/^[0-9]*=\(.*\)/\1/p" $lcfile | sed -e "s/%{error}/\${msgtext_error}/g" | sed -e "s/%{ok}/\${msgtext_ok}/g" | sed -e "s/%{warning}/\${msgtext_warning}/g" | sed -e "s/%{bold}/\${msgtext_bold}/g" | sed -e "s/%{normal}/\${msgtext_normal}/g" | sed -e "s/%{highlight}/\${msgtext_highlight}/g")
+	msg=$($bb sed -n -e "/^$msgno=/s/^[0-9]*=\(.*\)/\1/p" $lcfile | $bb sed -e "s/%{error}/\${msgtext_error}/g" | $bb sed -e "s/%{ok}/\${msgtext_ok}/g" | $bb sed -e "s/%{warning}/\${msgtext_warning}/g" | $bb sed -e "s/%{bold}/\${msgtext_bold}/g" | $bb sed -e "s/%{normal}/\${msgtext_normal}/g" | $bb sed -e "s/%{highlight}/\${msgtext_highlight}/g")
 	if [ ${#msg} -eq 0 ]; then
 		echo "The specified message number $msgno was not found at the language file for '$lang'." 1>&2
 		rc=1
@@ -452,8 +454,8 @@ check_kernels()
 	if [ ${#1} -eq 0 -o ${#2} -eq 0 ];then
 		rc=127
 	else
-		hash0=$(md5sum /dev/$mtdblockname$1 | sed -n -e 's/^\([0-9a-f]*\).*/\1/p')
-		hash1=$(md5sum /dev/$mtdblockname$2 | sed -n -e 's/^\([0-9a-f]*\).*/\1/p')
+		hash0=$($bb md5sum /dev/$mtdblockname$1 | $bb sed -n -e 's/^\([0-9a-f]*\).*/\1/p')
+		hash1=$($bb md5sum /dev/$mtdblockname$2 | $bb sed -n -e 's/^\([0-9a-f]*\).*/\1/p')
 		debug "check_kernels: /dev/$mtdblockname$1 = $hash0, /dev/$mtdblockname$2 = $hash1"
 		if [ $hash0 != $hash1 ]; then
 			rc=32
@@ -538,6 +540,7 @@ detect_image_filesystem()
 			fstype="squashfs$major"
 		else
 			if [ $offset -eq 0 ]; then
+				# recursive call with offset 256
 				sig="$(detect_image_filesystem "$src" 256)"
 				if [ $? -eq 0 ]; then
 					fstype="sqfs_dummy256_$sig"
@@ -568,7 +571,7 @@ copy_kernel_image()
 	fi
 	target=$(get_mtd_by_name $reservedprefix$kernelname)
 	debug "copy_kernel_image: src=$src, target=/dev/$mtdprefix$target"
-	$update_kernel_binary -i $src -o /dev/$mtdprefix$target >/dev/null 2>&1
+	$update_kernel_binary -i "$src" -o /dev/$mtdprefix$target >/dev/null 2>&1
 	rc=$?
 	debug "copy_kernel_image: exiting, rc=$rc"
 	return $rc
@@ -583,11 +586,11 @@ copy_filesystem()
 	$update_kernel_binary -o /dev/$mtdprefix$target >/dev/null 2>&1
 	debug "copy_filesystem: /dev/$mtdprefix$target cleared"
 	tmp=$(get_temp_dir)
-	mount -t yaffs2 /dev/$mtdblockname$target "$tmp"
-	cp -R /wrapper/* $tmp/
+	$bb mount -t yaffs2 /dev/$mtdblockname$target "$tmp"
+	$bb cp -R /wrapper/* $tmp/
 	rc=$?
 	debug "copy_filesystem: copied everything from $tmp, rc=$rc"
-	umount "$tmp"
+	$bb umount "$tmp"
 	remove_directory "$tmp"
 	debug "copy_filesystem: exiting, rc=$rc"
 	return $rc
@@ -644,15 +647,15 @@ copy_wrapper_filesystem()
 		if [ $rc -eq 0 ]; then
 			# mount squashfs and yaffs2 wrapper and copy from one to the other
 			tmp="$(get_temp_dir)"
-			mkdir -p $tmp/yaffs $tmp/wrapperfs
-			mount -t yaffs2 /dev/$mtdblockname$target $tmp/yaffs
+			$bb mkdir -p $tmp/yaffs $tmp/wrapperfs
+			$bb mount -t yaffs2 /dev/$mtdblockname$target $tmp/yaffs
 			if [ "$fstype" == "ext2" -o "$fstype" == "sqfs_dummy256_ext2" ]; then
 				# ext2 image with AVM's dummy header
 				mount_ext2_image "$src" "$tmp/wrapperfs" "$fstype"
 				rc=$?
 				mrc=$rc
 			else
-				mount "$src" $tmp/wrapperfs 2>/dev/null
+				$bb mount "$src" $tmp/wrapperfs 2>/dev/null
 				rc=$?
 				mrc=$rc
 				if [ $rc -ne 0 ]; then
@@ -665,19 +668,19 @@ copy_wrapper_filesystem()
 						rc=$?
 						if [ $rc -eq 0 ]; then
 							rmdir "$tmp/wrapperfs"
-							mv "$tmp/$squashfsdirname" "$tmp/wrapperfs"
+							$bb mv "$tmp/$squashfsdirname" "$tmp/wrapperfs"
 							rc=$?
-							rm "$tmp/wrapperfs/$rootfsname"
+							$bb rm "$tmp/wrapperfs/$rootfsname"
 						fi
 					fi
 				fi
 			fi
 			if [ $rc -eq 0 ]; then
-				tar -c -O -C $tmp/wrapperfs --exclude=$rootfsname . | tar -x -C $tmp/yaffs
+				$bb tar -c -O -C $tmp/wrapperfs --exclude=$rootfsname . | $bb tar -x -C $tmp/yaffs
 				rc=$?
 				debug "copy_wrapper_filesystem: copying done, rc=$rc"
-				[ $mrc -eq 0 ] && umount $tmp/wrapperfs
-				umount $tmp/yaffs
+				[ $mrc -eq 0 ] && $bb umount $tmp/wrapperfs
+				$bb umount $tmp/yaffs
 				remove_directory "$tmp"
 				rc=0
 			fi
@@ -696,10 +699,10 @@ copy_new_root_filesystem()
 	target=$(get_mtd_by_name $reservedprefix$filesystemname)
 	tmp="$(get_temp_dir)"
 	debug "copy_new_root_filesystem: src=$src, target=/dev/$mtdblockname$target"
-	mount -t yaffs2 /dev/$mtdblockname$target "$tmp"
-	cp -a "$src" "$tmp/$rootfsname"
+	$bb mount -t yaffs2 /dev/$mtdblockname$target "$tmp"
+	$bb cp -a "$src" "$tmp/$rootfsname"
 	rc=$?
-	umount "$tmp"
+	$bb umount "$tmp"
 	remove_directory "$tmp"
 	debug "copy_new_root_filesystem: exiting, rc=$rc"
 	return $rc
@@ -713,7 +716,7 @@ get_squashfs_blocksize()
 	local bs sq_version
 	sq_version=$(get_squashfs_tools_version "$1")
 	debug "get_squashfs_blocksize: using SquashFS version $sq_version"
-	bs=$(sq_unsquashfs -s "$1" 2>/dev/null | sed -n -e "s/^Block size \(.*\)/\1/p")
+	bs=$(sq_unsquashfs -s "$1" 2>/dev/null | $bb sed -n -e "s/^Block size \(.*\)/\1/p")
 	debug "get_squashfs_blocksize: block size=$bs"
 	echo $bs
 }
@@ -726,7 +729,7 @@ get_squashfs_endianess()
 	local endianess=0 endian sq_version
 	sq_version=$(get_squashfs_tools_version "$1")
 	debug "get_squashfs_endianess: using SquashFS version $sq_version"
-	endian=$(sq_unsquashfs -s "$1" 2>/dev/null | sed -n -e "s/Found a valid \(big\|litte\) endian SQUASHFS.*/\1/p")
+	endian=$(sq_unsquashfs -s "$1" 2>/dev/null | $bb sed -n -e "s/Found a valid \(big\|litte\) endian SQUASHFS.*/\1/p")
 	[ ${#endian} -gt 0 ] && [ x"$endian" == xlittle ] && endianess=1
 	debug "get_squashfs_endianess: $endian endian"
 	echo $endianess
@@ -807,7 +810,7 @@ is_supported()
 get_target_kernel_version()
 {
 	local rootdir="$1" default_version="3.10.73" version rc=0
-	version="$(cd "$rootdir/lib/modules";find -maxdepth 1 -type d | sed -n -e "s|.*/\([0-9\.]\+\)\$|\1|p")"
+	version="$(cd "$rootdir/lib/modules";$bb find -maxdepth 1 -type d | $bb sed -n -e "s|.*/\([0-9\.]\+\)\$|\1|p")"
 	rc=$?
 	[ $rc -ne 0 ] && version="$default_version"
 	debug "get_target_kernel_version: result=$version, rc=$rc"
@@ -819,9 +822,9 @@ get_target_kernel_version()
 get_target_system_version()
 {
 	local rootdir="$1" version subversion date rc=0 var
-	version_major="$(sed -n -e "s/^export CONFIG_VERSION_MAJOR=\"\(.*\)\"\$/\1/p" "$rootdir/etc/init.d/rc.conf" | sed -n -e "\$p")"
+	version_major="$($bb sed -n -e "s/^export CONFIG_VERSION_MAJOR=\"\(.*\)\"\$/\1/p" "$rootdir/etc/init.d/rc.conf" | $bb sed -n -e "\$p")"
 	for var in version subversion date; do
-		eval "$(sed -n -e "s/^export FIRMWARE_$(uppercase $var)=\"\?\([^\"]*\)\"\?\$/$var=\"\1\"/p" "$rootdir/etc/version" | sed -e "s/CONFIG_VERSION_MAJOR/version_major/")"
+		eval "$($bb sed -n -e "s/^export FIRMWARE_$(uppercase $var)=\"\?\([^\"]*\)\"\?\$/$var=\"\1\"/p" "$rootdir/etc/version" | $bb sed -e "s/CONFIG_VERSION_MAJOR/version_major/")"
 	done
 	debug "get_target_system_version: version=\"$version\", subversion=\"$subversion\", date=\"$date\", rc=$rc"
 	echo "TARGET_SYSTEM_VERSION=\"$version\" TARGET_SYSTEM_SUBVERSION=\"$subversion\" TARGET_SYSTEM_DATE=\"$date\""
@@ -832,8 +835,8 @@ get_target_system_version()
 get_target_brandings()
 {
 	local rootdir="$1" rc=0 path brandings
-	path=$(find $rootdir/etc -type d -name "default.*" | sed -e "\|$rootdir/etc/default.[0-9]*\$|d")
-	brandings=$(find $path -maxdepth 1 -type d | sed -n -e "s|$path[/]*||p" | sed -e "/^\$/d")
+	path=$($bb find $rootdir/etc -type d -name "default.*" | $bb sed -e "\|$rootdir/etc/default.[0-9]*\$|d")
+	brandings=$($bb find $path -maxdepth 1 -type d | $bb sed -n -e "s|$path[/]*||p" | $bb sed -e "/^\$/d")
 	echo $brandings
 }
 #
@@ -857,10 +860,10 @@ execute_modscript()
 {
 	local script="$1" scriptname="${script##*/}" rootdir="$2" mode="$3" rc=0 supports name language uselang languages header opt msg
 	debug "execute_modscript: script=$script, root=$rootdir, mode=$mode"
-	header="$(sed -n -e "1p" "$script")"
+	header="$($bb sed -n -e "1p" "$script")"
 	if [ x"$header" == x"# MODFS_MODSCRIPT" ]; then
-		supports="$(sed -n -e "s/^# SUPPORTS \(.*\)/\1/p" "$script")"
-		name="$(sed -n -e "s/^# NAME \(.*\)/\1/p" "$script")"
+		supports="$($bb sed -n -e "s/^# SUPPORTS \(.*\)/\1/p" "$script")"
+		name="$($bb sed -n -e "s/^# NAME \(.*\)/\1/p" "$script")"
 		name="${name// /\\ }"
 		if [ ${#name} -gt 0 -a ${#supports} -gt 0 ]; then
 			if [ x"$mode" == xauto ]; then
@@ -947,8 +950,8 @@ get_description()
 {
 	local language="$1" script="$2" rc=0 append=0 tempdir tempfile line
 	tempdir="$(get_temp_dir)"
-	tempfile="$tempdir/$(date +%s)"
-	sed -n -e "/^# MODFS_MODSCRIPT\$/,/^# EOH\$/p" $script | sed -e "1d;\$d;/^# SUPPORTS.*\$/d;/^# NAME.*\$/d" >"$tempfile"
+	tempfile="$tempdir/$($bb date +%s)"
+	$bb sed -n -e "/^# MODFS_MODSCRIPT\$/,/^# EOH\$/p" $script | $bb sed -e "1d;\$d;/^# SUPPORTS.*\$/d;/^# NAME.*\$/d" >"$tempfile"
 	while read line; do
 		if [ x"${line:0:13}" == x"# DESCRIPTION" ]; then
 			if [ $language == - ]; then
@@ -970,7 +973,7 @@ get_description()
 			fi
 		fi
 	done <"$tempfile"
-	rm "$tempfile"
+	$bb rm "$tempfile"
 	remove_directory "$tempdir"
 	debug "get_description: $description"
 	echo "$description"
@@ -985,10 +988,10 @@ execute_optional_modscript()
 {
 	local script="$1" scriptname="${script##*/}" rootdir="$2" rc=0 supports name language uselang languages header desc msg doit
 	debug "execute_optional_modscript: script=$script, root=$rootdir, mode=$mode"
-	header="$(sed -n -e "1p" "$script")"
+	header="$($bb sed -n -e "1p" "$script")"
 	if [ x"$header" == x"# MODFS_MODSCRIPT" ]; then
-		supports="$(sed -n -e "1,/^# EOH\$/s/^# SUPPORTS \(.*\)/\1/p" "$script")"
-		name="$(sed -n -e "1,/^# EOH\$/s/^# NAME \(.*\)/\1/p" "$script")"
+		supports="$($bb sed -n -e "1,/^# EOH\$/s/^# SUPPORTS \(.*\)/\1/p" "$script")"
+		name="$($bb sed -n -e "1,/^# EOH\$/s/^# NAME \(.*\)/\1/p" "$script")"
 		name="${name// /\\ }"
 		if [ ${#name} -gt 0 -a ${#supports} -gt 0 ]; then
 			echo -e "$(get_localized $lang 172 "$name")" 1>&2
@@ -1009,9 +1012,9 @@ execute_optional_modscript()
 				uselang=en
 			fi
 			sleep 1
-			desc="$(sed -n -e "/^# DESCRIPTION $uselang\$/=" "$script")"
+			desc="$($bb sed -n -e "/^# DESCRIPTION $uselang\$/=" "$script")"
 			if [ ${#desc} -eq 0 ]; then
-				desc="$(sed -n -e "/^# DESCRIPTION\$/=" "$script")"
+				desc="$($bb sed -n -e "/^# DESCRIPTION\$/=" "$script")"
 				if [ ${#desc} -eq 0 ]; then
 					desc="$(get_localized $lang 181)"
 				else
@@ -1063,7 +1066,7 @@ prepare_custom_modscripts_selection()
 			elif [ "$state" == '?' ]; then
 				flags="ug+x"
 			fi
-			chmod "$flags" "$scripts/$scriptname"
+			$bb chmod "$flags" "$scripts/$scriptname"
 			rc=$?
 			debug "prepare_custom_modscripts_selection: chmod done for '$scriptname' (flags='$flags'), rc=$rc"
 		done <"$scriptpath/$custom_selection_file"
@@ -1095,13 +1098,13 @@ modify_rootfs()
 	prepare_custom_modscripts_selection
 	filelist="$tmpdir/scripts"
 	donelist="$tmpdir/executed"
-	find "$scripts" -follow -xdev -type f | sort >"$filelist"
-	[ -s "$filelist" ] && lines=$(sed -n -e "\$=" "$filelist") || lines=0
+	$bb find "$scripts" -follow -xdev -type f | $bb sort >"$filelist"
+	[ -s "$filelist" ] && lines=$($bb sed -n -e "\$=" "$filelist") || lines=0
 	line=0
 	while [ $line -lt $lines ]; do
 		let line+=1
-		script="$(sed -n -e "${line}p" "$filelist")"
-		flags=$(stat -c %a $script)
+		script="$($bb sed -n -e "${line}p" "$filelist")"
+		flags=$($bb stat -c %a $script)
 		execute=$(( ( ${flags:2:1} & 1 ) + ( ${flags:1:1} & 1 ) + ( ${flags:0:1} & 1 ) ))
 		[ $execute -lt 3 ] && continue
 		echo "\|^$script\$|d" >>$donelist
@@ -1109,13 +1112,13 @@ modify_rootfs()
 		lrc=$?
 		[ $lrc -gt $rc ] && rc=$lrc
 	done
-	[ $line -gt 0 -a -s "$donelist" ] && sed -f "$donelist" -i "$filelist"
-	[ -s "$filelist" ] && lines=$(sed -n -e "\$=" "$filelist") || lines=0
+	[ $line -gt 0 -a -s "$donelist" ] && $bb sed -f "$donelist" -i "$filelist"
+	[ -s "$filelist" ] && lines=$($bb sed -n -e "\$=" "$filelist") || lines=0
 	line=0
 	while [ $line -lt $lines ]; do
 		let line+=1
-		script="$(sed -n -e "${line}p" "$filelist")"
-		flags=$(stat -c %a $script)
+		script="$($bb sed -n -e "${line}p" "$filelist")"
+		flags=$($bb stat -c %a $script)
 		execute=$(( ( ${flags:1:1} & 1 ) + ( ${flags:0:1} & 1 ) ))
 		[ $execute -lt 2 ] && continue
 		execute_optional_modscript "$script" "$target"
@@ -1142,7 +1145,7 @@ extract_rootfs_from_firmware()
 	if [ $rc -ne 0 ]; then
 		rc=39
 	else
-		mkdir "$tmpdir/mp"
+		$bb mkdir "$tmpdir/mp"
 		fstype=$(detect_image_filesystem "$tmp")
 		rc=$?
 		if [ $rc -eq 0 ]; then
@@ -1151,7 +1154,7 @@ extract_rootfs_from_firmware()
 				mount_ext2_image "$tmp" "$tmpdir/mp" "$fstype"
 				rc=$?
 			else
-				mount "$tmp" "$tmpdir/mp" 2>/dev/null
+				$bb mount "$tmp" "$tmpdir/mp" 2>/dev/null
 				rc=$?
 				if [ $rc -ne 0 ]; then
 					# try to extract with unsquashfs3, if this is a 3.xx kernel based
@@ -1162,9 +1165,9 @@ extract_rootfs_from_firmware()
 						unpack_squashfs "$tmp" "${target%/*}" "$rootfsname" 2>&1 >/dev/null
 						rc=$?
 						if [ $rc -eq 0 ]; then
-							mv "${target%/*}/$squashfsdirname/$rootfsname" "${target}"
+							$bb mv "${target%/*}/$squashfsdirname/$rootfsname" "${target}"
 							rc=$?
-							rmdir "${target%/*}/$squashfsdirname"
+							$bb rmdir "${target%/*}/$squashfsdirname"
 							remove_directory "$tmpdir"
 							debug "extract_rootfs_from_firmware: exiting, rc=$rc"
 							return $rc
@@ -1175,16 +1178,16 @@ extract_rootfs_from_firmware()
 			if [ $rc -ne 0 ]; then
 				rc=40
 			else
-				cp -a "$tmpdir/mp/$rootfsname" "$target"
+				$bb cp -a "$tmpdir/mp/$rootfsname" "$target"
 				rc=$?
 				if [ $rc -ne 0 ]; then
 					rc=41
 				fi
-				umount "$tmpdir/mp"
+				$bb umount "$tmpdir/mp"
 			fi
 		fi
 	fi
-	rm $tmp 2>/dev/null
+	$bb rm $tmp 2>/dev/null
 	remove_directory "$tmpdir"
 	debug "extract_rootfs_from_firmware: exiting, rc=$rc"
 	return $rc
@@ -1220,18 +1223,18 @@ mount_ext2_image()
 	local src="$1" mp="$2" fstype="$3" rc=202 loopdev
 	debug "mount_ext2_image: src=$src, mp=$mp, type=$fstype"
 	if [ "$fstype" == "sqfs_dummy256_ext2" ]; then
-		losetup -a >/dev/null 2>&1
+		$bb losetup -a >/dev/null 2>&1
 		if [ $? -eq 0 ]; then
-			losetup -r -f -o 256 $src 2>/dev/null
+			$bb losetup -r -f -o 256 $src 2>/dev/null
 			rc=$?
-			[ $rc -eq 0 ] && loopdev=$(losetup -a | sed -n -e "s|^\([^ ]*\):.*$src.*\$|\1|p")
+			[ $rc -eq 0 ] && loopdev=$($bb losetup -a | $bb sed -n -e "s|^\([^ ]*\):.*$src.*\$|\1|p")
 		else
 			debug "mount_ext2_image: no losetup found, using dd to remove dummy block"
-			dd if="$src" of="$src.ext2" bs=256 skip=1 conv=fsync,sync 2>/dev/null
+			$bb dd if="$src" of="$src.ext2" bs=256 skip=1 conv=fsync,sync 2>/dev/null
 			rcdd=$?
 			rcmv="?"
 			if [ $rcdd -eq 0 ]; then
-				mv "$src.ext2" "$src"
+				$bb mv "$src.ext2" "$src"
 				rcmv=$?
 			fi
 			debug "mount_ext2_image: dummy header removed, dd=$rcdd, mv=$rcmv"
@@ -1243,7 +1246,7 @@ mount_ext2_image()
 		rc=0
 	fi
 	if [ $rc -eq 0 ]; then
-		mount "$loopdev" "$mp" 2>/dev/null
+		$bb mount "$loopdev" "$mp" 2>/dev/null
 		rc=$?
 	fi
 	debug "mount_ext2_image: exiting, rc=$rc"
@@ -1267,7 +1270,7 @@ extract_rootfs_from_wrapper()
 			mount_ext2_image "$src" "$tmpdir" "$fstype"
 			rc=$?
 		else
-			mount "$src" "$tmpdir" 2>/dev/null
+			$bb mount "$src" "$tmpdir" 2>/dev/null
 			rc=$?
 			if [ $rc -ne 0 ]; then
 				# try to extract with unsquashfs3, if this is a 3.xx kernel based
@@ -1278,9 +1281,9 @@ extract_rootfs_from_wrapper()
 					unpack_squashfs "$src" "${target%/*}" "$rootfsname" 2>&1 >/dev/null
 					rc=$?
 					if [ $rc -eq 0 ]; then
-						mv "${target%/*}/$squashfsdirname/$rootfsname" "${target}"
+						$bb mv "${target%/*}/$squashfsdirname/$rootfsname" "${target}"
 						rc=$?
-						rmdir "${target%/*}/$squashfsdirname"
+						$bb rmdir "${target%/*}/$squashfsdirname"
 						remove_directory "$tmpdir"
 						debug "extract_rootfs_from_wrapper: exiting, rc=$rc"
 						return $rc
@@ -1291,12 +1294,12 @@ extract_rootfs_from_wrapper()
 		if [ $rc -ne 0 ]; then
 			rc=40
 		else
-			cp -a "$tmpdir/$rootfsname" "$target"
+			$bb cp -a "$tmpdir/$rootfsname" "$target"
 			rc=$?
 			if [ $rc -ne 0 ]; then
 				rc=41
 			fi
-			umount "$tmpdir"
+			$bb umount "$tmpdir"
 		fi
 		remove_directory "$tmpdir"
 	fi
@@ -1312,7 +1315,7 @@ extract_kernel()
 {
 	local src="$1" target="$2" tmp rc mp tmpdir
 	debug "extract_kernel: src=$src, target=$target"
-	tar -xOf "$src" "$firmware_kernel_image" >"$target" 2>/dev/null
+	$bb tar -xOf "$src" "$firmware_kernel_image" >"$target" 2>/dev/null
 	rc=$?
 	if [ $rc -ne 0 ]; then
 		rc=62
@@ -1329,7 +1332,7 @@ extract_filesystem()
 {
 	local src="$1" target="$2" tmp rc mp tmpdir
 	debug "extract_filesystem: src=$src, target=$target"
-	tar -xOf "$src" "$firmware_filesystem_image" >"$target" 2>/dev/null
+	$bb tar -xOf "$src" "$firmware_filesystem_image" >"$target" 2>/dev/null
 	rc=$?
 	if [ $rc -ne 0 ]; then
 		rc=39
@@ -1360,12 +1363,12 @@ download_firmware()
 	eval ftppath="$(echo \$ftp_path_$hwrev)"
 	eval ftppath="$(echo $ftppath)"
 	debug "download_firmware: ftppath=$ftppath"
-	ftpget $ftp_server "$target" "$ftppath" 2>/dev/null
+	$bb ftpget $ftp_server "$target" "$ftppath" 2>/dev/null
 	rc=$?
 	if [ $rc -ne 0 ]; then
 		rc=42
 	else
-		if [ $(stat -c %s "$target") -eq 0 ]; then
+		if [ $($bb stat -c %s "$target") -eq 0 ]; then
 			rc=43
 		fi
 	fi
@@ -1413,8 +1416,8 @@ check_free_tmpfs()
 	rc2=$?
 	debug "check_free_tmpfs: wanted=$wanted, needed=$needed"
 	if [ $rc1 -eq 0 -a $rc2 -eq 0 ]; then
-		bs=$(stat -c %S -f $tmpfsbasedir)
-		free=$(stat -c %f -f $tmpfsbasedir)
+		bs=$($bb stat -c %S -f $tmpfsbasedir)
+		free=$($bb stat -c %f -f $tmpfsbasedir)
 		freespace=$(( bs * free ))
 		if [ $freespace -lt $wanted ]; then
 			if [ $freespace -lt $needed ]; then
@@ -1437,7 +1440,7 @@ check_free_tmpfs()
 is_tmpfs()
 {
 	local path="$1"
-	type=$(stat -c %T -f "$path")
+	type=$($bb stat -c %T -f "$path")
 	if [ x$type == x"tmpfs" ]; then
 		echo 1
 	else
@@ -1454,12 +1457,12 @@ get_nand_mountpoint()
 	if [ $CONFIG_NAND == y ]; then
 		nandminor=$(get_mtd_by_name $nandname)
 		if [ ${#nandminor} -gt 0 ]; then
-			nandmajor=$(sed -n -e "s/^ *\([0-9]*\) $mtdblockname/\1/p" /proc/devices)
+			nandmajor=$($bb sed -n -e "s/^ *\([0-9]*\) $mtdblockname/\1/p" /proc/devices)
 			rc=1
 			while read device mountpoint type options x y; do
-				if [ x"$(stat -c %F $device 2>/dev/null)" == x"block special file" ]; then
-					if [ $(( 0x$(stat -c %t $device 2>/dev/null) )) -eq $nandmajor ]; then
-						if [ $(( 0x$(stat -c %T $device 2>/dev/null) )) -eq $nandminor ]; then
+				if [ x"$($bb stat -c %F $device 2>/dev/null)" == x"block special file" ]; then
+					if [ $(( 0x$($bb stat -c %t $device 2>/dev/null) )) -eq $nandmajor ]; then
+						if [ $(( 0x$($bb stat -c %T $device 2>/dev/null) )) -eq $nandminor ]; then
 							echo $mountpoint
 							rc=0
 							break
@@ -1487,8 +1490,8 @@ check_free_nand()
 	rc=$?
 	if [ $rc -eq 0 ]; then
 		nand=$(get_nand_mountpoint)
-		bs=$(stat -c %S -f $nand)
-		free=$(stat -c %f -f $nand)
+		bs=$($bb stat -c %S -f $nand)
+		free=$($bb stat -c %f -f $nand)
 		freespace=$(( bs * free ))
 		if [ $freespace -lt $size ]; then
 			rc=1
@@ -1508,9 +1511,9 @@ get_possible_usb_mountpoints()
 {
 	local device mountpoint type options x y major dev i count=0
 	while read device mountpoint type options x y; do
-		if [ x"$(stat -c %F $device 2>/dev/null)" == x"block special file" ]; then
-			major=$(( 0x$(stat -c %t $device 2>/dev/null) ))
-			dev=$(sed -e "1,/^Block devices:/d" /proc/devices | sed -n -e "s/^ *$major \(.*\)/\1/p")
+		if [ x"$($bb stat -c %F $device 2>/dev/null)" == x"block special file" ]; then
+			major=$(( 0x$($bb stat -c %t $device 2>/dev/null) ))
+			dev=$($bb sed -e "1,/^Block devices:/d" /proc/devices | $bb sed -n -e "s/^ *$major \(.*\)/\1/p")
 			i=$(index_of_item "$dev" "loop $mtdblockname")
 			if [ $? -eq 1 ]; then
 				# not on loop or mtdblock - USB or network
@@ -1535,8 +1538,8 @@ check_space()
 	needed=$(get_numeric_space_value $1)
 	debug "check_space: needed=$needed"
 	while read mp; do
-		bs=$(stat -c %S -f $mp)
-		free_blocks=$(stat -c %f -f $mp)
+		bs=$($bb stat -c %S -f $mp)
+		free_blocks=$($bb stat -c %f -f $mp)
 		# 32-bit arithmetics on box are a little bit annoying
 		let size=$(( bs * free_blocks ))
 		if [ ${#size} -gt 6 ]; then
@@ -1665,8 +1668,8 @@ get_path_selection()
 			path="${mp%%:*}"
 			letter=${letters:$index:1}
 			freespace=$(get_display_space $space)
-			device=$(sed -n -e "s|^\([^ ]*\) $path .*|\1|p" /proc/mounts)
-			filesystem=$(sed -n -e "s|^[^ ]* $path \([^ ]*\) .*|\1|p" /proc/mounts)
+			device=$($bb sed -n -e "s|^\([^ ]*\) $path .*|\1|p" /proc/mounts)
+			filesystem=$($bb sed -n -e "s|^[^ ]* $path \([^ ]*\) .*|\1|p" /proc/mounts)
 			[ $filesystem == fuseblk ] && filesystem="NTFS_via_fuse"
 			let index+=1
 			line="$(get_localized $lang $msg3 "$letter" "$device" "$filesystem" "$path" "$freespace")"
@@ -1776,7 +1779,7 @@ get_mountpoint()
 {
 	local path="$1" rc=0
 	while [ ${#path} -gt 0 ]; do
-		dev="$(sed -n -e "s|^\([^ \t]*\) $path \(.*\) \(.*\) \(.\) \(.\)|\1|p" /proc/mounts)"
+		dev="$($bb sed -n -e "s|^\([^ \t]*\) $path \(.*\) \(.*\) \(.\) \(.\)|\1|p" /proc/mounts)"
 		if [ ${#dev} -gt 0 ]; then
 			break
 		else
@@ -1862,7 +1865,7 @@ check_firmware_image()
 	local firmwareimage="$1" rc=0
 	debug "check_firmware_image: src=$firmwareimage"
 	progress 1 167 "$firmwareimage"
-	tar -tf "$firmwareimage" "$firmware_filesystem_image" 2>/dev/null 1>&2
+	$bb tar -tf "$firmwareimage" "$firmware_filesystem_image" 2>/dev/null 1>&2
 	rc=$?
 	if [ $rc -ne 0 ]; then
 		progress 3 166
@@ -1878,9 +1881,9 @@ check_firmware_image()
 			echo -e "$(get_localized $lang $rc)" 1>&2
 			return $rc
 		fi
-		image_directory="$working_directory/$(date +%s)"
-		mkdir -p "$image_directory"
-		echo "rm -r $image_directory" >>$tempfilelist
+		image_directory="$working_directory/$($bb date +%s)"
+		$bb mkdir -p "$image_directory"
+		echo "$bb rm -r $image_directory" >>$tempfilelist
 		progress 1 132
 		extract_rootfs_from_firmware "$firmwareimage" "$image_directory/$rootfsname"
 		rc=$?
@@ -2014,8 +2017,8 @@ get_input_image_path()
 							space="${mp##*:}"
 							pathto="${mp%%:*}"
 							letter=${letters:$index:1}
-							device=$(sed -n -e "s|^\([^ ]*\) $pathto .*|\1|p" /proc/mounts)
-							filesystem=$(sed -n -e "s|^[^ ]* $pathto \([^ ]*\) .*|\1|p" /proc/mounts)
+							device=$($bb sed -n -e "s|^\([^ ]*\) $pathto .*|\1|p" /proc/mounts)
+							filesystem=$($bb sed -n -e "s|^[^ ]* $pathto \([^ ]*\) .*|\1|p" /proc/mounts)
 							[ $filesystem == fuseblk ] && filesystem="NTFS_via_fuse"
 							let index+=1
 							line="$(get_localized $lang 158 "$letter" "$device" "$filesystem" "$pathto")"
@@ -2397,8 +2400,8 @@ is_newer_version()
 {
 	local left="$1" right left_model left_major left_minor right_model right_major right_minor
 	right="$(get_system_version)"
-	eval "$(echo $left | sed -n -e 's/\([0-9]\{1,3\}\)\.\([0-9]\{2\}\)\.\([0-9]\{2\}\)/left_model=\1 left_major=\2 left_minor=\3/p')"
-	eval "$(echo $right | sed -n -e 's/\([0-9]\{1,3\}\)\.\([0-9]\{2\}\)\.\([0-9]\{2\}\)/right_model=\1 right_major=\2 right_minor=\3/p')"
+	eval "$(echo $left | $bb sed -n -e 's/\([0-9]\{1,3\}\)\.\([0-9]\{2\}\)\.\([0-9]\{2\}\)/left_model=\1 left_major=\2 left_minor=\3/p')"
+	eval "$(echo $right | $bb sed -n -e 's/\([0-9]\{1,3\}\)\.\([0-9]\{2\}\)\.\([0-9]\{2\}\)/right_model=\1 right_major=\2 right_minor=\3/p')"
 	debug "is_newer_version: left=$left, right=$right"
 	[ ${#left_model} -eq 0 -o ${#left_major} -eq 0 -o ${#left_minor} -eq 0 -o ${#right_model} -eq 0 -o ${#right_major} -eq 0 -o ${#right_minor} -eq 0 ] && return 2
 	[ $left_model -ne $right_model ] && return 3
@@ -2426,7 +2429,7 @@ get_latest_version_from_ftp()
 	filename_prefix="$(escape_regexp "${filename_prefix}")"
 	filename_suffix="$(escape_regexp "${filename_suffix}")"
 	ftppath="${ftppath%/*}"
-	version="$(wget -O - "http://$ftp_server$ftppath/" 2>/dev/null | sed -n -e "s#.*${filename_prefix}\([0-9]\{2,3\}\.[0-9]\{2\}\.[0-9]\{2\}\)${filename_suffix}.*#\1#p" | uniq | sort -nr | sed -n -e '1p')"
+	version="$($bb wget -O - "http://$ftp_server$ftppath/" 2>/dev/null | $bb sed -n -e "s#.*${filename_prefix}\([0-9]\{2,3\}\.[0-9]\{2\}\.[0-9]\{2\}\)${filename_suffix}.*#\1#p" | $bb uniq | $bb sort -nr | $bb sed -n -e '1p')"
 	if [ ${#version} -eq 0 ]; then
 		progress 3 97
 		progress 2 187
@@ -2457,9 +2460,9 @@ get_latest_version_from_ftp()
 cleanup()
 {
 	debug "cleanup: running cleanup from file $tempfilelist"
-	[ $MODFS_DEBUG -eq 1 ] && (cat $tempfilelist | $debugoutput)
+	[ $MODFS_DEBUG -eq 1 ] && ($bb cat $tempfilelist | $debugoutput)
 	. $tempfilelist 2>/dev/null
-	rm $tempfilelist 2>/dev/null
+	$bb rm $tempfilelist 2>/dev/null
 }
 #
 # show a spinner as progress indicator at stderr
@@ -2482,14 +2485,14 @@ spinner()
     shift
 	debug "run_spinner: dir=$dir, command=$@"
 	echo -ne "  " 1>&2
-	spin_from="$dir/$(date +%s)_$$"
-    mkfifo "$spin_from"
+	spin_from="$dir/$($bb date +%s)_$$"
+    $bb mkfifo "$spin_from"
     run_spinner <"$spin_from" &
 	spinpid=$!
     "$@" >"$spin_from" 2>/dev/null
     rc=$?
 	wait $spinpid
-    rm "$spin_from"
+    $bb rm "$spin_from"
 	echo -ne "\x1B[2D" 1>&2
 	debug "run_spinner: exiting, rc=$rc"
     return $rc
@@ -2501,15 +2504,15 @@ init_ringbuffer_file()
 {
 	local file="$1" size=$2 maxoff maxstr
 	maxoff=$(( size * 1024 - 1 ))
-	dd if=/dev/zero of=$file bs=1024 count=$size 2>/dev/null
+	$bb dd if=/dev/zero of=$file bs=1024 count=$size 2>/dev/null
 	# signature
-	echo -ne "\\xF9\\x13\\x66\\x8E" | dd if=/proc/self/fd/0 of=$file bs=4 count=1 conv=notrunc seek=0 2>/dev/null
+	echo -ne "\\xF9\\x13\\x66\\x8E" | $bb dd of=$file bs=4 count=1 conv=notrunc seek=0 2>/dev/null
 	# first entry
-	echo -ne "\\x00\\x00\\x00\\x14" | dd if=/proc/self/fd/0 of=$file bs=4 count=1 conv=notrunc seek=1 2>/dev/null
+	echo -ne "\\x00\\x00\\x00\\x14" | $bb dd of=$file bs=4 count=1 conv=notrunc seek=1 2>/dev/null
 	# last entry
-	echo -ne "\\x00\\x00\\x00\\x14" | dd if=/proc/self/fd/0 of=$file bs=4 count=1 conv=notrunc seek=2 2>/dev/null
+	echo -ne "\\x00\\x00\\x00\\x14" | $bb dd of=$file bs=4 count=1 conv=notrunc seek=2 2>/dev/null
 	# next entry
-	echo -ne "\\x00\\x00\\x00\\x14" | dd if=/proc/self/fd/0 of=$file bs=4 count=1 conv=notrunc seek=3 2>/dev/null
+	echo -ne "\\x00\\x00\\x00\\x14" | $bb dd of=$file bs=4 count=1 conv=notrunc seek=3 2>/dev/null
 	maxoff=$(printf "%08x" $maxoff)
 	maxstr=""
 	while [ ${#maxoff} -gt 0 ]; do
@@ -2517,7 +2520,7 @@ init_ringbuffer_file()
 		maxoff="${maxoff:2}"
 	done
 	# max. offset
-	eval echo -ne "$maxstr" | dd if=/proc/self/fd/0 of=$file bs=4 count=1 conv=notrunc seek=4 2>/dev/null
+	eval echo -ne "$maxstr" | $bb dd of=$file bs=4 count=1 conv=notrunc seek=4 2>/dev/null
 	echo -n "with a $size KB buffer" 1>&2
 }
 #
@@ -2526,10 +2529,13 @@ init_ringbuffer_file()
 # prepare script environment
 scriptcalledbyname="$0"
 scriptfile="$scriptcalledbyname"
-while [ -L "$scriptfile" ]; do scriptfile="$(readlink "$scriptfile")"; done
-scriptfile="$(realpath $scriptfile)"
+while [ -L "$scriptfile" ]; do scriptfile="$($bb readlink "$scriptfile")"; done
+scriptfile="$($bb realpath $scriptfile)"
 scriptpath="${scriptfile%/*}"
 scriptname="${scriptfile##*/}"
+# switch to our own version of Busybox
+bb="$(bindir)/busybox"
+shl="$bb sh"
 #
 # check debug settings and initialize ring buffer, if necessary
 #
@@ -2540,7 +2546,7 @@ if [ x"$MODFS_DEBUG" == x"1" ]; then
 	if [ x$MODFS_BUFSIZE != x ]; then
 		if [ $MODFS_BUFSIZE != 8 ]; then
 			debugfile="$(eval echo $ringbufferfile)"
-			rm $debugfile 2>/dev/null
+			$bb rm $debugfile 2>/dev/null
 			init_ringbuffer_file $debugfile $MODFS_BUFSIZE
 		fi
 	fi
@@ -2578,8 +2584,8 @@ rc=0
 #
 # we'll store an unlink command for all temporary directories and files here and remove it, if the target is deleted elsewhere
 #
-tempfilelist="$tmpfsbasedir/$$_filelist_$(date +%s)"
-touch $tempfilelist
+tempfilelist="$tmpfsbasedir/$$_filelist_$($bb date +%s)"
+$bb touch $tempfilelist
 debug "modfs: using temporary file list from $tempfilelist"
 trap 'cleanup' EXIT HUP
 debug "modfs: cleanup trap set"
@@ -2730,9 +2736,9 @@ case $source in
 		fi
 		debug "modfs: working directory=$working_directory"
 		progress 1 121 "$version"
-		download_directory="$working_directory/$(date +%s)"
-		mkdir -p "$download_directory"
-		echo "rm -r $download_directory" >>$tempfilelist
+		download_directory="$working_directory/$($bb date +%s)"
+		$bb mkdir -p "$download_directory"
+		echo "$bb rm -r $download_directory" >>$tempfilelist
 		debug "modfs: download directory=$download_directory"
 		download_firmware "$download_directory/$firmwarestoragename" "$(get_system_version)"
 		rc=$?
@@ -2755,8 +2761,8 @@ case $source in
 				echo -e "$(get_localized $lang $rc)" 1>&2
 				exit $rc
 			fi
-			image_directory="$working_directory/$(date +%s)"
-			mkdir -p "$image_directory"
+			image_directory="$working_directory/$($bb date +%s)"
+			$bb mkdir -p "$image_directory"
 			echo "rm -r $image_directory" >>$tempfilelist
 			progress 1 132
 			extract_rootfs_from_firmware "$download_directory/$firmwarestoragename" "$image_directory/$rootfsname"
@@ -2775,7 +2781,7 @@ case $source in
 				if [ $copybase == Y ]; then
 					target=""
 					if [ $(is_tmpfs $image_directory) -eq 1 ]; then
-						targetdir="$(get_persistent_path $(( $(stat -c %s "$baseimage") + 4096 )) )"
+						targetdir="$(get_persistent_path $(( $($bb stat -c %s "$baseimage") + 4096 )) )"
 						rc=$?
 						if [ $rc -eq 0 ]; then
 							target=$targetdir/$rootfsname
@@ -2829,9 +2835,9 @@ case $source in
 			fi
 			debug "modfs: working directory=$working_directory"
 			progress 1 121 "$version"
-			download_directory="$working_directory/$(date +%s)"
-			mkdir -p "$download_directory"
-			echo "rm -r $download_directory" >>$tempfilelist
+			download_directory="$working_directory/$($bb date +%s)"
+			$bb mkdir -p "$download_directory"
+			echo "$bb rm -r $download_directory" >>$tempfilelist
 			debug "modfs: download directory=$download_directory"
 			download_firmware "$download_directory/$firmwarestoragename" "$version"
 			rc=$?
@@ -2854,9 +2860,9 @@ case $source in
 					echo -e "$(get_localized $lang $rc)" 1>&2
 					exit $rc
 				fi
-				image_directory="$working_directory/$(date +%s)"
-				mkdir -p "$image_directory"
-				echo "rm -r $image_directory" >>$tempfilelist
+				image_directory="$working_directory/$($bb date +%s)"
+				$bb mkdir -p "$image_directory"
+				echo "$bb rm -r $image_directory" >>$tempfilelist
 				progress 1 195
 				extract_kernel "$download_directory/$firmwarestoragename" "$image_directory/$kernelfilename"
 				rc=$?
@@ -2917,7 +2923,7 @@ case $source in
 				progress 3 200 "$firmware_update_file"
 				rc=200
 			else
-				firmware_update_file="$(realpath $firmware_update_file)"
+				firmware_update_file="$($bb realpath $firmware_update_file)"
 				progress 3 199 "$firmware_update_file"
 				rc=0
 			fi
@@ -2931,9 +2937,9 @@ case $source in
 				exit $rc
 			fi
 			debug "modfs: working directory=$working_directory"
-			image_directory="$working_directory/$(date +%s)"
-			mkdir -p "$image_directory"
-			echo "rm -r $image_directory" >>$tempfilelist
+			image_directory="$working_directory/$($bb date +%s)"
+			$bb mkdir -p "$image_directory"
+			echo "$bb rm -r $image_directory" >>$tempfilelist
 			debug "modfs: image directory=$image_directory"
 			progress 1 195
 			extract_kernel "$firmware_update_file" "$image_directory/$kernelfilename"
@@ -3013,9 +3019,9 @@ if [ $rc -eq 0 ]; then
 		fi
 		if [ $rc -eq 0 ]; then
 			# check file system at mount point - we need a native one
-			fs="$(sed -n -e "s|^[^ \t]* $unpack_directory \(.*\) .* . .|\1|p" /proc/mounts)"
+			fs="$($bb sed -n -e "s|^[^ \t]* $unpack_directory \(.*\) .* . .|\1|p" /proc/mounts)"
 			if [ ${#fs} -eq 0 ]; then
-				fs="$(sed -n -e "s|^[^ \t]* $(get_mountpoint $unpack_directory) \(.*\) .* . .|\1|p" /proc/mounts)"
+				fs="$($bb sed -n -e "s|^[^ \t]* $(get_mountpoint $unpack_directory) \(.*\) .* . .|\1|p" /proc/mounts)"
 			fi
 			index_of_item $fs "$nativefilesystems" 1>/dev/null
 			ind=$?
@@ -3023,17 +3029,17 @@ if [ $rc -eq 0 ]; then
 				debug "modfs: using loopback device with ext3 image for unpacking"
 				# we'll use a loopback device to mount our ext3 image
 				progress 1 140
-				unpack_directory="$unpack_directory/$(date +%s)"
-				mkdir -p "$unpack_directory"
-				echo "rm -r $unpack_directory" >>$tempfilelist
-				gunzip -c "$(filesdir)/$packedpartition" >"$unpack_directory/loopback"
+				unpack_directory="$unpack_directory/$($bb date +%s)"
+				$bb mkdir -p "$unpack_directory"
+				echo "$bb rm -r $unpack_directory" >>$tempfilelist
+				$bb gunzip -c "$(filesdir)/$packedpartition" >"$unpack_directory/loopback"
 				rc=$?
 				if [ $rc -eq 0 ]; then
 					progress 3 96
 					progress 1 141
 					loopback_host="$unpack_directory/loopback"
 					tmp="$(get_temp_dir)"
-					mount -o loop $loopback_host $tmp
+					$bb mount -o loop $loopback_host $tmp
 					if [ $rc -eq 0 ]; then
 						progress 3 96
 						loopback_used=1
@@ -3052,9 +3058,9 @@ if [ $rc -eq 0 ]; then
 			else
 				debug "modfs: using a native filesystem for unpacking"
 				loopback_used=0
-				unpack_directory="$unpack_directory/$(date +%s)"
-				mkdir -p $unpack_directory
-				echo "rm -r $unpack_directory" >>$tempfilelist
+				unpack_directory="$unpack_directory/$($bb date +%s)"
+				$bb mkdir -p $unpack_directory
+				echo "$bb rm -r $unpack_directory" >>$tempfilelist
 			fi
 		fi
 	else
@@ -3124,7 +3130,7 @@ fi
 if [ $create_image_only -eq 1 ]; then
 	if [ $rc -eq 0 ]; then
 		progress 1 202 "$target_image_name"
-		cp -a "$unpack_directory/newroot.squashfs" "$target_image_name"
+		$bb cp -a "$unpack_directory/newroot.squashfs" "$target_image_name"
 		rc=$?
 		if [ $rc -eq 0 ]; then
 			progress 3 96
@@ -3201,12 +3207,12 @@ fi
 if [ $loopback_used -eq 1 ]; then
 	# unmount and remove loopback partition, if it was used
 	progress 1 142
-	umount "$unpack_directory"
+	$bb umount "$unpack_directory"
 	rc=$?
 	if [ $rc -eq 0 ]; then
 		progress 3 96
 		progress 1 143
-		rm "$loopback_host" 2>/dev/null
+		$bb rm "$loopback_host" 2>/dev/null
 		rc=$?
 		lbdir="${loopback_host%/loopback}"
 		[ x"$lbdir" != x"$loopback_host" ] && remove_directory "$lbdir"
