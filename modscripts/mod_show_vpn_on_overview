@@ -19,7 +19,7 @@ step=$4
 #
 rc=0
 check_filename="$rootdir/usr/www/$TARGET_BRANDING/home/home.lua"
-check_trigger="get_vpnConnections"
+check_trigger="get_vpn_connections"
 #
 # apply
 #
