@@ -247,7 +247,7 @@ get_temp_dir()
 {
 	local name="$tmpdirbase/$$_$($bb date +%s)"
 	$bb mkdir -p "$name"
-	echo "rm -r $name" >>$tempfilelist
+	echo "$bb rm -r $name" >>$tempfilelist
 	debug "get_temp_dir: directory=$name"
 	echo "$name"
 	return 0
@@ -261,7 +261,7 @@ get_temp_file()
 	local name="$1" dir out
 	dir="$(get_temp_dir)"
 	[ -z "$name" ] && out="$dir/$($bb date +%s)" || out="$dir/$name"
-	echo "rm $out" >>$tempfilelist
+	echo "$bb rm $out" >>$tempfilelist
 	debug "get_temp_file: file=$out"
 	echo "$out"
 	return 0
@@ -2763,7 +2763,7 @@ case $source in
 			fi
 			image_directory="$working_directory/$($bb date +%s)"
 			$bb mkdir -p "$image_directory"
-			echo "rm -r $image_directory" >>$tempfilelist
+			echo "$bb rm -r $image_directory" >>$tempfilelist
 			progress 1 132
 			extract_rootfs_from_firmware "$download_directory/$firmwarestoragename" "$image_directory/$rootfsname"
 			rc=$?
