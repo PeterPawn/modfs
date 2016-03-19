@@ -667,7 +667,7 @@ copy_wrapper_filesystem()
 						unpack_squashfs "$src" "$tmp" 2>&1 >/dev/null
 						rc=$?
 						if [ $rc -eq 0 ]; then
-							rmdir "$tmp/wrapperfs"
+						 	$bb rmdir "$tmp/wrapperfs"
 							$bb mv "$tmp/$squashfsdirname" "$tmp/wrapperfs"
 							rc=$?
 							$bb rm "$tmp/wrapperfs/$rootfsname"
@@ -2790,7 +2790,7 @@ case $source in
 						target="$working_directory/$rootfsname"
 					fi
 					progress 1 134
-					[ $rc -eq 0 ] && mv "$image_directory/$rootfsname" "$target"
+					[ $rc -eq 0 ] && $bb mv "$image_directory/$rootfsname" "$target"
 					rc=$?
 					if [ $rc -ne 0 ]; then
 						progress 3 97
