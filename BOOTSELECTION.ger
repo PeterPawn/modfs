@@ -126,7 +126,7 @@ seinerseits eigene "lokale Kommandos" kennt, aus denen er dann passende Kommando
 (entfernten) FTP-Server ableitet. Da der Client aber unsere Kommandos an den Server ohnehin 
 nicht versteht, senden wir diese in unserer Beispielsitzung mit dem "quote"-Kommando direkt
 an den Server. Wer gleich mit "nc" oder "socat" arbeitet, der muß zwar die Anmeldung "von
-Hand" machen ("user adam2", gefolgt von "pass adam2"), aber als Entschädigung darf er dann
+Hand" machen ("USER adam2", gefolgt von "PASS adam2"), aber als Entschädigung darf er dann
 wieder diese "quote"-Ansagen auslassen und die Kommandos direkt eingeben.
 
 Nun ist es sogar ein leichtes, dieses "Umschalten" der Variablen auch noch zu automatisieren,
