@@ -661,7 +661,7 @@ copy_wrapper_filesystem()
 				if [ $rc -ne 0 ]; then
 					# try to extract with unsquashfs3, if this is a 3.xx kernel based
 					# system without knowledge about SquashFS3 format while mounting
-					kernelversion=$(uname -r)
+					kernelversion=$($bb uname -r)
 					kernelversion=${kernelversion%%.*}
 					if [ $kernelversion -eq 3 -a x"$fstype" == x"squashfs3" ]; then
 						unpack_squashfs "$src" "$tmp" 2>&1 >/dev/null
@@ -1011,7 +1011,7 @@ execute_optional_modscript()
 				progress 3 174
 				uselang=en
 			fi
-			sleep 1
+		 	$bb sleep 1
 			desc="$($bb sed -n -e "/^# DESCRIPTION $uselang\$/=" "$script")"
 			if [ ${#desc} -eq 0 ]; then
 				desc="$($bb sed -n -e "/^# DESCRIPTION\$/=" "$script")"
@@ -1088,7 +1088,7 @@ modify_rootfs()
 	local target="$1" scripts="$2" rc=0 line lines lrc filelist script donelist tmpdir flags execute
 	tmpdir="$(get_temp_dir)"
 	# short stop to ensure an unique temporary directory name (contains the unix time)
-	sleep 1
+	$bb sleep 1
 	debug "modify_rootfs: starting, target=$target, scripts=$scripts"
 	FRITZOS_VERSION="$(get_target_system_version "$target")"
 	KERNEL_VERSION="$(get_target_kernel_version "$target")"
@@ -1159,7 +1159,7 @@ extract_rootfs_from_firmware()
 				if [ $rc -ne 0 ]; then
 					# try to extract with unsquashfs3, if this is a 3.xx kernel based
 					# system without knowledge about SquashFS3 format while mounting
-					kernelversion=$(uname -r)
+					kernelversion=$($bb uname -r)
 					kernelversion=${kernelversion%%.*}
 					if [ $kernelversion -eq 3 -a x"$fstype" == x"squashfs3" ]; then
 						unpack_squashfs "$tmp" "${target%/*}" "$rootfsname" 2>&1 >/dev/null
@@ -1275,7 +1275,7 @@ extract_rootfs_from_wrapper()
 			if [ $rc -ne 0 ]; then
 				# try to extract with unsquashfs3, if this is a 3.xx kernel based
 				# system without knowledge about SquashFS3 format while mounting
-				kernelversion=$(uname -r)
+				kernelversion=$($bb uname -r)
 				kernelversion=${kernelversion%%.*}
 				if [ $kernelversion -eq 3 -a x"$fstype" == x"squashfs3" ]; then
 					unpack_squashfs "$src" "${target%/*}" "$rootfsname" 2>&1 >/dev/null
