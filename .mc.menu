@@ -1,5 +1,5 @@
 = t d
-1       Compress the current directory to be published on yourfritz.de
+1	Compress the current directory to be published on yourfritz.de
 	version=$(cat .version)
 	Files="bin files locale modscripts README* LICENSE BOOTSELECTION* modfs"
 	busybox tar cf - $Files | gzip -c9 > "modfs-$version.tgz"
@@ -15,3 +15,9 @@
 	echo "Created (and linked) modfs version $version on yourfritz.de"
 	tar tvf modfs-$version.tgz
 
+2	Update modfs version timestamp
+	version="$(cat .version)"
+	# calling date here needs to use double percent signs to prevent mc variable evaluation
+	date="$(date +%%d%%m%%Y%%H%%M)"
+	sed -e "s|^modfs_version=.*|modfs_version=$version-$date|" -i modfs
+	echo "Updated version string to $version-$date"
