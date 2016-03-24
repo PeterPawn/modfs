@@ -159,7 +159,7 @@ nativefilesystems="tmpfs ext2 ext3 ext4 yaffs2"
 #
 # our "internal" constants
 #
-modfs_version=0.3.4-240320161743
+modfs_version=0.3.4-240320161905
 modfs_comment="please look at https://github.com/PeterPawn/modfs for further info"
 bindirname="bin"
 localedirname="locale"
@@ -2541,18 +2541,14 @@ shl="$bb sh"
 #
 ringbufferfile=$(eval echo $ringbufferfile)
 debugoutput=$(eval echo $debugoutput)
-if [ x"$MODFS_DEBUG" == x"1" ]; then
+if [ x"$MODFS_DEBUG" != x"0" ]; then
 	echo -n "Using debug mode " 1>&2
-	if [ x$MODFS_BUFSIZE != x ]; then
-		if [ $MODFS_BUFSIZE != 8 ]; then
-			debugfile="$(eval echo $ringbufferfile)"
-			$bb rm $debugfile 2>/dev/null
-			init_ringbuffer_file $debugfile $MODFS_BUFSIZE
-		fi
-	fi
+	DEBUG_BUFSIZE={$MODFS_BUFSIZE:-64}
+	debugfile="$(eval echo $ringbufferfile)"
+	$bb rm $debugfile 2>/dev/null
+	init_ringbuffer_file $debugfile $DEBUG_BUFSIZE
 	echo -e "\n" 1>&2
-else
-	MODFS_DEBUG=0
+	MODFS_DEBUG=1
 fi
 #
 # FRITZ!Box language environment setting
