@@ -69,10 +69,11 @@ Zeichenkette
 
 220 ADAM2 FTP Server ready
 
-enthalten. Sieht man diese, ist die Box im FTP-Modus und man kann mit der Anmeldung (die ist eher
-"pro forma", aber irgendjemand hielt das wohl (A) für notwendig und (B) für eine gute Idee. Mir
-ist allerdings bis heute noch nicht klar, was damit bezweckt wird ... ein echter Schutz vor
-unberechtigtem Zugriff kann es kaum sein, der dürfte ja dann nicht mit solchen "Standardwerten"
+enthalten. Sieht man diese, ist die Box im FTP-Modus und man kann mit der Anmeldung fortfahren.
+
+Die ist eher "pro forma", aber irgendjemand hielt das wohl (A) für notwendig und (B) für eine gute
+Idee. Mir ist allerdings bis heute noch nicht klar, was damit bezweckt wird ... ein echter Schutz 
+vor unberechtigtem Zugriff kann es kaum sein, der dürfte ja dann nicht mit solchen "Standardwerten"
 arbeiten.
 
 Der Einfachheit halber (und weil Windows-Benutzer meist etwas unbeholfener sind an dieser Stelle
