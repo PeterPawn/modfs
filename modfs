@@ -1,4 +1,5 @@
 #! /bin/sh
+# vim: set tabstop=4 shiftwidth=4 syntax=sh highlight=on
 ################################################################################
 #                                                                              #
 # an alternative approach to modify firmware images for AVM FRITZ!Box routers  #
