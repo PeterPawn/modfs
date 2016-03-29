@@ -1,0 +1,78 @@
+# MODFS_MODSCRIPT
+# SUPPORTS precheck postcheck install language(en,de)
+# NAME customize the original firmware with extension packages
+# DESCRIPTION en
+# search the system for custom images and initialize the contained services
+# DESCRIPTION de
+# Einbinden eigener Erweiterungspakete auf der Basis von Dateisystem-Images,
+# die beim Start gesucht und eingehangen werden, bevor dort hinterlegte  
+# Start-Skripte aufgerufen werden
+# EOH
+#
+# process parameters
+#
+language=$1
+rootdir=$2
+mode=$3
+step=$4
+[ ${#4} -eq 0 ] && exit 59 # invalid call
+#
+# variables
+#
+rc=0
+check_filename="$rootdir/etc/init.d/E99-custom"
+#
+# apply
+#
+copy_file()
+{
+	cp -a "files/E99-custom" "$check_filename"
+}
+patch_file()
+{
+	sed -e "\$s|^\(exit.*\)|#\1|" -i "$rootdir/etc/init.d/rc.tail.sh"
+}
+#
+# execute steps
+#
+case $step in
+	precheck)
+		if [ -e "$check_filename" ]; then
+			case "$language" in
+				de)
+					echo "Die Modifikation wurde bereits angewendet." 1>&2
+					;;
+				*)
+					echo "The modification is already present." 1>&2
+					;;
+			esac
+			rc=1
+		else
+			rc=0
+		fi
+		;;
+	postcheck)
+		if [ ! -e "$check_filename" ]; then
+			case "$language" in
+				de)
+					echo "Die Modifikation war nicht erfolgreich." 1>&2
+					;;
+				*)
+					echo "The new startup file cannot be found." 1>&2
+					;;
+			esac
+			rc=1
+		else
+			rc=0
+		fi
+		;;
+	install)
+		patch_file
+		copy_file
+		rc=0
+		;;
+	*)
+		rc=59
+		;;
+esac
+exit $rc
