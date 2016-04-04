@@ -31,7 +31,6 @@
 	cp modfs-$version.tgz /ssh/source/srv/www/vhosts/www.yourfritz.de/
 	opwd=$(pwd)
 	cd /ssh/source/srv/www/vhosts/www.yourfritz.de
-	rm modfs.tgz
 	cp modfs-$version.tgz 7490/
 	chmod 644 modfs-$version.tgz 7490/modfs-$version.tgz
 	chown wwwrun:www modfs-$version.tgz 7490/modfs-$version.tgz
