@@ -160,7 +160,7 @@ nativefilesystems="tmpfs ext2 ext3 ext4 yaffs2"
 #
 # our "internal" constants
 #
-modfs_version=0.3.5-020420161956
+modfs_version=0.3.5-040420161758
 modfs_comment="please look at https://github.com/PeterPawn/modfs for further info"
 bindirname="bin"
 localedirname="locale"
@@ -680,6 +680,12 @@ copy_wrapper_filesystem()
 				$bb tar -c -O -C $tmp/wrapperfs --exclude=$rootfsname . | $bb tar -x -C $tmp/yaffs
 				rc=$?
 				debug "copy_wrapper_filesystem: copying done, rc=$rc"
+				if [ -d add_to_wrapper ]; then
+					debug "copy_wrapper_filesystem: subdirectory add_to_wrapper exists, copying content to the new wrapper partition"
+					cp -a add_to_wrapper/* $tmp/wrapperfs/
+					rc=$?
+					debug "copy_wrapper_filesystem: add_to_wrapper copied, rc=$rc"
+				fi
 				[ $mrc -eq 0 ] && $bb umount $tmp/wrapperfs
 				$bb umount $tmp/yaffs
 				remove_directory "$tmp"
