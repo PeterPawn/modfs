@@ -136,7 +136,7 @@
 # to /dev/console                                                               #
 #                                                                               #
 #################################################################################
-exec 2>>/var/tmp/E99-custom.error 1>>/var/tmp/E99-custom.out
+exec 1>>/var/tmp/E99-custom.out 2>&1
 #################################################################################
 #                                                                               #
 # set some initial variables to ensure a defined state                          #
@@ -408,11 +408,11 @@ for p in $custom; do
 			;;
 		path)
 			custom_sources="$(get_list "$v")"
-			echo "Extension search path changed to '$custom_sources'" 1>&2
+			echo "Extension search path changed to '$custom_sources'" 
 			[ $? -ne 0 ] && rc=1
 			;;
 		normal)
-			echo "Starting customization, no 'custom' entry found in our command line" 1>&2
+			echo "Starting customization, no 'custom' entry found in our command line"
 			;;
 		*)
 			echo "Unknown keyword '$p' in 'custom' variable" 1>&2
@@ -434,19 +434,19 @@ for name in $(find $custom_sources -maxdepth 1 -name "*$custom_extension"); do
 	package="${package##*/}"
 	package="${package%%_*}"
 	if is_in_list "$package" "$ignore_list"; then
-		echo "Package '$package' found ($name), but it's in the ignore list." 1>&2
+		echo "Package '$package' found ($name), but it's in the ignore list." 
 	else
 		if [ -d $varbase/$package ]; then
 			if ! is_in_list "$package" "$packages"; then
-				echo "The package name '$package' cannot be used, there's a directory with this name in the stock firmware." 1>&2
+				echo "The package name '$package' cannot be used, there's a directory with this name in the stock firmware." 
 			else
-				echo "The package name '$package' is duplicate, only the first package with this name will be started." 1>&2
+				echo "The package name '$package' is duplicate, only the first package with this name will be started." 
 			fi
 		else
 			mkdir $varbase/$package
 			packages="$packages $package"
 			eval image_$package=$name
-			echo "Found package '$package' with image file '$name'." 1>&2
+			echo "Found package '$package' with image file '$name'."
 		fi
 	fi
 done
@@ -519,13 +519,13 @@ for p in $packages; do
 done
 #################################################################################
 #                                                                               #
-# finally we have to start our temporary shell file ... we use nohup command    #
-# here to create an instance, which continues to run after we've finished       #
+# finally we have to start our temporary shell file ... we use 'nohup' applet   #
+# here to create an instance, which is running as a detached process            #
 #                                                                               #
 #################################################################################
 echo "wait" >>$startscript
 chmod 555 $startscript
-nohup /bin/busybox sh -c "$startscript >/dev/console 2>&1" &
+nohup sh -c "$startscript >/tmp/E99-custom-startup.log 2>&1" 
 #################################################################################
 #                                                                               #
 # end of script                                                                 #
