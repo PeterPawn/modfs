@@ -63,7 +63,7 @@ patch_file()
 +# other partitions, only swap space (partition type 0x82)
 +# if other swap locations are also stopped, it's not a problem, because
 +# ALL storage devices will be stopped soon
-+[ x"$(sed -e "1d" /proc/swaps)" != x"" ] && (echo "Stopping all swap devices" >/dev/console;cat /proc/swaps >/dev/console;swapoff -a)
++[ x"$(sed -e "1d" /proc/swaps)" != x"" ] && (echo "Stopping all swap devices" >/dev/console;cat /proc/swaps >/dev/console;swapoff -a;cat /proc/swaps >/dev/console)
  /etc/hotplug/storage stop
  /etc/hotplug/aura stop
  /etc/init.d/rc.usbhost stop
