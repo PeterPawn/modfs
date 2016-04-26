@@ -142,4 +142,37 @@ Kunst ... das kostet halt nur alles Zeit und wäre ja sowas von großartig geeig
 Schritte", wenn jemand programmieren lernen will ... vielleicht findet sich ja jemand - an 
 Unterstützung bei Fragen soll es nicht scheitern.
 
+=============================================================================================
+
+Update 26.04.2016
+Unter der URL https://github.com/PeterPawn/YourFritz/blob/master/eva_tools kann man als 
+Linux-Benutzer ein paar Skript-Dateien laden, die einem die Umschaltung des Systems in einer
+FRITZ!Box abnehmen können. Dazu benötigt man die folgenden Dateien in einem gemeinsamen 
+Verzeichnis auf seinem Linux-System:
+
+https://github.com/PeterPawn/YourFritz/raw/master/eva_tools/eva_discover
+https://github.com/PeterPawn/YourFritz/raw/master/eva_tools/eva_switch_system
+https://github.com/PeterPawn/YourFritz/raw/master/helpers/yourfritz_helpers
+
+Anschließend kann man (bei ausgeschalteter FRITZ!Box - also bei ausgestecktem Netzteil) das
+Kommando
+
+eva_switch_system <interface> <ip address>
+
+starten (vorausgesetzt, man hat das aktuelle Verzeichnis in der PATH-Variablen, sonst muß
+man den Aufruf von "eva_discover" in der Datei "eva_switch_system" noch anpassen). Der
+erste Parameter gibt den Namen des LAN-Interfaces an, an dem die FRITZ!Box gesucht werden
+soll und der zweite legt die IP-Adresse fest, die der Bootloader der FRITZ!Box benutzen
+soll. Hier kann man irgendeine beliebige IP-Adresse angeben, die zum eigenen LAN-Segment
+paßt ... man muß also nicht unbedingt seine Netzwerk-Interfaces auf irgendwelche Adressen
+aus 192.168.178.0/24 umstellen.
+
+Wenn das Kommando dann läuft (es wartet bis zu 120 Sekunden auf das "Erscheinen" der Box),
+wird die FRITZ!Box mit Strom versorgt und dann sollte innerhalb der nächsten fünf Sekunden
+die FRITZ!Box auch gefunden werden. Ist das der Fall, wird der Inhalt von "linux_fs_start"
+ausgelesen, angezeigt, der neue Wert ermittelt und gesetzt. Anschließend wird die FRITZ!Box
+neu gestartet und das Ergebnis der Kommunikation mit der FRITZ!Box in der Datei mit dem
+Namen "eva_switch_system.log" im aktuellen Verzeichnis abgelegt.
+
+Coming soon ... the same comfort for Windows users, based on some PowerShell scripts.
 
