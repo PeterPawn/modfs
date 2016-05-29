@@ -740,7 +740,7 @@ get_squashfs_endianess()
 	local endianess=0 endian sq_version
 	sq_version=$(get_squashfs_tools_version "$1")
 	debug "get_squashfs_endianess: using SquashFS version $sq_version"
-	endian=$(sq_unsquashfs -s "$1" 2>/dev/null | $bb sed -n -e "s/Found a valid \(big\|litte\) endian SQUASHFS.*/\1/p")
+	endian=$(sq_unsquashfs -s "$1" 2>/dev/null | $bb sed -n -e "s/Found a valid \(big\|little\) endian SQUASHFS.*/\1/p")
 	[ ${#endian} -gt 0 ] && [ x"$endian" == xlittle ] && endianess=1
 	debug "get_squashfs_endianess: $endian endian"
 	echo $endianess
