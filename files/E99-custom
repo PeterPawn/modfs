@@ -367,9 +367,9 @@ PKG_${package}_IMAGE_IS_VOLATILE="$tmpfs"
 EOT
 	if is_in_list "$package" "$debug_list"; then
 		lf="/tmp/${script##*/}"
-		echo "/bin/busybox env PKG_NAME=\"$package\" sh -x \"$script\" start >${lf}.out 2>${lf}.error &" >>$startscript
+		echo "/bin/busybox env PKG_NAME=\"$package\" sh -x \"$script\" \$1 >>${lf}.out 2>>${lf}.error &" >>$startscript
 	else
-		echo "/bin/busybox env PKG_NAME=\"$package\" sh \"$script\" start &" >>$startscript
+		echo "/bin/busybox env PKG_NAME=\"$package\" sh \"$script\" \$1 &" >>$startscript
 	fi
 }
 #################################################################################
@@ -519,13 +519,25 @@ for p in $packages; do
 done
 #################################################################################
 #                                                                               #
+# now we make our settings subsystem writable and start the monitor instance    #
+#                                                                               #
+#################################################################################
+if [ ${#YF_CONFIG_EXPORTS} -gt 0 ]; then
+	if [ -f $YF_CONFIG_EXPORTS ]; then
+		source $YF_CONFIG_EXPORTS
+		touch $YF_CONFIG_SEMAPHORE_FILE
+		delay -d 0 CCMON "$YF_CONFIG_MONITOR >$YF_CONFIG_LOGDIR/monitor.log 2>&1"
+	fi
+fi
+#################################################################################
+#                                                                               #
 # finally we have to start our temporary shell file ... we use 'nohup' applet   #
 # here to create an instance, which is running as a detached process            #
 #                                                                               #
 #################################################################################
 echo "wait" >>$startscript
 chmod 555 $startscript
-nohup sh -c "$startscript >/tmp/E99-custom-startup.log 2>&1" 
+$startscript start >/tmp/E99-custom-startup.log 2>&1 
 #################################################################################
 #                                                                               #
 # end of script                                                                 #
