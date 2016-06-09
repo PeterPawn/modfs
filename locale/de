@@ -140,4 +140,6 @@
 202=Die erzeugte Image-Datei wird nach '%s' kopiert ...
 203=\nSoll das alternative System beim nächsten Start verwendet werden?
 204=Das neue root-Dateisystem wurde erfolgreich in die inaktive Partition kopiert.\n\n%{bold}Beim nächsten Start der Box wird weiterhin das aktuell laufende System benutzt.\n%{normal}
+205=Die Signatur der Datei konnte nicht erfolgreich verifiziert werden oder die Datei wurde verändert.
+206=Überprüfen der Signatur der geladenen Datei ...
 222=Fehler beim Ermitteln des Dateisystemtyps der Image-Datei.

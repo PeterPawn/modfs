@@ -140,4 +140,6 @@
 202=Copying the created image file to '%s' ...
 203=\nDo you want to use the newly installed system at next reboot?
 204=The new root file system has been installed into the inactive Partition.\n\n%{bold}Your device will still use the running system at next restart.\n%{normal}
+205=Signature verification failed due to missing components or the firmware image was manipulated.
+206=Try to verify image file signature ...
 222=Error detecting filesystem on image file.
