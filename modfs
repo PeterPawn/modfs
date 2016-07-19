@@ -47,8 +47,8 @@ fsvarname="linux_fs_start"
 # hardware revision variable name
 hwrevname="HWRevision"
 # supported hardware revisions
-# 3370, 7362SL, 3390, 7490, 3490
-hwrevs_supported="175 185 193 203 212"
+# 3370, 7362SL, 3390, 7490, 3490, 7430
+hwrevs_supported="175 185 193 203 212 218"
 # AVM's binary to modify the NAND based partitions (busybox has it's own tools, but not ooB on a device with original firmware)
 update_kernel_binary="/sbin/update_kernel"
 # where is the wrapper mounted at the running system ?
@@ -89,6 +89,7 @@ ftp_path_185="/fritz.box/fritzbox.7490/firmware/deutsch/FRITZ.Box_7490.\$version
 ftp_path_193="/fritz.box/fritzbox.wlan_3390/firmware/deutsch/FRITZ.Box_3390.\$version.image"
 ftp_path_203="/fritz.box/fritzbox.7362_sl/firmware/deutsch/FRITZ.Box_7362_SL.\$version.image"
 ftp_path_212="/fritz.box/fritzbox.3490/firmware/deutsch/FRITZ.Box_3490.\$version.image"
+ftp_path_218="/fritz.box/fritzbox.7430/firmware/deutsch/FRITZ.Box_7430.\$version.image"
 # some more values which have to be changed, if AVM modifies its firmware
 #
 # 128MB ext3 image plus 5 percent
@@ -170,7 +171,7 @@ nativefilesystems="tmpfs ext2 ext3 ext4 yaffs2"
 #
 # our "internal" constants
 #
-modfs_version=0.3.5-090620161904
+modfs_version=0.3.5-190720161551
 modfs_comment="please look at https://github.com/PeterPawn/modfs for further info"
 bindirname="bin"
 localedirname="locale"
