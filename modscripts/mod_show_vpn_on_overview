@@ -131,9 +131,110 @@ patch_file()
  if config.WLAN.is_double_wlan then
  gDataRd.wlan24 = get_wlan24GHz(data)
  gDataRd.wlan5 = get_wlan5GHz(data)
+--- usr/www/$TARGET_BRANDING/home/home.lua
++++ usr/www/$TARGET_BRANDING/home/home.lua
+@@ -548,6 +548,90 @@
+ end
+ return d
+ end
++local function get_vpn_connections(data)
++    if (not config.VPN) then
++        -- VPN not supported
++        return nil
++    end
++    if (general.is_ip_client() or not general.is_expert()) then
++        -- wrong settings for VPN usage
++        return nil
++    end
++    local query="vpn:settings/connection/list(name,activated,state)"
++    local vpn_conns=core.listquery(query)
++    local connected_names=""
++    if (#vpn_conns == 0) then
++         -- no VPN connection defined
++         return nil
++    end
++    vpn={}
++    vpn.title=[[{?577:732?}]]
++    vpn.link="shareVpn"
++    vpn.led="led_gray"
++    vpn.count_all=#vpn_conns
++    vpn.activated=0
++    vpn.connected=0
++    for i, conn in ipairs(vpn_conns) do
++        if conn.activated == "1" then
++            vpn.activated=vpn.activated + 1
++        end
++        if conn.state == "ready" then
++            if vpn.connected > 0 then
++                connected_names = connected_names..[[, ]]..conn.name
++            else
++                connected_names = conn.name
++                -- switch to green on first connected peer
++                vpn.led="led_green"
++            end
++            vpn.connected=vpn.connected + 1
++        end
++    end
++    if (vpn.count_all > 1) then
++        allconns=[[ Verbindungen gesamt]]
++    else
++        allconns=[[ Verbindung gesamt]]
++    end
++    if (vpn.activated < vpn.count_all) then
++        -- some connections are deactivated
++        if (vpn.connected < vpn.activated) then
++            -- at least one connection isn't established
++            if (vpn.connected > 0) then
++                -- at least one connection is established, one isn't it and another one is deactivated
++                if (vpn.activated ~= vpn.connected) then
++                    vpn.txt=vpn.connected..[[ verbunden (]]..connected_names..[[), ]]..vpn.activated..[[ aktiviert, ]]..vpn.count_all..allconns
++                else
++                    vpn.txt=vpn.connected..[[ verbunden (]]..connected_names..[[), ]]..vpn.count_all..allconns
++                end
++            else
++                -- no connection established, but at least one is active and another is deactivated
++                vpn.txt=[[nicht verbunden, ]]..vpn.activated..[[ aktiviert, ]]..vpn.count_all..allconns
++            end
++        else
++            -- all activated connections are established
++            if (vpn.connected > 0) then
++                vpn.txt=vpn.connected..[[ aktiviert und verbunden (]]..connected_names..[[), ]]..vpn.count_all..allconns
++            else
++                vpn.txt=[[nicht verbunden, ]]..vpn.activated..[[ aktiviert, ]]..vpn.count_all..allconns
++            end
++        end
++    else
++        -- all defined connections activated
++        if (vpn.connected > 0) then
++            -- at least on connection established
++            if (vpn.connected < vpn.count_all) then
++                -- at least one connections isn't established
++                vpn.txt=vpn.connected..[[ verbunden (]]..connected_names..[[), ]]..vpn.count_all..allconns..[[, alle aktiviert]]
++            else
++                -- all connections activated and established
++                vpn.txt=[[alle verbunden (]]..connected_names..[[)]]
++            end
++        else
++            -- all activated, none connected
++            vpn.txt=[[nicht verbunden, ]]..vpn.count_all..allconns..[[ vorhanden]]
++        end
++    end
++    return vpn
++end
+ local function unknown()
+ return [[ — ]]
+ end
+@@ -1371,6 +1455,7 @@
+ wan = get_wan(data),
+ lan = get_lan(data),
+ usb = get_usb(data),
++vpn = get_vpn_connections(data),
+ wlan24 = (config.WLAN.is_double_wlan and get_wlan24GHz(data)) or (not config.WLAN.is_double_wlan and get_wlan(data)) or nil,
+ wlan5 = (config.WLAN.is_double_wlan and get_wlan5GHz(data)) or nil,
+ smarthome= get_smarthome(data),
 --- usr/www/$TARGET_BRANDING/home/home.js
 +++ usr/www/$TARGET_BRANDING/home/home.js
-@@ -272,6 +272,22 @@
+@@ -297,6 +297,22 @@
  return item;
  }
  /*###############################################################*/
@@ -156,6 +257,22 @@ patch_file()
  /*------------------------ Onlinespiecher -----------------------*/
  /*###############################################################*/
  function add_webStorage(obj) {
+--- usr/www/$TARGET_BRANDING/home/home.js
++++ usr/www/$TARGET_BRANDING/home/home.js
+@@ -366,6 +382,11 @@
+ if (data.ipv6) {
+ /*Internet Ipv6*/
+ html2.add(list, create_MultilineItem(data.ipv6));
++anyEntry=true;
++}
++if (data.vpn) {
++/* VPN connections are present */
++html2.add(list, create_vpnConnections(data.vpn));
+ anyEntry=true;
+ }
+ if (data.fonnum) {
+--- usr/www/$TARGET_BRANDING/home/home.js
++++ usr/www/$TARGET_BRANDING/home/home.js
 @@ -336,6 +352,10 @@
  if (data.ipv6) {
  /*Internet Ipv6*/
