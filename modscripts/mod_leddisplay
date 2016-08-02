@@ -49,6 +49,20 @@ patch_file()
  local lnkTv = box.query("box:settings/iptv_url")
  pageData["liveTv"] = ("string" == type(lnkTv) and "non-emu" ~= lnkTv and "" ~= lnkTv) and {
  ["show"] = true,
+--- usr/www/$TARGET_BRANDING/menus/menu_data.lua
++++ usr/www/$TARGET_BRANDING/menus/menu_data.lua
+@@ -1273,6 +1273,11 @@
+ ["dev"] = true,
+ ["lua"] = "developer.lua"
+ } or nil,
++["led"] = {
++["show"] = true,
++["lua"] = "system/led_display.lua",
++["help"] = forLuaOnly and "hilfe_system_anzeige"
++} or nil,
+ ["liveTv"] = {
+ ["show"] = ("string" == type(data.lnkTv) and "non-emu" ~= data.lnkTv and "" ~= data.lnkTv),
+ ["lnk"] = data.lnkTv
 --- usr/www/$TARGET_BRANDING/system/led_display.lua
 +++ usr/www/$TARGET_BRANDING/system/led_display.lua
 @@ -10,19 +10,18 @@
