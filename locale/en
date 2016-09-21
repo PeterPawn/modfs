@@ -127,7 +127,8 @@
 189=Found a newer version (%{bold}%s%{normal}) at the FTP server.
 190=Unable to find a newer version than %s at the FTP server, update aborted.
 191=Error %d comparing version number '%s' with '%s', aborting.
-192=Do you want to copy the running system to the alternative partitions too?\n\nWarning: Your system will be restarted without any further questions, after the copy process completed.\n\nExecute the copy process now?
+#192=Do you want to copy the running system to the alternative partitions too?\n\nWarning: Your system will be restarted without any further questions, after the copy process completed.\n\nExecute the copy process now?
+192=Do you want to copy the running system to the alternative partitions too?
 193=\nDo you want to save the downloaded root image for later use?
 194=\nDo you want to undo the selection of the alternative system at next reboot?
 195=Extracting kernel image from firmware image ...

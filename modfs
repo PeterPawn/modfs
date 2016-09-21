@@ -132,7 +132,7 @@ nativefilesystems="tmpfs ext2 ext3 ext4 yaffs2"
 #  32 - different MD5 hashes for kernel MTDs
 #  33 - unable to find kernel MTD
 #  34 - unable to find alternative kernel MTD
-#  35 - missing linux_fs_start at environment
+#  35 - not used anymore, was missing linux_fs_start at environment
 #  36 - unsupported hardware revision
 #  37 - system modified already, restart needed
 #  38 - specified squashfs source file not found
@@ -290,7 +290,13 @@ debug()
 #
 # get next system index from environment
 #
-get_system_switch() { $bb sed -n -e "s/^$fsvarname\t\([01]\)/\1/p" $envpathname; }
+get_system_switch() 
+{ 
+	local fsvar
+	fsvar=$($bb sed -n -e "s/^$fsvarname\t\([01]\)/\1/p" $envpathname)
+	[ -z "$fsvar" ] && fsvar="0"
+	echo $fsvar
+}
 #
 # get hardware revision from environment (it has not to be a number !)
 #
@@ -2748,9 +2754,10 @@ if [ $prerc -eq 32 ]; then
 			echo -e "$(get_localized $lang $rc)" 1>&2
 		else
 			echo -e "$(get_localized $lang 183)" 1>&2
-			[ $MODFS_DEBUG -ne 1 ] && reboot
-			echo -e "Ready to reboot, but due to active debugging output exiting instead.\nCheck debug output and reboot manually." 1>&2
-			exit 183
+			prerc=0
+#			[ $MODFS_DEBUG -ne 1 ] && reboot
+#			echo -e "Ready to reboot, but due to active debugging output exiting instead.\nCheck debug output and reboot manually." 1>&2
+#			exit 183
 		fi
 	fi
 fi

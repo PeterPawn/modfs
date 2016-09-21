@@ -127,7 +127,8 @@
 189=Es wurde eine neuere Version (%{bold}%s%{normal}) auf dem FTP-Server gefunden.
 190=Es wurde keine neuere Version als %s auf dem FTP-Server gefunden, Abbruch.
 191=Fehler %d bei Vergleich der Versionnummer '%s' mit '%s', Abbruch.
-192=Soll das laufende System in die inaktiven Partitionen kopiert werden?\n\nAchtung: Nachdem der Kopiervorgang abgeschlossen ist, wird die Box ohne weitere\nNachfrage neu gestartet.\n\nSoll der Kopiervorgang ausgeführt werden?
+#192=Soll das laufende System in die inaktiven Partitionen kopiert werden?\n\nAchtung: Nachdem der Kopiervorgang abgeschlossen ist, wird die Box ohne weitere\nNachfrage neu gestartet.\n\nSoll der Kopiervorgang ausgeführt werden?
+192=Soll das laufende System in die inaktiven Partitionen kopiert werden?
 193=\nSoll das extrahierte root-Dateisystem für die wiederholte Verwendung aufbewahrt werden?
 194=\nSoll die Auswahl des alternativen Systems beim nächsten Start der Box rückgängig gemacht werden?
 195=Extrahieren des neuen Kernel-Images aus dem Firmware-Image ...
