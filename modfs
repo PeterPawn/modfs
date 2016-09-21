@@ -1409,14 +1409,16 @@ download_firmware()
 #
 try_to_check_integrity()
 {
-	local target="$1" rc=205
+	local target="$1" rc=205 opwd
 	debug "try_to_check_integrity: target=$target"
 	progress 1 206
 	if [ -x $(bindir)/check_image_signature ]; then
-		$(bindir)/check_image_signature check
+		opwd="$($bb pwd)"
+		cd "$(bindir)"
+		./check_image_signature check
 		rc=$?
 		if [ $rc -eq 0 ]; then
-			$(bindir)/check_image_signature verify "$target"
+			./check_image_signature verify "$target"
 			rc=$?
 			if [ $rc -eq 0 ]; then
 				progress 3 96
@@ -1432,6 +1434,7 @@ try_to_check_integrity()
 			debug "try_to_check_integrity: some components are missing, unable to verify signature"
 			rc=0
 		fi
+		cd "$opwd"
 	else
 		progress 3 95
 		debug "try_to_check_integrity: script is not present"
