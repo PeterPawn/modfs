@@ -1415,7 +1415,6 @@ try_to_check_integrity()
 	if [ -x $(bindir)/check_image_signature ]; then
 		opwd="$($bb pwd)"
 		cd "$(bindir)"
-		export PATH=$(bindir):$PATH
 		check_image_signature check
 		rc=$?
 		if [ $rc -eq 0 ]; then
@@ -2612,6 +2611,13 @@ scriptname="${scriptfile##*/}"
 # switch to our own version of Busybox
 bb="$(bindir)/busybox"
 shl="$bb sh"
+if [ x"$MODFS_RUN_SHELL" != x"1" ]; then
+	export PATH=$(bindir)
+	export MODFS_RUN_SHELL=1
+	echo "respawn script with custom BusyBox shell" 1>&2
+	$shl $0 $*
+	exit $?
+fi
 #
 # check debug settings and initialize ring buffer, if necessary
 #
@@ -2653,6 +2659,7 @@ loopback_used=0
 squashfs_blocksize=0
 squashfs_endianess=0
 rc=0
+debug "modfs: search path is $PATH"
 #
 # we'll store an unlink command for all temporary directories and files here and remove it, if the target is deleted elsewhere
 #
