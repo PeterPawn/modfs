@@ -183,7 +183,7 @@ read_box_key()
 	fi
 	if [ $found -ne 0 ]; then # try to use the certificate to get the public key
 		echo -en "Check \x1B[1mx509\x1B[0m command ... " 1>&2
-		echo "" | openssl x509 2>&1 | grep -q '^unable to load certificate' 2>/dev/null 1>&2
+		echo "" | openssl x509 2>&1 | grep -v "WARNING: can't open config file:" | grep -q '^unable to load certificate' 2>/dev/null 1>&2
 		rc=$?
 		if [ $rc -eq 0 ]; then
 			show_ok 
@@ -336,7 +336,7 @@ fi
 show_version
 [ $? -ne 0 ] && exit 32
 echo -en "Check \x1B[1mdgst\x1B[0m command ... " 1>&2
-echo "" | openssl dgst 2>&1 | grep -q '^(stdin)=' 2>/dev/null 1>&2
+echo "" | openssl dgst 2>&1 | grep -v "WARNING: can't open config file:" | grep -q '^(stdin)=' 2>/dev/null 1>&2
 rc=$?
 if [ $rc -eq 0 ]; then
 	show_ok 
@@ -345,7 +345,7 @@ else
 	exit 33
 fi
 echo -en "Check \x1B[1mrsautl\x1B[0m command ... " 1>&2
-echo "" | openssl rsautl 2>&1 | grep -q '^no keyfile specified' 2>/dev/null 1>&2
+echo "" | openssl rsautl 2>&1 | grep -v "WARNING: can't open config file:" | grep -q '^no keyfile specified' 2>/dev/null 1>&2
 rc=$?
 if [ $rc -eq 0 ]; then
 	show_ok 
@@ -558,7 +558,7 @@ while read line; do
 	eval $line
 	echo -en "Checking the public key from \x1B[1m$SRC\x1B[0m ... " 1>&2
 	modulus_to_der $MOD $EXP >"$tmp/pubkey.der"
-	output="$(openssl rsautl -verify -pubin -inkey "$tmp/pubkey.der" -keyform der -asn1parse -in "$tmp/var/signature" 2>&1)"
+	output="$(openssl rsautl -verify -pubin -inkey "$tmp/pubkey.der" -keyform der -asn1parse -in "$tmp/var/signature" 2>&1 | grep -v "WARNING: can't open config file:")"
 	rc=$?
 	if [ $rc -eq 0 ]; then
 		key_found=1
@@ -574,7 +574,7 @@ while read line; do
 				fi
 			done
 			if [ $valid_algo -eq 1 ]; then
-				echo "" | openssl dgst -$algo 2>&1 2>/dev/null 1>&2
+				echo "" | openssl dgst -$algo 2>/dev/null 1>&2
 				rc=$?
 				if [ $rc -eq 0 ]; then
 					show_ok
