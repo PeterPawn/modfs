@@ -183,7 +183,7 @@ read_box_key()
 	fi
 	if [ $found -ne 0 ]; then # try to use the certificate to get the public key
 		echo -en "Check \x1B[1mx509\x1B[0m command ... " 1>&2
-		echo "" | openssl x509 2>&1 | grep -v "WARNING: can't open config file:" | grep -q '^unable to load certificate' 2>/dev/null 1>&2
+		echo "" | openssl x509 2>&1 | grep -q '^unable to load certificate' 2>/dev/null 1>&2
 		rc=$?
 		if [ $rc -eq 0 ]; then
 			show_ok 
@@ -330,13 +330,26 @@ if ! [ -f "$image_file" ]; then
 fi
 ####################################################################################
 #                                                                                  #
+# prepare a temporary directory and cleanup on exit                                #
+#                                                                                  #
+####################################################################################
+tmp=$(mktemp -d)
+[ $? -eq 127 ] && tmp="/tmp/tmp.$(date +%s).$$" && mkdir -p "$tmp"
+trap "rm -r \"$tmp\"" EXIT HUP INT
+####################################################################################
+#                                                                                  #
 # check OpenSSL presence and version                                               #
 #                                                                                  #
 ####################################################################################
 show_version
 [ $? -ne 0 ] && exit 32
+cnf="$(openssl version 2>&1 | sed -n -e "s|WARNING: can't open config file: \(.*\)\$|\1|p")"
+if [ -n "$cnf" ]; then # configuration file missing
+	touch $tmp/openssl.cnf
+	export OPENSSL_CONF=$tmp/openssl.cnf
+fi
 echo -en "Check \x1B[1mdgst\x1B[0m command ... " 1>&2
-echo "" | openssl dgst 2>&1 | grep -v "WARNING: can't open config file:" | grep -q '^(stdin)=' 2>/dev/null 1>&2
+echo "" | openssl dgst 2>&1 | grep -q '^(stdin)=' 2>/dev/null 1>&2
 rc=$?
 if [ $rc -eq 0 ]; then
 	show_ok 
@@ -345,7 +358,7 @@ else
 	exit 33
 fi
 echo -en "Check \x1B[1mrsautl\x1B[0m command ... " 1>&2
-echo "" | openssl rsautl 2>&1 | grep -v "WARNING: can't open config file:" | grep -q '^no keyfile specified' 2>/dev/null 1>&2
+echo "" | openssl rsautl 2>&1 | grep -q '^no keyfile specified' 2>/dev/null 1>&2
 rc=$?
 if [ $rc -eq 0 ]; then
 	show_ok 
@@ -353,14 +366,6 @@ else
 	show_error
 	exit 34
 fi
-####################################################################################
-#                                                                                  #
-# prepare a temporary directory and cleanup on exit                                #
-#                                                                                  #
-####################################################################################
-tmp=$(mktemp -d)
-[ $? -eq 127 ] && tmp="/tmp/tmp.$(date +%s).$$" && mkdir -p "$tmp"
-trap "rm -r \"$tmp\"" EXIT HUP INT
 ####################################################################################
 #                                                                                  #
 # If the signature isn't the last file (we've checked the length already), we have #
@@ -558,7 +563,7 @@ while read line; do
 	eval $line
 	echo -en "Checking the public key from \x1B[1m$SRC\x1B[0m ... " 1>&2
 	modulus_to_der $MOD $EXP >"$tmp/pubkey.der"
-	output="$(openssl rsautl -verify -pubin -inkey "$tmp/pubkey.der" -keyform der -asn1parse -in "$tmp/var/signature" 2>&1 | grep -v "WARNING: can't open config file:")"
+	output="$(openssl rsautl -verify -pubin -inkey "$tmp/pubkey.der" -keyform der -asn1parse -in "$tmp/var/signature" 2>&1)"
 	rc=$?
 	if [ $rc -eq 0 ]; then
 		key_found=1
@@ -574,7 +579,7 @@ while read line; do
 				fi
 			done
 			if [ $valid_algo -eq 1 ]; then
-				echo "" | openssl dgst -$algo 2>/dev/null 1>&2
+				echo "" | openssl dgst -$algo 2>&1 2>/dev/null 1>&2
 				rc=$?
 				if [ $rc -eq 0 ]; then
 					show_ok
