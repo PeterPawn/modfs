@@ -1416,10 +1416,10 @@ try_to_check_integrity()
 		opwd="$($bb pwd)"
 		cd "$(bindir)"
 		export PATH=$(bindir):$PATH
-		./check_image_signature check
+		check_image_signature check
 		rc=$?
 		if [ $rc -eq 0 ]; then
-			./check_image_signature verify "$target"
+			check_image_signature verify "$target"
 			rc=$?
 			if [ $rc -eq 0 ]; then
 				progress 3 96
