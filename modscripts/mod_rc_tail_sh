@@ -62,7 +62,7 @@ case $step in
 		else
 			tmpdir=/var/tmp/${0##*/}_$$
 			mkdir -p "$tmpdir"
-			mkconfigfile "$tmpdir/tffs" $minor
+			mknod "$tmpdir/tffs" c $(sed -n -e 's|\([0-9]*\) tffs|\1|p' /proc/devices) $minor
 			cat "$tmpdir/tffs" >"$tmpdir/content" 2>/dev/null
 			if [ ! -s "$tmpdir/content" ]; then
 				case "$language" in
