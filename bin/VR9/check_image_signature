@@ -33,12 +33,12 @@ if [ x"$1" == x"check" ]; then
 # check OpenSSL presence and version                                               #
 #                                                                                  #
 ####################################################################################
-	if [ -x ./openssl ]; then
-		./openssl version 2>/dev/null 1>&2
+	if [ -x openssl ]; then
+		openssl version 2>/dev/null 1>&2
 		if [ $? -ne 0 ]; then
 			exit 6
 		else
-			if [ -x ./check_signed_image ]; then
+			if [ -x check_signed_image ]; then
 				exit 0
 			else
 				exit 7
@@ -54,7 +54,7 @@ elif [ x"$1" == x"verify" ]; then
 	if ! [ -f "$2" ]; then
 		exit 4
 	else
-		./check_signed_image "$2" -b 2>/dev/null 1>&2
+		check_signed_image "$2" -b 2>/dev/null 1>&2
 		if [ $? -ne 0 ]; then
 			exit 1
 		else
