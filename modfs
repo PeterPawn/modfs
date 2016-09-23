@@ -171,7 +171,7 @@ nativefilesystems="tmpfs ext2 ext3 ext4 yaffs2"
 #
 # our "internal" constants
 #
-modfs_version=0.3.5-220920162002
+modfs_version=0.3.5-230920160936
 modfs_comment="please look at https://github.com/PeterPawn/modfs for further info"
 bindirname="bin"
 localedirname="locale"
@@ -1415,10 +1415,10 @@ try_to_check_integrity()
 	if [ -x $(bindir)/check_image_signature ]; then
 		opwd="$($bb pwd)"
 		cd "$(bindir)"
-		check_image_signature check
+		$shl check_image_signature check
 		rc=$?
 		if [ $rc -eq 0 ]; then
-			check_image_signature verify "$target"
+			$shl check_image_signature verify "$target"
 			rc=$?
 			if [ $rc -eq 0 ]; then
 				progress 3 96
@@ -2614,9 +2614,14 @@ shl="$bb sh"
 if [ x"$MODFS_RUN_SHELL" != x"1" ]; then
 	export PATH=$(bindir)
 	export MODFS_RUN_SHELL=1
-	echo "respawn script with custom BusyBox shell" 1>&2
+	ln -s $bb /var/tmp/modfs_sh
+	export SHELL=/var/tmp/modfs_sh
+	echo "respawn script with custom BusyBox shell, SHLVL=$SHLVL" 1>&2
+	echo "$shl $0 $*" 1>&2
 	$shl $0 $*
-	exit $?
+	rc=$?
+	rm /var/tmp/modfs_sh
+	exit $rc
 fi
 #
 # check debug settings and initialize ring buffer, if necessary
@@ -2659,7 +2664,10 @@ loopback_used=0
 squashfs_blocksize=0
 squashfs_endianess=0
 rc=0
-debug "modfs: search path is $PATH"
+debug "modfs: PATH=$PATH"
+debug "modfs: SHELL=$SHELL"
+debug "modfs: SHLVL=$SHLVL"
+debug "modfs: BusyBox: $(busybox | sed -n -e '1p')"
 #
 # we'll store an unlink command for all temporary directories and files here and remove it, if the target is deleted elsewhere
 #
