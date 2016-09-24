@@ -1,4 +1,10 @@
 check_signed_image diff
 check_image_signature diff
 wrap_script diff
+busybox binary
+openssl binary
+mke2fs binary
+e2fsck binary
+mksquash* binary
+unsquash* binary
 
