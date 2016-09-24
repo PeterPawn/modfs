@@ -171,7 +171,7 @@ nativefilesystems="tmpfs ext2 ext3 ext4 yaffs2"
 #
 # our "internal" constants
 #
-modfs_version=0.3.5-230920160936
+modfs_version=0.3.5-240920160241
 modfs_comment="please look at https://github.com/PeterPawn/modfs for further info"
 bindirname="bin"
 localedirname="locale"
@@ -180,6 +180,7 @@ scriptdirname="modscripts"
 tmpdirbase="/var/tmp"
 packedpartition="128MB_ext3.gz"
 squashfsdirname="squashfs-root"
+scriptwrapper="wrap_script"
 showprogress=0
 msgtext_clearscreen="\x1B[2J\x1B[0;0H"
 msgtext_normal="\x1B[0m"
@@ -917,7 +918,7 @@ execute_modscript()
 			opt=$(is_supported 'precheck' "$supports")
 			if [ $?	-eq 1 ]; then
 				# execute pre check
-				msg="$(eval export $MODSCRIPT_ENV;$shl $script $uselang $rootdir $mode precheck 2>&1)"
+				msg="$(eval export $MODSCRIPT_ENV;$shl $scriptwrapper $script $uselang $rootdir $mode precheck 2>&1)"
 				rc=$?
 				if [ $rc -gt 0 ]; then
 					progress 3 177 $rc
@@ -931,7 +932,7 @@ execute_modscript()
 			fi
 			if [ $rc -eq 0 ]; then
 				progress 1 178
-				msg="$(eval export $MODSCRIPT_ENV;$shl $script $uselang $rootdir $mode install 2>&1)"
+				msg="$(eval export $MODSCRIPT_ENV;$shl $scriptwrapper $script $uselang $rootdir $mode install 2>&1)"
 				rc=$?
 				if [ $rc -gt 0 ]; then
 					progress 3 177 $rc
@@ -943,7 +944,7 @@ execute_modscript()
 					opt=$(is_supported 'postcheck' "$supports")
 					if [ $?	-eq 1 ]; then
 						# execute post check
-						msg="$(eval export $MODSCRIPT_ENV;$shl $script $uselang $rootdir $mode postcheck 2>&1)"
+						msg="$(eval export $MODSCRIPT_ENV;$shl $scriptwrapper $script $uselang $rootdir $mode postcheck 2>&1)"
 						rc=$?
 						if [ $rc -gt 0 ]; then
 							progress 3 177 $rc
@@ -1415,10 +1416,10 @@ try_to_check_integrity()
 	if [ -x $(bindir)/check_image_signature ]; then
 		opwd="$($bb pwd)"
 		cd "$(bindir)"
-		$shl check_image_signature check
+		$shl $scriptwrapper check_image_signature check
 		rc=$?
 		if [ $rc -eq 0 ]; then
-			$shl check_image_signature verify "$target"
+			$shl $scriptwrapper check_image_signature verify "$target"
 			rc=$?
 			if [ $rc -eq 0 ]; then
 				progress 3 96
@@ -2614,13 +2615,17 @@ shl="$bb sh"
 if [ x"$MODFS_RUN_SHELL" != x"1" ]; then
 	export PATH=$(bindir)
 	export MODFS_RUN_SHELL=1
-	ln -s $bb /var/tmp/modfs_sh
-	export SHELL=/var/tmp/modfs_sh
+	mkdir /var/tmp/modfs
+	ln -s $bb /var/tmp/modfs/sh
+	export SHELL=/var/tmp/modfs/sh
 	echo "respawn script with custom BusyBox shell, SHLVL=$SHLVL" 1>&2
+	if [ x"$MODFS_DEBUG_SHELL" == x"1" ]; then
+		[ -f /var/tmp/modfs_debug_scripts.log ] && rm /var/tmp/modfs_debug_scripts.log 2>/dev/null
+	fi
 	echo "$shl $0 $*" 1>&2
 	$shl $0 $*
 	rc=$?
-	rm /var/tmp/modfs_sh
+	rm -r /var/tmp/modfs
 	exit $rc
 fi
 #
@@ -2758,6 +2763,7 @@ else
 		no_sigcheck=1
 		debug "modfs: no_sigcheck=1 requested"
 	fi
+	scriptwrapper="$(bindir)/$scriptwrapper"
 fi
 #
 # check prerequisites first, any further action depends on them

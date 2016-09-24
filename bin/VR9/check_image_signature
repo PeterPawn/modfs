@@ -25,7 +25,7 @@ avm_default_files="/etc/avm_firmware_public_key[1-9] plugin_global_key.pem"
 #                                                                                  #
 ####################################################################################
 if [ -z "$1" ]; then
-		exit 2
+	exit 2
 fi
 if [ x"$1" == x"check" ]; then
 ####################################################################################
@@ -54,7 +54,14 @@ elif [ x"$1" == x"verify" ]; then
 	if ! [ -f "$2" ]; then
 		exit 4
 	else
-		check_signed_image "$2" -b 2>/dev/null 1>&2
+		if [ x"$MODFS_DEBUG_SHELL" == x"1" ]; then
+			debug="-x"
+			debuglog=/var/tmp/modfs_debug_scripts.log
+		else
+			debug=""
+			debuglog=/dev/null
+		fi
+		$SHELL $debug check_signed_image "$2" -b 2>>$debuglog 1>&2
 		if [ $? -ne 0 ]; then
 			exit 1
 		else
