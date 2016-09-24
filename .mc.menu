@@ -3,7 +3,7 @@
 	version=$(cat .version)
 	Files="bin files locale modscripts README* LICENSE BOOTSELECTION* modfs"
 	chmod o-x modscripts/*
-	busybox tar cf - $Files | gzip -c9 > "modfs-$version.tgz"
+	busybox tar -c --exclude=".git*" $Files | gzip -c9 > "modfs-$version.tgz"
 	cp modfs-$version.tgz /ssh/source/srv/www/vhosts/www.yourfritz.de/
 	opwd=$(pwd)
 	cd /ssh/source/srv/www/vhosts/www.yourfritz.de
@@ -27,7 +27,7 @@
 	version=$(cat .version)
 	Files="bin files locale modscripts README* LICENSE BOOTSELECTION* modfs"
 	chmod o-x modscripts/*
-	busybox tar cf - $Files | gzip -c9 > "modfs-$version.tgz"
+	busybox tar -c --exclude=".git*" $Files | gzip -c9 > "modfs-$version.tgz"
 	cp modfs-$version.tgz /ssh/source/srv/www/vhosts/www.yourfritz.de/
 	opwd=$(pwd)
 	cd /ssh/source/srv/www/vhosts/www.yourfritz.de
