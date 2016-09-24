@@ -1,4 +1,4 @@
-check_signed_image text eol=lf
-check_image_signature text eol=lf
-wrap_script text eol=lf
+check_signed_image diff
+check_image_signature diff
+wrap_script diff
 
