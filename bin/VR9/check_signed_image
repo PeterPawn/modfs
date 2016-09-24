@@ -330,6 +330,19 @@ if ! [ -f "$image_file" ]; then
 fi
 ####################################################################################
 #                                                                                  #
+# log some settings to be able to reproduce the same environment, invisible while  #
+# called without shell debug (-x)                                                  #
+#                                                                                  #
+####################################################################################
+# echo "SHELL=$SHELL" >/dev/null
+# echo "$(busybox | sed -n -e '1p')" >/dev/null
+# echo "PATH=$PATH" >/dev/null
+# echo "proc/self/exe=$(ls -l /proc/self/exe)" >/dev/null
+# echo "applets:" >/dev/null
+# busybox --list | while read applet; do echo "$applet" >/dev/null; done
+# eval "n=$(mktemp -d);[ -z \$n ] || rmdir \$n" >/dev/null
+####################################################################################
+#                                                                                  #
 # prepare a temporary directory and cleanup on exit                                #
 #                                                                                  #
 ####################################################################################
