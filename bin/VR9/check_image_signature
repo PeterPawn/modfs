@@ -5,13 +5,13 @@
 #                                                                                  #
 # rc   meaning                                                                     #
 #  0 - 'check' completed or 'verify' was successful                                #
-#  1 - 'verify' failed                                                             #
 #  2 - missing 1st parameter                                                       #
 #  3 - missing file name after 'verify' parameter                                  #
 #  4 - specified image file not found                                              #
 #  5 - invalid 1st parameter specified                                             #
 #  6 - 'openssl' binary missing                                                    #
 #  7 - 'check_signed_image' script missing                                         #
+#  128 + return code of 'check_signed_image' - 'verify' failed                     #
 #                                                                                  #
 ####################################################################################
 #                                                                                  #
@@ -62,8 +62,9 @@ elif [ x"$1" == x"verify" ]; then
 			debuglog=/dev/null
 		fi
 		$SHELL $debug check_signed_image "$2" -b 2>>$debuglog 1>&2
-		if [ $? -ne 0 ]; then
-			exit 1
+		rc=$?
+		if [ $rc -ne 0 ]; then
+			exit $(( rc + 128 ))
 		else
 			exit 0
 		fi
