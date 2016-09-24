@@ -171,7 +171,7 @@ nativefilesystems="tmpfs ext2 ext3 ext4 yaffs2"
 #
 # our "internal" constants
 #
-modfs_version=0.3.5-240920161012
+modfs_version=0.3.5-240920161048
 modfs_comment="please look at https://github.com/PeterPawn/modfs for further info"
 bindirname="bin"
 localedirname="locale"
@@ -2613,11 +2613,11 @@ scriptname="${scriptfile##*/}"
 bb="$(bindir)/busybox"
 shl="$bb sh"
 if [ x"$MODFS_RUN_SHELL" != x"1" ]; then
+	mkdir -p /var/run/modfs
 	ln -s $bb /var/run/modfs/sh
 	oldpath="$PATH"
 	export PATH=$(bindir)
 	export MODFS_RUN_SHELL=1
-	mkdir /var/run/modfs
 	export SHELL=/var/run/modfs/sh
 	echo "respawn script with custom BusyBox shell, SHLVL=$SHLVL" 1>&2
 	if [ x"$MODFS_DEBUG_SHELL" == x"1" ]; then
