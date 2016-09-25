@@ -9,7 +9,7 @@
 39=\nError extracting wrapper image from firmware image archive.
 40=\nUnable to mount the extracted wrapper image.
 41=\nUnable to copy root file system image from wrapper.
-42=\nUnable to download the firmware image for your version from manufacturers FTP server.
+42=\nUnable to download the firmware image for your version from manufacturers server.
 43=\nError downloading firmware image from manufacturer, resulting file size is 0.
 44=\nError copying kernel image to alternative partition.
 45=\nError copying wrapper file system content to alternative partition.
@@ -58,7 +58,7 @@
 118=%{warning} attention needed%{normal}
 119=Check free storage for unpacking firmware image ...
 120=You've decided to use the running system as basis for your new system. So your new system will\ninclude every modification already done to the running system. It's the obligation of each modscript to\nmake sure, that there are no duplicate changes which will result in an error.
-121=Downloading firmware image (version %s) from manufacturer's FTP server ...
+121=Downloading firmware image (version %s) from manufacturer's server ...
 122=There is more than one potential place for my working directory.
 123=The following mount points are available:
 124=%s - %s (filesystem %s) mounted at %s - free storage: %s %s
@@ -121,13 +121,12 @@
 181=no description available
 182=Do you want to apply the modification '%s' with the following description:\n%{bold}%s%{normal}\nChoose 'y' to apply or 'n' to skip.
 183=System copied, your device will be restarted now ...
-186=You've selected 'update' mode and therefore the new system's version has to\nbe greater than the running version to identify an update candidate\nat the FTP server.
+186=You've selected 'update' mode and a newer version is looked up from manufacturer's server.
 187=Unable to retrieve the latest version number, can't fulfill your 'update' request, terminating.
-188=Retrieving latest version number from FTP server ...
+188=Retrieving latest version number from manufacturer ...
 189=Found a newer version (%{bold}%s%{normal}) at the FTP server.
 190=Unable to find a newer version than %s at the FTP server, update aborted.
 191=Error %d comparing version number '%s' with '%s', aborting.
-#192=Do you want to copy the running system to the alternative partitions too?\n\nWarning: Your system will be restarted without any further questions, after the copy process completed.\n\nExecute the copy process now?
 192=Do you want to copy the running system to the alternative partitions too?
 193=\nDo you want to save the downloaded root image for later use?
 194=\nDo you want to undo the selection of the alternative system at next reboot?
@@ -143,4 +142,7 @@
 204=The new root file system has been installed into the inactive Partition.\n\n%{bold}Your device will still use the running system at next restart.\n%{normal}
 205=Signature verification failed due to missing components or the firmware image was manipulated.
 206=Try to verify image file signature ...
+207=Looking up download URL for version %s ... 
+208=No download source for version %s could be found.
+209=Error looking up download source for version %s, aborted.
 222=Error detecting filesystem on image file.

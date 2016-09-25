@@ -9,8 +9,8 @@
 39=\nBeim Extrahieren des 'äußeren Dateisystems' aus der FRITZ!OS-Datei ist ein Fehler aufgetreten.
 40=\nDas extrahierte 'äußere Dateisystem' kann nicht eingebunden werden.
 41=\nDie Vorlage für das neue Dateisystem kann nicht aus dem 'äußeren Dateisystem' kopiert werden.
-42=\nBeim Versuch des Downloads einer frischen Kopie der aktuellen Firmware vom\nFTP-Server des Herstellers ist ein Fehler aufgetreten.
-43=\nBeim Download einer frischen Kopie der Firmware vom FTP-Server ist ein Fehler\naufgetreten, die Größe der Download-Datei ist 0 Byte.
+42=\nBeim Versuch des Downloads einer frischen Kopie der aktuellen Firmware vom\nServer des Herstellers ist ein Fehler aufgetreten.
+43=\nBeim Download einer frischen Kopie der Firmware vom Hersteller ist ein Fehler\naufgetreten, die Größe der Download-Datei ist 0 Byte.
 44=\nBeim Kopieren des Kernels ist ein Fehler aufgetreten.
 45=\nBeim Kopieren des 'äußeren Dateisystems' ist ein Fehler aufgetreten.
 46=\nEin unbekannter Fehler (%d) ist beim Kopieren des System aufgetreten.
@@ -48,7 +48,7 @@
 108=Als Ausgangspunkt dieser Modifikationen wird ein SquashFS-Image benötigt.
 109=Dafür stehen drei Möglichkeiten zur Auswahl:
 110=%{normal}a - das root-Dateisystem des laufenden Systems benutzen
-111=b - ein neues root-Dateisystem aus einem Firmware-Download vom FTP-Server des Herstellers verwenden
+111=b - ein neues root-Dateisystem aus einem Firmware-Download vom Server des Herstellers verwenden
 112=c - ein an anderer Stelle im Dateisystem abgelegtes Image verwenden
 113=q - keine Änderungen vornehmen
 114=Bitte den Buchstaben des gewünschten Punktes eingeben :%{bold}
@@ -58,7 +58,7 @@
 118=%{warning} gesonderte Behandlung notwendig%{normal}
 119=Überprüfen des freien Speicherplatzes für das Auspacken des Dateisystems ...
 120=Als Quelle wird das root-Dateisystem des laufenden Systems verwendet, damit werden auch bereits vorhandene\nÄnderungen automatisch in das neue System übernommen. Für das Vermeiden doppelter Änderungen sind die\njeweiligen Skripte verantwortlich.
-121=Download eines aktuellen Firmware-Images vom FTP-Server des Herstellers ...
+121=Download eines Firmware-Images für Version %s vom Server des Herstellers ...
 122=Es gibt mehrere potentielle Arbeitsverzeichnisse auf verschiedenen Datenträgern bzw.\nin verschiedenen Partitionen.
 123=Die folgenden Arbeitsverzeichnisse stehen zur Auswahl:
 124=%s - %s (Dateisystem %s) eingebunden unter %s - freier Speicherplatz: %s %s
@@ -121,13 +121,12 @@
 181=keine Beschreibung vorhanden
 182=Soll die Modifikation '%s' mit folgender Beschreibung\n%{bold}%s%{normal}\nangewendet werden?
 183=System kopiert, das Gerät wird jetzt neu gestartet ...
-186=Die Auswahl des 'update'-Modus erfordert eine neuere Firmware-Version vom\nFTP-Server des Herstellers.
-187=Die neueste Versionsnummer auf dem FTP-Server kann nicht ermittelt werden, Abbruch.
-188=Ermitteln der neuesten Version durch Suche auf dem FTP-Server ...
-189=Es wurde eine neuere Version (%{bold}%s%{normal}) auf dem FTP-Server gefunden.
-190=Es wurde keine neuere Version als %s auf dem FTP-Server gefunden, Abbruch.
+186=Die Auswahl des 'update'-Modus erfordert eine neuere Firmware-Version vom Hersteller.
+187=Die neueste Versionsnummer konnte nicht ermittelt werden, Abbruch.
+188=Ermitteln der neuesten Version durch Abfrage beim Hersteller ...
+189=Es wurde eine neuere Version (%{bold}%s%{normal}) gefunden.
+190=Es wurde keine neuere Version als %s gefunden, Abbruch.
 191=Fehler %d bei Vergleich der Versionnummer '%s' mit '%s', Abbruch.
-#192=Soll das laufende System in die inaktiven Partitionen kopiert werden?\n\nAchtung: Nachdem der Kopiervorgang abgeschlossen ist, wird die Box ohne weitere\nNachfrage neu gestartet.\n\nSoll der Kopiervorgang ausgeführt werden?
 192=Soll das laufende System in die inaktiven Partitionen kopiert werden?
 193=\nSoll das extrahierte root-Dateisystem für die wiederholte Verwendung aufbewahrt werden?
 194=\nSoll die Auswahl des alternativen Systems beim nächsten Start der Box rückgängig gemacht werden?
@@ -143,4 +142,7 @@
 204=Das neue root-Dateisystem wurde erfolgreich in die inaktive Partition kopiert.\n\n%{bold}Beim nächsten Start der Box wird weiterhin das aktuell laufende System benutzt.\n%{normal}
 205=Die Signatur der Datei konnte nicht erfolgreich verifiziert werden oder die Datei wurde verändert.
 206=Überprüfen der Signatur der geladenen Datei ...
+207=Ermitteln der Download-URL für die Version %s ... 
+208=Es wurde keine Quelle für den Download der Version %s gefunden.
+209=Fehler beim Ermitteln einer Download-URL für die Version %s, Abbruch.
 222=Fehler beim Ermitteln des Dateisystemtyps der Image-Datei.
