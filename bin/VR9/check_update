@@ -22,9 +22,12 @@
 #                                                                                                     #
 # calling:                                                                                            #
 #                                                                                                     #
-# juis_check [-d|--debug]                                                                             #
+# check_update [-d|--debug] [-c|--current]                                                            #
 #                                                                                                     #
 # All box related settings will be read from the device, were're running on.                          #
+#                                                                                                     #
+# If '-c' is specified, the current version number will be decremented by one to search again for the #
+# current version.                                                                                    #
 #                                                                                                     #
 # If an error occurs, an exit code of 2 will be returned. If no newer version was found, the exit     #
 # code is set to 1 and only if a newer version was found, an exit code of 0 is used. In this case     #
@@ -77,31 +80,6 @@ jason_boxinfo()
 }
 #######################################################################################################
 #                                                                                                     #
-# make temporary directory or file, emulate 'mktemp' if it's missing                                  #
-#                                                                                                     #
-#######################################################################################################
-mktmp()
-{
-	local name="$(mktemp $*)"
-	if [ $? -eq 127 ]; then # mktemp is missing, emulation needed
-		local dir tmp="$TMP"
-		[ x"$1" == "-d" ] && dir=1 || dir=0
-		[ x"$1" == "-p" ] && tmp="$2"
-		[ x"$tmp" == x ] && tmp="/var/tmp"
-		name="$tmp/$(date +%s)_$$"
-		if [ $dir -eq 1 ]; then
-			if [ -d "$name" ]; then
-				name="$name_$(dd if=/dev/urandom bs=8 count=1 2>/dev/null | base64 | sed -e "s|[^A-Za-z0-9]*||g")"
-			fi
-			mkdir -p "$name" 2>/dev/null
-		else
-			touch $name 2>/dev/null
-		fi
-	fi
-	echo "$name"
-}
-#######################################################################################################
-#                                                                                                     #
 # check debug option                                                                                  #
 #                                                                                                     #
 #######################################################################################################
@@ -127,7 +105,7 @@ fi
 # prepare temporary directory and cleanup on exit                                                     #
 #                                                                                                     #
 #######################################################################################################
-td="$(mktmp -d)"
+td="$(mktemp -d)"
 trap 'rm -rf "$td" 2>/dev/null' EXIT INT HUP
 #######################################################################################################
 #                                                                                                     #
@@ -172,9 +150,9 @@ fi
 # prepare temporary files for the check request                                                       #
 #                                                                                                     #
 #######################################################################################################
-body="$(mktmp -p $td)"
-header="$(mktmp -p $td)"
-response="$(mktmp -p $td)"
+body="$(mktemp -p $td)"
+header="$(mktemp -p $td)"
+response="$(mktemp -p $td)"
 eval echo -ne "$bodyline_0" >>"$body"
 eval echo -ne "$bodyline_1" >>"$body"
 eval echo -ne "$bodyline_2" >>"$body"
@@ -221,7 +199,7 @@ fi
 # examine the response and show the result                                                            #
 #                                                                                                     #
 #######################################################################################################
-xmlresp="$(mktmp -p $td)"
+xmlresp="$(mktemp -p $td)"
 sed -n -e "\$p" "$response" >"$xmlresp"
 found="$(extract_xml "$xmlresp" "ns3" "Found")"
 [ x"$found" != x"true" ] && exit 1
