@@ -80,16 +80,6 @@ ringbufferfile="/var/.srb_\$scriptname"
 # our custom modscript selection file name
 custom_selection_file="custom_modscripts"
 #
-# the correct FTP download path is model and version dependent
-# one path entry is required for every supported hardware revision (ftp_path_${hwrev})
-#
-ftp_server="download.avm.de"
-ftp_path_175="/fritz.box/fritzbox.wlan_3370/firmware/deutsch/fritz.box_wlan_3370.\$version.image"
-ftp_path_185="/fritz.box/fritzbox.7490/firmware/deutsch/FRITZ.Box_7490.\$version.image"
-ftp_path_193="/fritz.box/fritzbox.wlan_3390/firmware/deutsch/FRITZ.Box_3390.\$version.image"
-ftp_path_203="/fritz.box/fritzbox.7362_sl/firmware/deutsch/FRITZ.Box_7362_SL.\$version.image"
-ftp_path_212="/fritz.box/fritzbox.3490/firmware/deutsch/FRITZ.Box_3490.\$version.image"
-ftp_path_218="/fritz.box/fritzbox.7430/firmware/deutsch/FRITZ.Box_7430.\$version.image"
 # some more values which have to be changed, if AVM modifies its firmware
 #
 # 128MB ext3 image plus 5 percent
@@ -171,7 +161,7 @@ nativefilesystems="tmpfs ext2 ext3 ext4 yaffs2"
 #
 # our "internal" constants
 #
-modfs_version=0.3.5-240920162108
+modfs_version=0.4.0-250920161556
 modfs_comment="please look at https://github.com/PeterPawn/modfs for further info"
 bindirname="bin"
 localedirname="locale"
@@ -855,6 +845,7 @@ get_target_system_version()
 	for var in version subversion date; do
 		eval "$($bb sed -n -e "s/^export FIRMWARE_$(uppercase $var)=\"\?\([^\"]*\)\"\?\$/$var=\"\1\"/p" "$rootdir/etc/version" | $bb sed -e "s/CONFIG_VERSION_MAJOR/version_major/")"
 	done
+	[ ${#subversion} -eq 0 ] && subversion="$($bb sed -n -e "/--project)/N;s|\n||p" "$rootdir/etc/version" | $bb sed -n -e "s|.*echo \(.*\)|\1|p")"
 	debug "get_target_system_version: version=\"$version\", subversion=\"$subversion\", date=\"$date\", rc=$rc"
 	echo "TARGET_SYSTEM_VERSION=\"$version\" TARGET_SYSTEM_SUBVERSION=\"$subversion\" TARGET_SYSTEM_DATE=\"$date\""
 }
@@ -1375,30 +1366,33 @@ extract_filesystem()
 #
 get_system_version()
 {
-	local vf="$1$versionfilename" version subversion
-	subversion=$($shl "$1$versionfilename" --subversion)
-	version=$($shl "$1$versionfilename" --version)
-	[ ${#subversion} -gt 0 ] && echo "$version$subversion" || echo "$version"
+	local rootdir="$1" version subversion date rc=0 var
+	version_major="$($bb sed -n -e "s/^export CONFIG_VERSION_MAJOR=\"\(.*\)\"\$/\1/p" "$rootdir/etc/init.d/rc.conf" | $bb sed -n -e "\$p")"
+	for var in version subversion date; do
+		eval "$($bb sed -n -e "s/^export FIRMWARE_$(uppercase $var)=\"\?\([^\"]*\)\"\?\$/$var=\"\1\"/p" "$rootdir/etc/version" | $bb sed -e "s/CONFIG_VERSION_MAJOR/version_major/")"
+	done
+	[ ${#subversion} -eq 0 ] && subversion="$($bb sed -n -e "/--project)/N;s|\n||p" "$rootdir/etc/version" | $bb sed -n -e "s|.*echo \(.*\)|-\1|p")"
+	debug "get_system_version: version=\"$version\", subversion=\"$subversion\", date=\"$date\", rc=$rc"
+	echo "${version}${subversion}"
 }
 #
 # download firmware file from manufacturer
 # $1 - target file name
+# $2 - source URL
 #
 download_firmware()
 {
-	local ftppath target="$1" version="$2" hwrev rc=0
-	debug "download_firmware: target=$target, version=$version"
-	hwrev="$(get_hardware_revision)"
-	eval ftppath="$(echo \$ftp_path_$hwrev)"
-	eval ftppath="$(echo $ftppath)"
-	debug "download_firmware: ftppath=$ftppath"
-	$bb ftpget $ftp_server "$target" "$ftppath" 2>/dev/null
+	local target="$1" source="$2" rc=0
+	debug "download_firmware: target=$target, source=$source"
+	$bb wget -q -O "$target" "$source" 2>/dev/null
 	rc=$?
 	if [ $rc -ne 0 ]; then
 		rc=42
 	else
 		if [ $($bb stat -c %s "$target") -eq 0 ]; then
 			rc=43
+		else
+			debug "download_firmware: $($bb stat -c %s "$target") bytes downloaded"
 		fi
 	fi
 	debug "download_firmware: exiting, rc=$rc"
@@ -2472,62 +2466,95 @@ get_working_directory()
 #
 # compare firmware versions
 #
-is_newer_version()
+# 0   - left is newer
+# 1   - left is equal
+# 2   - left is older
+# 4   - different models
+# 128 - invalid left or right version
+#
+compare_versions()
 {
-	local left="$1" right left_model left_major left_minor right_model right_major right_minor
-	right="$(get_system_version)"
+	local left="$1" right="$2" left_model left_major left_minor right_model right_major right_minor
 	eval "$(echo $left | $bb sed -n -e 's/\([0-9]\{1,3\}\)\.\([0-9]\{2\}\)\.\([0-9]\{2\}\)\(-[0-9]*\)\?/left_model=\1 left_major=\2 left_minor=\3 left_sub=\4/p')"
 	eval "$(echo $right | $bb sed -n -e 's/\([0-9]\{1,3\}\)\.\([0-9]\{2\}\)\.\([0-9]\{2\}\)\(-[0-9]*\)\?/right_model=\1 right_major=\2 right_minor=\3 right_sub=\4/p')"
-	debug "is_newer_version: left=$left, right=$right"
-	[ ${#left_model} -eq 0 -o ${#left_major} -eq 0 -o ${#left_minor} -eq 0 -o ${#right_model} -eq 0 -o ${#right_major} -eq 0 -o ${#right_minor} -eq 0 ] && return 2
-	[ $left_model -ne $right_model ] && return 3
-	[ $left_major -gt $right_major ] && return 0
+	debug "compare_version: left=$left, right=$right"
+	[ ${#left_model} -eq 0 -o ${#left_major} -eq 0 -o ${#left_minor} -eq 0 -o ${#right_model} -eq 0 -o ${#right_major} -eq 0 -o ${#right_minor} -eq 0 ] && return 128 # wrong input data
+	[ $left_model -ne $right_model ] && return 4 # different version
+	[ $left_major -gt $right_major ] && return 0 # newer
 	if [ $left_major -eq $right_major ]; then
-		[ $left_minor -gt $right_minor ] && return 0
+		[ $left_minor -gt $right_minor ] && return 0 # newer
+		if [ $left_minor -eq $right_minor ]; then
+			if [ ${#left_sub} -gt 0 -a ${#right_sub} -gt 0 ]; then
+				left_sub="${left_sub:1}"
+				right_sub="${right_sub:1}"
+				left_sub=$(( "${left_sub//[^0-9]}" )) # remove any suffix like "M"
+				right_sub=$(( "${right_sub//[^0-9]}" ))
+				[ $left_sub -gt $right_sub ] && return 0 # newer
+				[ $left_sub -eq $right_sub ] && return 1
+				return 2
+			else
+				return 1
+			fi
+		else
+			return 2
+		fi
 	fi
 	return 1
 }
 #
-# retrieve latest version number from FTP server
+# retrieve newer or current version number and URL from manufacturer
 #
-get_latest_version_from_ftp()
+get_version_from_manufacturer()
 {
-	local ftppath target="$1" hwrev rc=0 version filename versions
-	debug "get_latest_version_from_ftp: target=$target"
-	progress 1 188
-	hwrev="$(get_hardware_revision)"
-	eval ftppath="$(echo \$ftp_path_$hwrev)"
-	version="|"
-	eval ftppath="$(echo $ftppath)"
-	filename="${ftppath##*/}"
-	filename_prefix="${filename%|*}"
-	filename_suffix="${filename##*|}"
-	filename_prefix="$(escape_regexp "${filename_prefix}")"
-	filename_suffix="$(escape_regexp "${filename_suffix}")"
-	ftppath="${ftppath%/*}"
-	version="$($bb wget -O - "http://$ftp_server$ftppath/" 2>/dev/null | $bb sed -n -e "s#.*${filename_prefix}\([0-9]\{2,3\}\.[0-9]\{2\}\.[0-9]\{2\}\)${filename_suffix}.*#\1#p" | $bb uniq | $bb sort -nr | $bb sed -n -e '1p')"
-	if [ ${#version} -eq 0 ]; then
+	local target="${1:-newer}" rc=0 msg nf err res opt NewVersion DownloadURL curr comp
+	debug "get_version_from_manufacturer: target=$target"
+	[ $target == current ] && opt="-c"
+	curr="$(get_system_version)"
+	[ $target == current ] && progress 1 207 "$curr" || progress 1 188
+	res="$($shl $scriptwrapper $(bindir)/check_update $opt)"
+	rc=$?
+	if [ $rc -ne 0 ]; then
 		progress 3 97
-		progress 2 187
-		rc=187
-	else
-		progress 3 96
-		is_newer_version "$version"
-		rc=$?
-		if [ $rc -eq 0 ]; then
-			progress 3 189 $version
-			echo "$version"
-		else
-			if [ $rc -eq 1 ]; then
-				progress 3 190 "$(get_system_version)"
-				rc=190
+		debug "get_version_from_manufacturer: error $rc returned from check_update"
+		if [ $rc -eq 1 ]; then
+			if [ $target == current ]; then
+				echo "$(get_localized $lang 208 $curr)" 1>&2
+				rc=208
 			else
-				progress 3 191 $rc "${version}" "$(get_system_version)"
-				rc=191
+				echo "$(get_localized $lang 190 $curr)" 1>&2
+				rc=190
 			fi
+		else
+			if [ $target == current ]; then
+				echo "$(get_localized $lang 209 $curr)" 1>&2
+				rc=209
+			else
+				echo "$(get_localized $lang 187)" 1>&2
+				rc=187
+			fi
+		fi		
+	else
+		eval "$res"
+		if [ $target == current ]; then 
+			debug "get_version_from_manufacturer: found current version $NewVersion, URL=$DownloadURL"
+			compare_versions "$NewVersion" "$(get_system_version)"
+			comp=$?
+			if [ $comp -eq 1 ]; then
+				progress 3 96
+				rc=0
+			else
+				progress 3 97
+				echo "$(get_localized $lang 208 $curr)" 1>&2
+				rc=208
+			fi
+		else
+			progress 3 96
+			echo "$(get_localized $lang 189 "$NewVersion")" 1>&2
+			debug "get_version_from_manufacturer: found new version $NewVersion, URL=$DownloadURL"
 		fi
 	fi
-	debug "get_latest_version_from_ftp: exiting, rc=$rc"
+	debug "get_version_from_manufacturer: exiting, rc=$rc"
+	[ $rc -eq 0 ] && echo "$res"
 	return $rc
 }
 #
@@ -2841,81 +2868,87 @@ case $source in
 		$bb mkdir -p "$download_directory"
 		echo "$bb rm -r $download_directory" >>$tempfilelist
 		debug "modfs: download directory=$download_directory"
-		download_firmware "$download_directory/$firmwarestoragename" "$(get_system_version)"
+		download_version="$(get_version_from_manufacturer current)"
 		rc=$?
-		if [ $rc -ne 0 ]; then
-			if [ $rc -eq 42 ]; then
-				progress 3 97
-				echo "$(get_localized $lang 42)" 1>&2
-			else
-				if [ $rc -eq 43 ]; then
+		if [ $rc -eq 0 ]; then
+			eval "$download_version"
+			progress 1 121
+			download_firmware "$download_directory/$firmwarestoragename" "$DownloadURL"
+			rc=$?
+			if [ $rc -ne 0 ]; then
+				if [ $rc -eq 42 ]; then
 					progress 3 97
-					echo "$(get_localized $lang 43)" 1>&2
+					echo "$(get_localized $lang 42)" 1>&2
+				else
+					if [ $rc -eq 43 ]; then
+						progress 3 97
+						echo "$(get_localized $lang 43)" 1>&2
+					fi
 				fi
-			fi
-			exit $rc
-		else
-			progress 3 96
-			if [ $no_sigcheck -ne 1 ]; then
-				try_to_check_integrity "$download_directory/$firmwarestoragename"
-				rc=$?
-				if [ $rc -ne 0 ]; then
-					exit $rc
-				fi
-			fi
-			working_directory="$(get_working_directory $extract_space_needed "tmpfs nand storage")"
-			rc=$?
-			if [ $rc -ne 0 ]; then
-				echo -e "$(get_localized $lang $rc)" 1>&2
-				exit $rc
-			fi
-			image_directory="$working_directory/$($bb date +%s)"
-			$bb mkdir -p "$image_directory"
-			echo "$bb rm -r $image_directory" >>$tempfilelist
-			progress 1 132
-			extract_rootfs_from_firmware "$download_directory/$firmwarestoragename" "$image_directory/$rootfsname"
-			rc=$?
-			if [ $rc -ne 0 ]; then
-				progress 3 97
-				echo -e "$(get_localized $lang $rc)" 1>&2
 				exit $rc
 			else
 				progress 3 96
-				baseimage="$image_directory/$rootfsname"
-				progress 1 133
-				remove_directory "$download_directory"
-				progress 3 96
-				copybase=$(ask_yes_or_no n "$(get_localized $lang 193)")
-				if [ $copybase == Y ]; then
-					target=""
-					if [ $(is_tmpfs $image_directory) -eq 1 ]; then
-						targetdir="$(get_persistent_path $(( $($bb stat -c %s "$baseimage") + 4096 )) )"
-						rc=$?
-						if [ $rc -eq 0 ]; then
-							target=$targetdir/$rootfsname
-						fi
-					else
-						target="$working_directory/$rootfsname"
-					fi
-					progress 1 134
-					[ $rc -eq 0 ] && $bb mv "$image_directory/$rootfsname" "$target"
+				if [ $no_sigcheck -ne 1 ]; then
+					try_to_check_integrity "$download_directory/$firmwarestoragename"
 					rc=$?
 					if [ $rc -ne 0 ]; then
-						progress 3 97
-						if [ ${#target} -gt 0 ]; then
-							echo -e "$(get_localized $lang 53)" 1>&2
-							exit 53
-						fi
-					else
-						progress 3 96
-						echo -e "$(get_localized $lang 135 "$target")" 1>&2
-						baseimage="$target"
-						remove_directory "$image_directory"
+						exit $rc
 					fi
 				fi
+				working_directory="$(get_working_directory $extract_space_needed "tmpfs nand storage")"
+				rc=$?
+				if [ $rc -ne 0 ]; then
+					echo -e "$(get_localized $lang $rc)" 1>&2
+					exit $rc
+				fi
+				image_directory="$working_directory/$($bb date +%s)"
+				$bb mkdir -p "$image_directory"
+				echo "$bb rm -r $image_directory" >>$tempfilelist
+				progress 1 132
+				extract_rootfs_from_firmware "$download_directory/$firmwarestoragename" "$image_directory/$rootfsname"
+				rc=$?
+				if [ $rc -ne 0 ]; then
+					progress 3 97
+					echo -e "$(get_localized $lang $rc)" 1>&2
+					exit $rc
+				else
+					progress 3 96
+					baseimage="$image_directory/$rootfsname"
+					progress 1 133
+					remove_directory "$download_directory"
+					progress 3 96
+					copybase=$(ask_yes_or_no n "$(get_localized $lang 193)")
+					if [ $copybase == Y ]; then
+						target=""
+						if [ $(is_tmpfs $image_directory) -eq 1 ]; then
+							targetdir="$(get_persistent_path $(( $($bb stat -c %s "$baseimage") + 4096 )) )"
+							rc=$?
+							if [ $rc -eq 0 ]; then
+								target=$targetdir/$rootfsname
+							fi
+						else
+							target="$working_directory/$rootfsname"
+						fi
+						progress 1 134
+						[ $rc -eq 0 ] && $bb mv "$image_directory/$rootfsname" "$target"
+						rc=$?
+						if [ $rc -ne 0 ]; then
+							progress 3 97
+							if [ ${#target} -gt 0 ]; then
+								echo -e "$(get_localized $lang 53)" 1>&2
+								exit 53
+							fi
+						else
+							progress 3 96
+							echo -e "$(get_localized $lang 135 "$target")" 1>&2
+							baseimage="$target"
+							remove_directory "$image_directory"
+						fi
+					fi
+				fi
+				debug "modfs: baseimage=$baseimage"
+				debug "modfs: download done"
 			fi
-			debug "modfs: baseimage=$baseimage"
-			debug "modfs: download done"
 		fi
 		;;
 	file)
@@ -2931,9 +2964,10 @@ case $source in
 		debug "modfs: file selection done"
 		;;
 	download_update)
-		version="$(get_latest_version_from_ftp)"
+		download_version="$(get_version_from_manufacturer)"
 		rc=$?
 		if [ $rc -eq 0 ]; then
+			eval "$download_version"
 			working_directory="$(get_working_directory $download_space_needed "tmpfs nand storage")"
 			rc=$?
 			if [ $rc -ne 0 ]; then
@@ -2947,7 +2981,7 @@ case $source in
 			$bb mkdir -p "$download_directory"
 			echo "$bb rm -r $download_directory" >>$tempfilelist
 			debug "modfs: download directory=$download_directory"
-			download_firmware "$download_directory/$firmwarestoragename" "$version"
+			download_firmware "$download_directory/$firmwarestoragename" "$DownloadURL"
 			rc=$?
 			if [ $rc -ne 0 ]; then
 				if [ $rc -eq 42 ]; then
