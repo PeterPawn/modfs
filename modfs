@@ -2863,6 +2863,7 @@ case $source in
 			exit $rc
 		fi
 		debug "modfs: working directory=$working_directory"
+		version="$(get_system_version)"
 		progress 1 121 "$version"
 		download_directory="$working_directory/$($bb date +%s)"
 		$bb mkdir -p "$download_directory"
@@ -2872,7 +2873,6 @@ case $source in
 		rc=$?
 		if [ $rc -eq 0 ]; then
 			eval "$download_version"
-			progress 1 121
 			download_firmware "$download_directory/$firmwarestoragename" "$DownloadURL"
 			rc=$?
 			if [ $rc -ne 0 ]; then
@@ -2976,7 +2976,7 @@ case $source in
 				exit $rc
 			fi
 			debug "modfs: working directory=$working_directory"
-			progress 1 121 "$version"
+			progress 1 121 "$NewVersion"
 			download_directory="$working_directory/$($bb date +%s)"
 			$bb mkdir -p "$download_directory"
 			echo "$bb rm -r $download_directory" >>$tempfilelist
