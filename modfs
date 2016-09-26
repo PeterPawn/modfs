@@ -171,6 +171,7 @@ tmpdirbase="/var/tmp"
 packedpartition="128MB_ext3.gz"
 squashfsdirname="squashfs-root"
 scriptwrapper="wrap_script"
+modfsshelldebug="/var/tmp/modfs_debug_shell.log"
 showprogress=0
 msgtext_clearscreen="\x1B[2J\x1B[0;0H"
 msgtext_normal="\x1B[0m"
@@ -1407,7 +1408,7 @@ try_to_check_integrity()
 	local target="$1" rc=205 opwd
 	debug "try_to_check_integrity: target=$target"
 	progress 1 206
-	if [ -x $(bindir)/check_image_signature ]; then
+	if [ -f $(bindir)/check_image_signature ]; then
 		opwd="$($bb pwd)"
 		cd "$(bindir)"
 		$shl $scriptwrapper check_image_signature check
@@ -1426,7 +1427,7 @@ try_to_check_integrity()
 			fi
 		else
 			progress 3 95
-			debug "try_to_check_integrity: some components are missing, unable to verify signature"
+			debug "try_to_check_integrity: some components are missing (rc=$rc), unable to verify signature"
 			rc=0
 		fi
 		cd "$opwd"
@@ -2648,7 +2649,8 @@ if [ x"$MODFS_RUN_SHELL" != x"1" ]; then
 	export SHELL=/var/run/modfs/sh
 	echo "respawn script with custom BusyBox shell, SHLVL=$SHLVL" 1>&2
 	if [ x"$MODFS_DEBUG_SHELL" == x"1" ]; then
-		[ -f /var/tmp/modfs_debug_scripts.log ] && rm /var/tmp/modfs_debug_scripts.log 2>/dev/null
+		[ -f "$modfsshelldebug" ] && rm "$modfsshelldebug" 2>/dev/null
+		export MODFS_DEBUG_SHELL_FILE="$modfsshelldebug"
 	fi
 	echo "$shl $0 $*" 1>&2
 	$shl $0 $*
@@ -2809,9 +2811,6 @@ if [ $prerc -eq 32 ]; then
 		else
 			echo -e "$(get_localized $lang 183)" 1>&2
 			prerc=0
-#			[ $MODFS_DEBUG -ne 1 ] && reboot
-#			echo -e "Ready to reboot, but due to active debugging output exiting instead.\nCheck debug output and reboot manually." 1>&2
-#			exit 183
 		fi
 	fi
 fi

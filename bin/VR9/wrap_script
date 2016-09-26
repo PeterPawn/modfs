@@ -1,8 +1,6 @@
-#! /bin/sh
-debuglog=/var/tmp/modfs_debug_scripts.log
 if [ x"$MODFS_DEBUG_SHELL" == x"1" ]; then
-	echo "<<<<<<<<<< $* >>>>>>>>>>" >>$debuglog
-	$SHELL -x $* 2>>$debuglog
+	echo '<<<<<<<<<<' $* '>>>>>>>>>>' >>$MODFS_DEBUG_SHELL_FILE
+	$SHELL -x $* 2>>$MODFS_DEBUG_SHELL_FILE
 else
 	$SHELL $*
 fi

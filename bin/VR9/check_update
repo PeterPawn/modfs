@@ -1,4 +1,3 @@
-#! /bin/sh
 #######################################################################################################
 #                                                                                                     #
 # even smaller JUIS update check to be used from "modfs", must be called on the device itself         #
