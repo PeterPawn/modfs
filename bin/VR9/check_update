@@ -138,7 +138,7 @@ nonce=$(dd if=/dev/urandom bs=16 count=1 2>/dev/null | base64)
 #                                                                                                     #
 #######################################################################################################
 if [ $debug -eq 1 ]; then
-	printf "===================================\nVariables set:\n"
+	printf "===================================\nVariables set:\n" 1>&2
 	for n in $variables type hostname nonce; do
 		printf "%s=\"%s\"\n" $n "$(eval echo \$$n)" 1>&2
 	done
