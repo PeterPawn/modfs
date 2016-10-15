@@ -161,7 +161,7 @@ nativefilesystems="tmpfs ext2 ext3 ext4 yaffs2"
 #
 # our "internal" constants
 #
-modfs_version=0.4.0-270920161709
+modfs_version=0.4.0-151020161455
 modfs_comment="please look at https://github.com/PeterPawn/modfs for further info"
 bindirname="bin"
 localedirname="locale"
@@ -389,12 +389,12 @@ ask_yes_or_no()
 		nl="$answer\n"
 		[ ${#answer} -eq 0 ] && answer=$def && nl="\n"
 		debug "ask_yes_or_no: A=$answer"
-		if [ $answer == $(uppercase $yes) -o $answer == $yes ]; then
+		if [ "$answer" == $(uppercase $yes) -o $answer == $yes ]; then
 			echo -n 'Y'
 			echo -e -n "$nl" 1>&2
 			return 0
 		else
-			if [ $answer == $(uppercase $no) -o $answer == $no ]; then
+			if [ "$answer" == $(uppercase $no) -o $answer == $no ]; then
 				echo -n  'N'
 				echo -e -n "$nl" 1>&2
 				return 0
@@ -1744,7 +1744,7 @@ get_path_selection()
 		echo -ne "\n$(get_localized $lang $msg4) " 1>&2
 		while read -n 10 -s -t 1; do :; done
 		read -n 1 -s selection
-		case $selection in
+		case "$selection" in
 			[qQ])
 				echo -e "$selection$(get_localized $lang $msg7)" 1>&2
 				return 1
@@ -2101,7 +2101,7 @@ get_input_image_path()
 						echo -ne "\n$(get_localized $lang 161) " 1>&2
 						while read -n 10 -s -t 1; do :; done
 						read -n 1 -s selection
-						case $selection in
+						case "$selection" in
 							[qQ])
 								echo -e "$selection$(get_localized $lang 131)" 1>&2
 								return 1
@@ -2122,7 +2122,7 @@ get_input_image_path()
 								fi
 								;;
 						esac
-						if [ x$selection == xp ]; then
+						if [ x"$selection" == x"p" ]; then
 							echo -ne "$selection\n$msgtext_normal" 1>&2
 						else
 							echo -ne "$selection\n\n$msgtext_normal" 1>&2
@@ -2408,7 +2408,7 @@ get_source()
 		while read -n 10 -s -t 1; do :; done
 		read -n 1 -s selection
 		if [ $noversioncheck -eq 0 ]; then
-			case $selection in
+			case "$selection" in
 				[aA])
 					source=running
 					;;
@@ -2428,7 +2428,7 @@ get_source()
 			esac
 			break
 		else
-			case $selection in
+			case "$selection" in
 				[aA])
 					source=download_update
 					;;
@@ -3254,7 +3254,7 @@ if [ $rc -eq 0 -a $install_image_only -eq 0 ]; then
 		echo -ne "$(get_localized $lang 150 $unpack_directory/$squashfsdirname)" 1>&2
 		while [ 1 -eq 1 ]; do
 			read abort
-			if [ x$abort == xq ]; then
+			if [ x"$abort" == x"q" ]; then
 				echo -e "$(get_localized $lang 155)" 1>&2
 				rc=1
 				break
