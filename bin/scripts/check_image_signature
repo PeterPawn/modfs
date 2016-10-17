@@ -1,0 +1,78 @@
+####################################################################################
+#                                                                                  #
+# signature verification for downloaded firmware from AVM                          #
+#                                                                                  #
+# rc   meaning                                                                     #
+#  0 - 'check' completed or 'verify' was successful                                #
+#  2 - missing 1st parameter                                                       #
+#  3 - missing file name after 'verify' parameter                                  #
+#  4 - specified image file not found                                              #
+#  5 - invalid 1st parameter specified                                             #
+#  6 - 'openssl' binary missing                                                    #
+#  7 - 'check_signed_image' script missing                                         #
+#  128 + return code of 'check_signed_image' - 'verify' failed                     #
+#                                                                                  #
+####################################################################################
+#                                                                                  #
+# constants                                                                        #
+#                                                                                  #
+####################################################################################
+avm_default_files="/etc/avm_firmware_public_key[1-9] plugin_global_key.pem"
+####################################################################################
+#                                                                                  #
+# check parameters                                                                 #
+#                                                                                  #
+####################################################################################
+if [ -z "$1" ]; then
+	exit 2
+fi
+if [ x"$1" == x"check" ]; then
+####################################################################################
+#                                                                                  #
+# check OpenSSL presence and version                                               #
+#                                                                                  #
+####################################################################################
+	if [ -x openssl ]; then
+		openssl version 2>/dev/null 1>&2
+		if [ $? -ne 0 ]; then
+			exit 6
+		else
+			if [ -f check_signed_image ]; then
+				exit 0
+			else
+				exit 7
+			fi
+		fi
+	else
+		exit 6
+	fi
+elif [ x"$1" == x"verify" ]; then
+	if [ -z "$2" ]; then
+		exit 3
+	fi
+	if ! [ -f "$2" ]; then
+		exit 4
+	else
+		if [ x"$MODFS_DEBUG_SHELL" == x"1" ]; then
+			debug="-x"
+			debuglog="$MODFS_DEBUG_SHELL_FILE"
+		else
+			debug=""
+			debuglog=/dev/null
+		fi
+		$SHELL $debug check_signed_image "$2" -b 2>>$debuglog 1>&2
+		rc=$?
+		if [ $rc -ne 0 ]; then
+			exit $(( rc + 128 ))
+		else
+			exit 0
+		fi
+	fi
+else
+	exit 5
+fi
+####################################################################################
+#                                                                                  #
+# end of file                                                                      #
+#                                                                                  #
+####################################################################################
