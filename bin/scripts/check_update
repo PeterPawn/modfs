@@ -98,7 +98,7 @@ run_nc()
 	nc $hostname $port >"$out" <"$pin" &
 	ncpid=$!
 	cat - 1>&6
-	while [ -s "$out" ]; do
+	while grep -q "/soap:Envelope" "$out" 2>/dev/null; do
 		i=$(( i + 1 ))
 		[ $i -gt $timeout ] && break
 		sleep 1
