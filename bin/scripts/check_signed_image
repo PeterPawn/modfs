@@ -345,8 +345,8 @@ fi
 # prepare a temporary directory and cleanup on exit                                #
 #                                                                                  #
 ####################################################################################
-tmp=$(mktemp -d)
-[ $? -eq 127 ] && tmp="/tmp/tmp.$(date +%s).$$" && mkdir -p "$tmp"
+tmp=$(mktemp -d 2>/dev/null)
+[ $? -eq 127 -o ${#tmp} -eq 0 ] && tmp="/tmp/tmp.${0##*/}.$(date +%s).$$" && mkdir -p "$tmp"
 trap "rm -r \"$tmp\"" EXIT HUP INT
 ####################################################################################
 #                                                                                  #

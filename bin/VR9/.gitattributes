@@ -1,7 +1,3 @@
-check_signed_image diff
-check_image_signature diff
-check_update diff
-wrap_script diff
 busybox binary
 openssl binary
 mke2fs binary
