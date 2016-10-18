@@ -42,6 +42,20 @@ patch_file()
  ["wGuest"] = (config.WLAN and config.WLAN_GUEST) and {
  ["show"] = showWGuest(),
  ["lua"] = "wlan/guest_access.lua",
+--- usr/www/$TARGET_BRANDING/menus/menu_data.lua
++++ usr/www/$TARGET_BRANDING/menus/menu_data.lua
+@@ -405,6 +405,11 @@
+ ["lua"] = "system/wlan_night.lua",
+ ["help"] = forLuaOnly and "hilfe_system_nachtschalt_wlan"
+ } or nil
++pageData["night"] = config.TIMERCONTROL and {
++["show"] = true,
++["lua"] = "system/nacht.lua",
++["help"] = forLuaOnly and "hilfe_system_nachtschalt_wlan"
++} or nil
+ tmp = wlan_on and not is_wlan_ata
+ if config.GUI_IS_REPEATER or is_wds_repeater then
+ tmp = tmp and config.WLAN.has_repeater_guest_ap
 EOT
 	cd $home
 }

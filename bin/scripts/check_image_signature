@@ -32,7 +32,7 @@ if [ x"$1" == x"check" ]; then
 # check OpenSSL presence and version                                               #
 #                                                                                  #
 ####################################################################################
-	if [ -x openssl ]; then
+	if type openssl >/dev/null 2>&1; then
 		openssl version 2>/dev/null 1>&2
 		if [ $? -ne 0 ]; then
 			exit 6

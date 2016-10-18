@@ -161,7 +161,7 @@ nativefilesystems="tmpfs ext2 ext3 ext4 yaffs2"
 #
 # our "internal" constants
 #
-modfs_version=0.4.0-151020161455
+modfs_version=0.4.0-181020160333
 modfs_comment="please look at https://github.com/PeterPawn/modfs for further info"
 bindirname="bin"
 localedirname="locale"
@@ -172,6 +172,7 @@ packedpartition="128MB_ext3.gz"
 squashfsdirname="squashfs-root"
 scriptwrapper="wrap_script"
 modfsshelldebug="/var/tmp/modfs_debug_shell.log"
+scriptsdir="bin/scripts"
 showprogress=0
 msgtext_clearscreen="\x1B[2J\x1B[0;0H"
 msgtext_normal="\x1B[0m"
@@ -207,6 +208,10 @@ index_of_item()
 # get binaries subdirectory name
 #
 bindir() { echo "$scriptpath/$bindirname/$(get_hardware_revision)"; }
+#
+# get scripts subdirectory name
+#
+scriptdir() { echo "$scriptpath/$scriptsdir"; }
 #
 # get locale subdirectory name
 #
@@ -1408,9 +1413,9 @@ try_to_check_integrity()
 	local target="$1" rc=205 opwd
 	debug "try_to_check_integrity: target=$target"
 	progress 1 206
-	if [ -f $(bindir)/check_image_signature ]; then
+	if [ -f $(scriptdir)/check_image_signature ]; then
 		opwd="$($bb pwd)"
-		cd "$(bindir)"
+		cd "$(scriptdir)"
 		$shl $scriptwrapper check_image_signature check
 		rc=$?
 		if [ $rc -eq 0 ]; then
@@ -2512,7 +2517,7 @@ get_version_from_manufacturer()
 	[ $target == current ] && opt="-c"
 	curr="$(get_system_version)"
 	[ $target == current ] && progress 1 207 "$curr" || progress 1 188
-	res="$($shl $scriptwrapper $(bindir)/check_update $opt)"
+	res="$($shl $scriptwrapper $(scriptdir)/check_update $opt)"
 	rc=$?
 	if [ $rc -ne 0 ]; then
 		progress 3 97
@@ -2794,7 +2799,7 @@ else
 		no_sigcheck=1
 		debug "modfs: no_sigcheck=1 requested"
 	fi
-	scriptwrapper="$(bindir)/$scriptwrapper"
+	scriptwrapper="$(scriptdir)/$scriptwrapper"
 fi
 #
 # check prerequisites first, any further action depends on them
