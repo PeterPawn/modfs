@@ -1,25 +1,32 @@
 #! /bin/true
-# vi: set tabstop=4 syntax=dash : # colorize it in 'vi' and use shorter tabstops
+# vi: set tabstop=4 syntax=sh : # colorize it in 'vi' and use shorter tabstops
 #######################################################################################
 #                                                                                     #
-# endianess                                                                           #
-# - detect the endianess of the system we're running on                               #
-#                                                                                     #
-# - this will use the ELF header of the running executable (via /proc/self/exe) to    #
-#   distinguish between LE and BE platforms                                           #
+# base64_decode - convert STDIN from base64 format to the encoded content, if no      #
+#                 'base64' command exists, try to run an emulation                    #
 #                                                                                     #
 # parameters:                                                                         #
 #   none                                                                              #
 #                                                                                     #
+# stdin:                                                                              #
+#   the content to decode                                                             #
+#                                                                                     #
 # stdout:                                                                             #
-#   "B" for big endian system and "L" for little endian system                        #
+#   the decoded data                                                                  #
 #                                                                                     #
 # return code:                                                                        #
-#   always 0 (no errors, default output of "B" in case of problems)                   #
+#   0 - stdout value is valid                                                         #
+#   1 - error occured, 'base64' command was not found or input data is invalid        #
 #                                                                                     #
 #######################################################################################
-yf_endianess()
+yf_base64_decode()
 (
-	[ $(dd if=/proc/self/exe bs=1 count=1 skip=5 2>/dev/null | yf_base64) = AQ== ] && printf "L" || printf "B"
-	return 0
+	[ -t 0 ] && return 1
+	if command -v base64 2>/dev/null 1>&2; then
+		command base64 -d
+		rc=$?
+	else
+		rc=1
+	fi
+	return $rc
 )

@@ -2,49 +2,57 @@
 # vi: set tabstop=4 syntax=sh : # colorize it in 'vi' and use shorter tabstops
 #######################################################################################
 #                                                                                     #
-# bin2hex - convert binary data its hexadecimal representation (via base64 encoding)  #
+# bin2dec - convert binary data its decimal representation (via 'cmp' utility)        #
 #                                                                                     #
 # parameters:                                                                         #
-#   none                                                                              #
+#   $1 - optional specification of the endianess to use (L or B) - if unspecified,    #
+#        the endianess of the system we're running on is used                         #
 #                                                                                     #
 # stdio:                                                                              #
-#   binary data to encode                                                             #
+#   binary data to read                                                               #
 #                                                                                     #
 # stdout:                                                                             #
-#   input data converted to its hexadecimal format (one char per nibble) as string    #
+#   the decimal value of the input data                                               #
 #                                                                                     #
 # return code:                                                                        #
 #   always 0 - no errors possible, empty input results in empty output                #
 #                                                                                     #
 # remarks:                                                                            #
-#   - this version can handle whitespace, newline and NUL characters too              #
-#   - it needs the "yf_base64" utility to encode the binary data to base64 and the    #
-#     output of this applet is translated to hexadecimal in the next step             #
-#   - this "double conversion" is time-consuming and you should use yf_str2hex as     #
-#     often as possible                                                               #
+#   If the provided data may not be expressed as a number using shell arithmetics,    #
+#   the behavior is undefined.                                                        #
 #                                                                                     #
 #######################################################################################
-yf_bin2hex()
+yf_bin2dec()
 (
-	[ -t 0 ] && return 0
-	f=0 
-	v=0 
-	l=0
-	in=$(yf_base64 2>/dev/null | sed -e ':x;$!N;s/\n//;tx' -e 's/+/_/g')
-	[ ${#in} -eq 0 ] && return
-	while [ ${#in} -gt 0 ]; do
-		c=$(yf_substring "$in" 0 1)
-		in=$(yf_substring "$in" 1)
-		[ $c = = ] \
-			&& f=$(( f + 1 )) \
-			|| v=$(( ( v << 6 ) + $(( $(expr index "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_/" $c) - 1 )) ))
-		l=$(( l + 1 ))
-		if [ $l -eq 4 ]; then
-			v=$(( v >> ( f * 2 ) ))
-			printf "%0$(( ( 3 - f ) << 1 ))x" $v
-			l=0
-			v=0
-		fi
-	done
+	yf_bin2dec_read_octal()
+	{
+		e=$1
+		i=1
+		l=0
+		v=0
+		s=-8
+		while read pos left right; do
+			while [ $i -lt $pos ]; do # insert zeroes for missing bytes
+				[ $e -eq 0 ] && v=$(( v << 8 )) || s=$(( s + 8 ))
+				i=$(( i + 1 ))
+			done
+			[ $e -eq 0 ] && v=$(( v << 8 )) || s=$(( s + 8 ))
+			[ $e -eq 1 ] && right=$(( 0$right << $s )) || right=$(( 0$right ))
+			v=$(( v + $right ))
+			i=$(( pos + 1 ))
+		done
+		printf "%d" $v
+	}
+
+	[ -t 0 ] && return 1
+	command -v cmp 2>/dev/null 1>&2 || return 1
+	if ! [ -z "$1" ]; then
+		e=0
+		[ "$1" = L ] && e=1
+		[ $e -eq 0 ] && [ "$1" != B ] && return 1
+	else
+		[ $(yf_endianess) = L ] && e=1 || e=0
+	fi
+	command cmp -l /dev/zero /proc/self/fd/0 2>/dev/null | yf_bin2dec_read_octal $e
 	return 0
 )
