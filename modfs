@@ -802,6 +802,7 @@ pack_squashfs()
 	popd="$(pwd)"
 	debug "pack_squashfs: using SquashFS version $sq_version"
 	cd "$src"
+	echo $modfs_version > squashfs-root/etc/.modfs_version
 	sq_mksquashfs squashfs-root "$target" -info -b $blocksize $endian -force-uid 0 -force-gid 0
 	rc=$?
 	cd "$popd"
