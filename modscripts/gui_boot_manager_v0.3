@@ -44,7 +44,7 @@ install_script()
 # GUI Boot Manager extension for AVM's FRITZ!Box routers with "hot flash"    #
 # capabilities                                                               #
 #                                                                            #
-# Copyright (C) 2014-2016 P.Hämmerlein (http://www.yourfritz.de)             #
+# Copyright (C) 2014-2016 P.Haemmerlein (http://www.yourfritz.de)            #
 #                                                                            #
 # This program is free software; you can redistribute it and/or              #
 # modify it under the terms of the GNU General Public License                # 
@@ -80,13 +80,14 @@ reservedprefix="reserved"
 fsvarname="linux_fs_start"
 brandingvarname="firmware_version"
 wrapper="/wrapper"
-statfile="/etc/.modfs_version"
+statfile="/var.tar"
 rootfsimage="filesystem_core.squashfs"
 versionfilename="etc/version"
 defaultspath="etc/default.$CONFIG_PRODUKT"
 tmpdirbase="/var/tmp"
 altfs="altfs"
 altroot="altroot"
+semafile="/var/run/bootmanager.semaphore"
 ##############################################################################
 #                                                                            #
 # include FRITZ!Box 6490/6590 detection helpers from AVM                     #
@@ -280,11 +281,11 @@ mount_alternative_system()
 	else
 		blkid=$(command -v blkid 2>/dev/null)
 		[ -z $blkid ] && fstype=squashfs
-		[ -z $fstype ] && fstype=$(blkid $1 | sed -n -e 's|.*TYPE="\(.*\)"|\1|p')
+		[ -z $fstype ] && fstype=$(blkid $mtdblockprefix$1 | sed -n -e 's|.*TYPE="\?\([^"]*\)"\?|\1|p')
 		[ -z $fstype ] && fstype=yaffs2
-		mount -t $fstype $mtdblockprefix$1 $2/$altfs 2>/dev/null || return 1
+		mount -t $fstype -o ro $mtdblockprefix$1 $2/$altfs 2>/dev/null || return 1
 		! [ $fstype = yaffs2 ] && printf '%s/%s' $2 $altfs && return 0
-		mkdir -p $2/altroot 2>/dev/null || return 1
+		mkdir -p $2/$altroot 2>/dev/null || return 1
 		mount -t squashfs -o ro $2/$altfs/$rootfsimage $2/$altroot 2>/dev/null || return 1
 		printf '%s/%s' $2 $altroot
 	fi
@@ -354,6 +355,7 @@ get_image_name()
 ##############################################################################
 #                                                                            #
 # cleanup any mounted images and remove the temporary directory              #
+# remove semaphore file, if it's owned by this instance to avoid deadlocks   #
 #                                                                            #
 ##############################################################################
 cleanup()
@@ -364,6 +366,43 @@ cleanup()
 	mp=$(sed -n -e "s|[^ ]* \($tempdir/$altfs\) .*|\1|p" /proc/mounts)
 	[ -z $mp ] || umount $mp 2>/dev/null
 	rm -r "$tempdir" 2>/dev/null
+	[ -z $spinlock_pid ] && return
+	[ -f $semafile ] || return
+	[ $(cat $semafile) = $spinlock_pid ] && rm -f $semafile 2>/dev/null
+)
+##############################################################################
+#                                                                            #
+# create a locked section using a semaphore file                             #
+# $1 - operation (get or release)                                            #
+# $2 - maximum wait time for 'get'                                           #
+#                                                                            #
+##############################################################################
+spinlock()
+(
+	( [ $1 = get ] || [ $1 = release ] ) || return 1 # invalid call
+	[ -z $spinlock_pid ] && return 1 # missing pid
+	set -C
+	if [ $1 = get ]; then
+		maxwait=$(( $2 ))
+		i=0
+		while [ $i -le $maxwait ]; do
+			while [ -f $semafile ]; do
+				sleep 1
+				i=$(( i + 1 ))
+				[ $i -ge $maxwait ] && return 1
+			done
+			printf "%d" $spinlock_pid >$semafile
+			pid=$(cat $semafile)
+			! [ -z $pid ] && [ $pid = $spinlock_pid ] && return 0
+		done
+		return 1 # timeout
+	else
+		[ -f $semafile ] || return 0
+		pid=$(cat $semafile)
+		( [ -z $pid ] || [ $pid != $spinlock_pid ] ) && return 0
+		rm -f $semafile 2>/dev/null
+		return 0
+	fi
 )
 ##############################################################################
 #                                                                            #
@@ -408,7 +447,7 @@ html_display()
 			|| printf '<h4>Switching between alternative systems is not supported on this device.</h4>\n'
 		return 1
 	else
-		mp=$(mount_alternative_system $alternative_filesystem $tempdir)
+		spinlock get 10 && mp=$(mount_alternative_system $alternative_filesystem $tempdir)
 		if [ -z $mp ]; then
 			alternative_version="unknown"
 			alternative_date="unknown"
@@ -429,6 +468,7 @@ html_display()
 			fi
 			dismount_alternative_system $mp
 		fi
+		spinlock release
 		running_version=$(get_system_version)
 		running_date=$(get_system_date)
 		[ -d $wrapper ] \
@@ -569,6 +609,7 @@ html_display()
 ##############################################################################
 case $1 in
 	(html_display)
+		spinlock_pid=$$
 		html_display
 		rc=$?
 		;;
