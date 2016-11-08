@@ -274,6 +274,10 @@ switch_system_to()
 ##############################################################################
 mount_alternative_system()
 (
+	# CGI calls have only /bin:/usr/bin in the search PATH, the old value is
+	# not important, changing the PATH should be local to this function and
+	# it's childs, even if it's "export"ed here
+	export PATH=/sbin:/usr/sbin:/bin:/usr/bin
 	mkdir -p $2/$altfs 2>/dev/null || return 1
 	if is_puma6; then
 		mount -t squashfs -o ro $mmcprefix$1 $2/$altfs 2>/dev/null || return 1
