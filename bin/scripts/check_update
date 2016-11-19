@@ -253,7 +253,7 @@ found="$(extract_xml "$xmlresp" "ns3" "Found")"
 [ x"$found" != x"true" ] && exit 1
 URL="$(extract_xml "$xmlresp" "ns3" "DownloadURL")"
 Version="$(extract_xml "$xmlresp" "ns3" "Version")"
-echo "NewVersion=$Version"
+echo "NewVersion=\"$Version\""
 echo "DownloadURL=$URL"
 #######################################################################################################
 #                                                                                                     #

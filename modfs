@@ -161,7 +161,7 @@ nativefilesystems="tmpfs ext2 ext3 ext4 yaffs2"
 #
 # our "internal" constants
 #
-modfs_version=0.4.1-071120160223
+modfs_version=0.4.1-191120160505
 modfs_comment="please look at https://github.com/PeterPawn/modfs for further info"
 bindirname="bin"
 localedirname="locale"
@@ -2556,7 +2556,8 @@ get_version_from_manufacturer()
 			fi
 		else
 			progress 3 96
-			echo "$(get_localized $lang 189 "$NewVersion")" 1>&2
+			ShowVersion=$(printf "%s" "$NewVersion" | sed -e "y/ /_/")
+			echo "$(get_localized $lang 189 "$ShowVersion")" 1>&2
 			debug "get_version_from_manufacturer: found new version $NewVersion, URL=$DownloadURL"
 		fi
 	fi
@@ -2981,7 +2982,8 @@ case $source in
 				exit $rc
 			fi
 			debug "modfs: working directory=$working_directory"
-			progress 1 121 "$NewVersion"
+			ShowVersion=$(printf "%s" "$NewVersion" | sed -e "y/ /_/")
+			progress 1 121 "$ShowVersion"
 			download_directory="$working_directory/$($bb date +%s)"
 			$bb mkdir -p "$download_directory"
 			echo "$bb rm -r $download_directory" >>$tempfilelist
