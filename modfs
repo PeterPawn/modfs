@@ -48,7 +48,7 @@ fsvarname="linux_fs_start"
 hwrevname="HWRevision"
 # supported hardware revisions
 # 3370, 7362SL, 3390, 7490, 3490, 7430
-hwrevs_supported="175 185 193 203 212 218 192"
+hwrevs_supported="175 185 193 203 212 218"
 # AVM's binary to modify the NAND based partitions (busybox has it's own tools, but not ooB on a device with original firmware)
 update_kernel_binary="/sbin/update_kernel"
 # where is the wrapper mounted at the running system ?
@@ -161,7 +161,7 @@ nativefilesystems="tmpfs ext2 ext3 ext4 yaffs2"
 #
 # our "internal" constants
 #
-modfs_version=0.4.1-031220162001
+modfs_version=0.4.1-030220170153
 modfs_comment="please look at https://github.com/PeterPawn/modfs for further info"
 bindirname="bin"
 localedirname="locale"
@@ -2711,6 +2711,12 @@ debug "modfs: PATH=$PATH"
 debug "modfs: SHELL=$SHELL"
 debug "modfs: SHLVL=$SHLVL"
 debug "modfs: BusyBox: $(busybox | sed -n -e '1p')"
+debug "modfs: Filesystems mounted"
+$bb cat /proc/mounts | $debugoutput
+debug "modfs: Free space"
+$bb df -h | $debugoutput
+debug "modfs: Swap space"
+$bb cat /proc/swaps | $debugoutput
 #
 # we'll store an unlink command for all temporary directories and files here and remove it, if the target is deleted elsewhere
 #
