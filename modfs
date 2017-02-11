@@ -65,8 +65,6 @@ firmware_filesystem_image="./var/tmp/filesystem.image"
 wrapperimagename="filesystem.image"
 # kernel image file name
 kernelfilename="kernel.image"
-# the name of the file, which can be used to determine the version of the system within a squashfs image
-versionfilename="/etc/version"
 # the name of the busybox to be used, will be changed later
 bb="/bin/busybox"
 # the name of the shell on the box
@@ -161,7 +159,7 @@ nativefilesystems="tmpfs ext2 ext3 ext4 yaffs2"
 #
 # our "internal" constants
 #
-modfs_version=0.4.1-030220170153
+modfs_version=0.4.1-191120160505
 modfs_comment="please look at https://github.com/PeterPawn/modfs for further info"
 bindirname="bin"
 localedirname="locale"
@@ -1998,8 +1996,8 @@ check_squashfs_file_version()
 	progress 1 168 $squashfsimage
 	checkdir="$(get_temp_dir)"
 	sq_version=$(get_squashfs_tools_version "$squashfsimage")
-	sq_unsquashfs -dest "$checkdir/test" "$squashfsimage" "$versionfilename" 2>/dev/null 1>&2
-	if [ -f "$checkdir/test$versionfilename" ]; then
+	sq_unsquashfs -dest "$checkdir/test" "$squashfsimage" "/etc/version" "/etc/init.d/rc.conf"  2>/dev/null 1>&2
+	if [ -f "$checkdir/test/etc/version" ] && [ -f "$checkdir/test/etc/init.d/rc.conf" ]; then
 		# check image version
 		imageversion="$(get_system_version "$checkdir/test")"
 		if [ x$imageversion == x$(get_system_version) ]; then

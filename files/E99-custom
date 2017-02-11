@@ -355,7 +355,6 @@ add_script()
 	local script="$1" package="$2" image="$3" mountedimage="$4" basedir="$5" 
 	local mode="$6" fstype="$7" tmpfs="$8" debug
 	local scriptname="${script##*/}"
-	scriptname="${scriptname%$custom_extension}"
 	cat >${basedir}.${scriptname}.environ <<EOT
 PKG_${package}_SCRIPT="$script"
 PKG_${package}_IMAGE="$image"
