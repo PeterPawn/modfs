@@ -695,7 +695,7 @@ copy_wrapper_filesystem()
 				if [ -n "$ADD_TO_WRAPPER" ]; then
 					if [ -d "$ADD_TO_WRAPPER" ]; then
 						debug "copy_wrapper_filesystem: subdirectory '$ADD_TO_WRAPPER' exists, copying content to the new wrapper partition"
-						cp -a add_to_wrapper/* $tmp/yaffs/
+						cp -a $ADD_TO_WRAPPER/* $tmp/yaffs/
 						rc=$?
 						debug "copy_wrapper_filesystem: add_to_wrapper directory '$ADD_TO_WRAPPER' copied, rc=$rc"
 					else
