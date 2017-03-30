@@ -304,6 +304,7 @@ mount_alternative_system()
 	if [ $puma6 -eq 1 ]; then
 		mount -t squashfs -o ro $blkdev$1 $2/$altfs 2>/dev/null || return 1
 		printf '%s/%s' $2 $altfs
+		return 0
 	else
 		blkid=$(command -v blkid 2>/dev/null)
 		if [ -z $blkid ]; then
@@ -313,11 +314,15 @@ mount_alternative_system()
 		[ -z $fstype ] && fstype=yaffs2
 		mount -t $fstype -o ro $blkdev$1 $2/$altfs 2>/dev/null || return 1
 		! [ $fstype = yaffs2 ] && printf '%s/%s' $2 $altfs && return 0
-		mkdir -p $2/$altroot 2>/dev/null || return 1
-		mount -t squashfs -o ro $2/$altfs/$rootfsimage $2/$altroot 2>/dev/null || return 1
-		printf '%s/%s' $2 $altroot
+		if mkdir -p $2/$altroot 2>/dev/null; then
+			if mount -t squashfs -o ro $2/$altfs/$rootfsimage $2/$altroot 2>/dev/null; then
+				printf '%s/%s' $2 $altroot
+				return 0
+			fi
+		fi
+		umount $2/$altfs 2>/dev/null
+		return 1
 	fi
-	return 0
 )
 ##############################################################################
 #                                                                            #
