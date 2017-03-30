@@ -516,7 +516,8 @@ html_display()
 		running_date="$(get_system_date)"
 		if [ -d $wrapper ]; then
 			image="$(get_image_name /)"
-			[ $? -eq 0 ] && running_fsdate="$(date -d @$(stat -c %Y $image 2>/dev/null) +'%d.%m.%Y %H:%M:%S')"
+			[ $? -eq 0 ] || image=$wrapper/$rootfsimage
+			running_fsdate="$(date -d @$(stat -c %Y $image 2>/dev/null) +'%d.%m.%Y %H:%M:%S')"
 		else
 			[ -f $statfile ] && running_fsdate="$(date -d @$(stat -c %Y $statfile 2>/dev/null) +'%d.%m.%Y %H:%M:%S')"
 		fi
