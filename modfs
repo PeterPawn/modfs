@@ -165,6 +165,7 @@ bindirname="bin"
 localedirname="locale"
 filesdirname="files"
 scriptdirname="modscripts"
+contribdirname="contrib"
 tmpdirbase="/var/tmp"
 packedpartition="128MB_ext3.gz"
 squashfsdirname="squashfs-root"
@@ -218,6 +219,10 @@ localedir() { echo "$scriptpath/$localedirname"; }
 # get files subdirectory name
 #
 filesdir() { echo "$scriptpath/$filesdirname"; }
+#
+# get contributed content subdirectory name
+#
+contribdir() { echo "$scriptpath/$contribdirname"; }
 #
 # remove temporary file
 # $1 - file name
@@ -1066,6 +1071,15 @@ execute_optional_modscript()
 	return $rc
 }
 #
+# sort the list of modscripts to ensure orepare the executable flags of modscripts listed in a custom selection file
+# $1 - script list file
+#
+solve_modscript_dependencies()
+{
+	local list="$1"
+	$bb sort $list
+}
+#
 # prepare the executable flags of modscripts listed in a custom selection file
 #
 prepare_custom_modscripts_selection()
@@ -1110,20 +1124,23 @@ prepare_custom_modscripts_selection()
 #
 modify_rootfs()
 {
-	local target="$1" scripts="$2" rc=0 line lines lrc filelist script donelist tmpdir flags execute
+	local target="$1" scripts="$2" contribs="$3" rc=0 line lines lrc filelist script donelist tmpdir flags execute
 	tmpdir="$(get_temp_dir)"
 	# short stop to ensure an unique temporary directory name (contains the unix time)
 	$bb sleep 1
-	debug "modify_rootfs: starting, target=$target, scripts=$scripts"
+	debug "modify_rootfs: starting, target=$target, scripts=$scripts, contribs=$contribs"
 	FRITZOS_VERSION="$(get_target_system_version "$target")"
 	KERNEL_VERSION="$(get_target_kernel_version "$target")"
 	BRANDINGS="$(get_target_brandings "$target")"
 	BRANDING="$(get_first_branding "$BRANDINGS")"
 	MODSCRIPT_ENV="$KERNEL_VERSION $FRITZOS_VERSION TARGET_BRANDINGS=\"$BRANDINGS\" TARGET_BRANDING=\"$BRANDING\""
 	prepare_custom_modscripts_selection
+	list="$tmpdir/scriptfiles"
 	filelist="$tmpdir/scripts"
 	donelist="$tmpdir/executed"
-	$bb find "$scripts" -follow -xdev -type f | $bb sort >"$filelist"
+	$bb find "$scripts" "$contribs" -follow -xdev -type f >"$list"
+	[ -s "$list" ] && lines=$($bb sed -n -e "\$=" "$list") || lines=0
+	[ $lines -gt 0 ] && solve_modscript_dependencies "$list" >"$filelist" || touch "$filelist"
 	[ -s "$filelist" ] && lines=$($bb sed -n -e "\$=" "$filelist") || lines=0
 	line=0
 	while [ $line -lt $lines ]; do
@@ -3257,7 +3274,14 @@ if [ $rc -eq 0 -a $install_image_only -eq 0 ]; then
 fi
 if [ $rc -eq 0 -a $install_image_only -eq 0 ]; then
 	# modify root file system
-	modify_rootfs "$unpack_directory/$squashfsdirname" "$scriptpath/modscripts"
+	contribs="$(contribdir)/$scriptdirname"
+	if [ -d "$contribs" ]; then
+		files=$($bb find "$contribs" -follow -xdev -type f | $bb wc -l)
+		[ $files -gt 0 ] || contribs=""
+	else
+		contribs=""
+	fi
+	modify_rootfs "$unpack_directory/$squashfsdirname" "$scriptpath/$scriptdirname" "$contribs"
 	rc=$?
 	if [ $rc -lt 2 ]; then
 		rc=0
