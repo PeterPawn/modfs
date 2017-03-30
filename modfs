@@ -1138,7 +1138,7 @@ modify_rootfs()
 	list="$tmpdir/scriptfiles"
 	filelist="$tmpdir/scripts"
 	donelist="$tmpdir/executed"
-	$bb find "$scripts" "$contribs" -follow -xdev -type f >"$list"
+	$bb find "$scripts" "$contribs" -follow -xdev -type f 2>/dev/null >"$list"
 	[ -s "$list" ] && lines=$($bb sed -n -e "\$=" "$list") || lines=0
 	[ $lines -gt 0 ] && solve_modscript_dependencies "$list" >"$filelist" || touch "$filelist"
 	[ -s "$filelist" ] && lines=$($bb sed -n -e "\$=" "$filelist") || lines=0
@@ -3276,7 +3276,7 @@ if [ $rc -eq 0 -a $install_image_only -eq 0 ]; then
 	# modify root file system
 	contribs="$(contribdir)/$scriptdirname"
 	if [ -d "$contribs" ]; then
-		files=$($bb find "$contribs" -follow -xdev -type f | $bb wc -l)
+		files=$($bb find "$contribs" -follow -xdev -type f 2>/dev/null | $bb wc -l)
 		[ $files -gt 0 ] || contribs=""
 	else
 		contribs=""
