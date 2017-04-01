@@ -1103,7 +1103,7 @@ prepare_custom_modscripts_selection()
 			if [ "$state" == "+" ]; then
 				flags="a+x"
 			elif [ "$state" == '?' ]; then
-				flags="ug+x"
+				flags="ug+x,o-x"
 			fi
 			$bb chmod "$flags" "$scripts/$scriptname"
 			rc=$?
