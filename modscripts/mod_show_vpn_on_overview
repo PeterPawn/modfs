@@ -224,6 +224,8 @@ patch_file()
  local function unknown()
  return [[ — ]]
  end
+--- usr/www/$TARGET_BRANDING/home/home.lua
++++ usr/www/$TARGET_BRANDING/home/home.lua
 @@ -1371,6 +1455,7 @@
  wan = get_wan(data),
  lan = get_lan(data),
@@ -231,6 +233,16 @@ patch_file()
 +vpn = get_vpn_connections(data),
  wlan24 = (config.WLAN.is_double_wlan and get_wlan24GHz(data)) or (not config.WLAN.is_double_wlan and get_wlan(data)) or nil,
  wlan5 = (config.WLAN.is_double_wlan and get_wlan5GHz(data)) or nil,
+ smarthome= get_smarthome(data),
+--- usr/www/$TARGET_BRANDING/home/home.lua
++++ usr/www/$TARGET_BRANDING/home/home.lua
+@@ -1381,6 +1381,7 @@
+ wan = get_wan(data),
+ lan = get_lan(data),
+ usb = get_usb(data),
++vpn = get_vpn_connections(data),
+ wlan24 = config.WLAN and ((config.WLAN.is_double_wlan and get_wlan24GHz(data)) or (not config.WLAN.is_double_wlan and get_wlan(data))) or nil,
+ wlan5 = config.WLAN and ((config.WLAN.is_double_wlan and get_wlan5GHz(data))) or nil,
  smarthome= get_smarthome(data),
 --- usr/www/$TARGET_BRANDING/home/home.js
 +++ usr/www/$TARGET_BRANDING/home/home.js
