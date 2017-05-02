@@ -159,7 +159,7 @@ nativefilesystems="tmpfs ext2 ext3 ext4 yaffs2"
 #
 # our "internal" constants
 #
-modfs_version=0.4.5-020520172241
+modfs_version=0.4.5-030520170044
 modfs_comment="please look at https://github.com/PeterPawn/modfs for further info"
 bindirname="bin"
 localedirname="locale"
@@ -1269,7 +1269,7 @@ mount_ext2_image()
 		if [ $? -eq 0 ]; then
 			$bb losetup -r -f -o 256 $src 2>/dev/null
 			rc=$?
-			[ $rc -eq 0 ] && loopdev=$($bb losetup -a | $bb sed -n -e "s|^\([^ ]*\):.*${src:1:63}.*\$|\1|p")
+			[ $rc -eq 0 ] && loopdev=$($bb losetup -a | $bb sed -n -e "s|^\([^ ]*\):.*${src:0:63}.*\$|\1|p")
 		else
 			debug "mount_ext2_image: no losetup found, using dd to remove dummy block"
 			$bb dd if="$src" of="$src.ext2" bs=256 skip=1 conv=fsync,sync 2>/dev/null
