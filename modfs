@@ -1270,6 +1270,11 @@ mount_ext2_image()
 			$bb losetup -r -f -o 256 $src 2>/dev/null
 			rc=$?
 			[ $rc -eq 0 ] && loopdev=$($bb losetup -a | $bb sed -n -e "s|^\([^ ]*\):.*${src:0:63}.*\$|\1|p")
+			if [ ${#loopdev} -eq 0 ]; then
+				debug "mount_ext2_image: unable to find the loop device backed by our image file, aborting"
+				losetup -a 2>&1 | $debugoutput
+				rc=202
+			fi
 		else
 			debug "mount_ext2_image: no losetup found, using dd to remove dummy block"
 			$bb dd if="$src" of="$src.ext2" bs=256 skip=1 conv=fsync,sync 2>/dev/null
