@@ -95,6 +95,7 @@ semafile="/var/run/bootmanager.semaphore"
 ##############################################################################
 . /etc/puma6_helper.sh
 is_puma6 && puma6=1 || puma6=0
+is_puma_na && plat=ATOM || plat=ARM
 [ $puma6 -eq 0 ] && blkdev=$mtdblockprefix || blkdev=$mmcprefix
 [ $puma6 -eq 0 ] && dev=$mtdprefix || dev=$mmcprefix
 ##############################################################################
@@ -173,7 +174,7 @@ get_system_switch()
 get_partition_by_name() 
 (
 	if [ $puma6 -eq 1 ]; then
-		name="$1${2:+_}${2}_ARM"
+		name="$1${2:+_}${2}_${plat}"
 		sed -n -e "s|^${name}=$mmcprefix\([0-9]\{1,2\}\)\$|\1|p" $pumaparts
 	else
 		name=$2${2:+-}$1
@@ -189,7 +190,7 @@ get_partition_by_name()
 get_partition_by_number() 
 (
 	if [ $puma6 -eq 1 ]; then
-		sed -e "/_SIZE=/d" -e "s|_|-|g" $pumaparts | sed -n -e "s|^\([a-z]*\)\(-$reservedprefix\)\?-ARM=$mmcprefix$1|\1\2|p" | sed -e "s|\(.*\)-\(.*\)|\2-\1|"
+		sed -e "/_SIZE=/d" -e "s|_|-|g" $pumaparts | sed -n -e "s|^\([a-z]*\)\(-$reservedprefix\)\?-${plat}=$mmcprefix$1|\1\2|p" | sed -e "s|\(.*\)-\(.*\)|\2-\1|"
 	else
 		sed -n -e "s|$mtdprefix$1: [0-9a-f]\{8\} [0-9a-f]\{8\} \"\(.*\)\"|\1|p" $procmtd 
 	fi
