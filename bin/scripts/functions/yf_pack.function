@@ -37,6 +37,15 @@
 #   1 - error occured, generally an invalid parameter was specified                   #
 #                                                                                     #
 #######################################################################################
+#                                                                                     #
+# U: printf readlink sed                                                              #
+# W: -                                                                                #
+# F: yf_substring yf_reverse_hex yf_endianess yf_hex2bin yf_dec2hex yf_ipv4_address   #
+# F: yf_str2hex                                                                       #
+# I: -                                                                                #
+# K: convert                                                                          #
+#                                                                                     #
+#######################################################################################
 yf_pack()
 (
 	out="" 
@@ -45,7 +54,7 @@ yf_pack()
 		val="$2"
 		shift 2
 		endian=$(yf_substring "$type" 0 1 | yf_uppercase)
-		if [ $endian = B -o $endian = L ]; then
+		if [ $endian = B ] || [ $endian = L ]; then
 			type="$(yf_substring "$type" 1)"
 		else
 			unset endian
@@ -69,7 +78,7 @@ yf_pack()
 				[ -z $endian ] && endian=B
 				;;
 			STR)
-				hex="$(yf_str2hex "$val")"
+				hex="$(printf "%s" "$val" | yf_bin2hex)"
 				unset endian
 				;;
 			*)
@@ -87,6 +96,6 @@ yf_pack()
 		fi
 		out="$out$hex"
 	done
-	yf_hex2bin "$out"
+	printf "%s" "$out" | yf_hex2bin
 	return 0
 )

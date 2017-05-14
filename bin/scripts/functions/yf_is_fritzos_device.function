@@ -22,6 +22,14 @@
 # this pseudo-file at all) should be enough input for a decision.                     #
 #                                                                                     #
 #######################################################################################
+#                                                                                     #
+# U: grep                                                                             #
+# W: -                                                                                #
+# F: -                                                                                #
+# I: -                                                                                #
+# K: fritzbox                                                                         #
+#                                                                                     #
+#######################################################################################
 yf_is_fritzos_device()
 (
 	[ -d /proc/sys/urlader ] || return 1

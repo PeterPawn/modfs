@@ -2,39 +2,36 @@
 # vi: set tabstop=4 syntax=sh : # colorize it in 'vi' and use shorter tabstops
 #######################################################################################
 #                                                                                     #
-# get_default_gateway_address - retrieve the IPv4 addresses for the specified         #
-#                               interface                                             #
+# index - return first position of a character in a string                            #
 #                                                                                     #
 # parameters:                                                                         #
-#   none                                                                              #
+#   $1 - string to search for the character                                           #
+#   $2 - character to be found                                                        #
 #                                                                                     #
 # stdout:                                                                             #
-#   gateway address for default route (0.0.0.0/0.0.0.0), only one should be present   #
+#   the position of the first occurence of $2 in $1 (like 'expr index' would do it)   #
 #                                                                                     #
 # return code:                                                                        #
-#   0 - stdout is valid                                                               #
-#   1 - no default gateway found at /proc/net/route                                   #
-#                                                                                     #
-# remarks:                                                                            #
-#   Any policy based routing is silently ignored - usually it's not used on a         #
-#   FRITZ!Box device.                                                                 #
+#   0 - stdout value is valid                                                         #
+#   1 - error occured, one or more parameters are invald                              #
 #                                                                                     #
 #######################################################################################
 #                                                                                     #
-# U: sed                                                                              #
+# U: printf                                                                           #
 # W: -                                                                                #
-# F: yf_endianess yf_reverse_hex yf_print_ip                                          #
+# F: -                                                                                #
 # I: -                                                                                #
-# K: network                                                                          #
+# K: strings                                                                          #
 #                                                                                     #
 #######################################################################################
-yf_get_default_gateway_address()
+yf_index()
 (
-	addr="$(sed -n -e "s|[^\t]*\t*0\{8\}\t*\([^\t]*\)\t*.*0\{8\}\t*.*\$|\1|p" /proc/net/route)"
-	[ ${#addr} -eq 0 ] && return 1
-	if [ $(yf_endianess) == L ]; then
-		addr="$(yf_reverse_hex "$addr")"
-	fi
-	yf_print_ip "$addr"
-	return $?
+	string="$1"
+	char="$2"
+	[ ${#string} -eq 0 ] && return 1
+	[ ${#char} -ne 1 ] && return 1
+	tv="${string%${char}*}"
+	[ "$tv" = "$string" ] && l=0 || l=$(( ${#tv} + 1 ))
+	printf "%d" $l
+	return 0
 )

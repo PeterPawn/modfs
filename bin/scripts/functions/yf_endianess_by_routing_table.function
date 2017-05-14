@@ -22,6 +22,14 @@
 #   always 0 (no errors, default output of "B" in case of problems)                   #
 #                                                                                     #
 #######################################################################################
+#                                                                                     #
+# U: sed grep printf                                                                  #
+# W: -                                                                                #
+# F: -                                                                                #
+# I: -                                                                                #
+# K: convert_alt endian_alt                                                           #
+#                                                                                     #
+#######################################################################################
 yf_endianess_by_routing_table()
 (
 	endian="B"

@@ -6,7 +6,7 @@
 #                                                                                     #
 # parameters:                                                                         #
 #   $1 - original string                                                              #
-#   $2 - start position of string to extract                                          #
+#   $2 - start position of string to extract (zero based)                             #
 #   $3 - optional length of string to extract                                         #
 #                                                                                     #
 # stdout:                                                                             #
@@ -15,6 +15,14 @@
 # return code:                                                                        #
 #   0 - stdout value is valid                                                         #
 #   1 - error occured, one or more parameters are invald                              #
+#                                                                                     #
+#######################################################################################
+#                                                                                     #
+# U: expr                                                                             #
+# W: -                                                                                #
+# F: yf_is_decimal                                                                    #
+# I: -                                                                                #
+# K: strings                                                                          #
 #                                                                                     #
 #######################################################################################
 yf_substring()
@@ -29,7 +37,7 @@ yf_substring()
 	[ -n $len ] && ! yf_is_decimal $len && return 1
 	[ -z $len ] || [ $len -gt $(( ${#in} - start )) ] && len=$(( ${#in} - start ))
 	len="\{$len\}"
-	[ $start -gt 0 ] && mask="s|^.\{$start\}\(.$len\).*|\1|p" || mask="s|^\(.$len\).*|\1|p"
-	printf "$in" | sed -n -e "$mask"
+	[ $start -gt 0 ] && mask=".\{$start\}\(.$len\).*" || mask="\(.$len\).*"
+	expr "$in" : "$mask"
 	return 0
 )

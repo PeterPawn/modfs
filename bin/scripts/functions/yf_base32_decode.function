@@ -2,65 +2,68 @@
 # vi: set tabstop=4 syntax=sh : # colorize it in 'vi' and use shorter tabstops
 #######################################################################################
 #                                                                                     #
-# base64_decode - convert STDIN from base64 format to the encoded content, if no      #
-#                 'base64' command exists, try to run an emulation, but this is very  #
-#                 slow                                                                #
+# base32_decode - convert STDIN from base32 format (AVMs character set) to the binary #
+#                 content                                                             #
 #                                                                                     #
 # parameters:                                                                         #
 #   none                                                                              #
 #                                                                                     #
 # stdin:                                                                              #
-#   the content to decode                                                             #
+#   the content to decode, size has to be a multiple of 8 on each line and a newline  #
+#   character is needed at the end (otherwise the 'read' command will fail), even if  #
+#   the encoding function does not add one (it doesn't split its output into lines)   #
 #                                                                                     #
 # stdout:                                                                             #
 #   the decoded data                                                                  #
 #                                                                                     #
 # return code:                                                                        #
 #   0 - stdout value is valid                                                         #
-#   1 - error occured, 'base64' command was not found or input data is invalid        #
+#   1 - error occured, input data is invalid                                          #
 #                                                                                     #
 #######################################################################################
 #                                                                                     #
 # U: sed printf expr dd                                                               #
-# W: base64                                                                           #
+# W: -                                                                                #
 # I: -                                                                                #
 # F: yf_substring yf_index                                                            #
-# K: base64                                                                           #
+# K: avm encryption fritzbox                                                          #
 #                                                                                     #
 #######################################################################################
-yf_base64_decode()
+yf_base32_decode()
 (
 	[ -t 0 ] && return 1
-	if command -v base64 2>/dev/null 1>&2 ; then
-		command base64 -d
-		rc=$?
-	else
-		while read line; do
-			! [ -z "$(expr "$line" : "\([^A-Za-z0-9+/\r=]\)")" ] && return 1
-			line=$(printf "%s" $line | sed -e "s|\r||g")
-			[ $(( ${#line} % 4 )) -gt 0 ] && return 1
-			i=0
-			f=0
-			while [ $i -lt ${#line} ]; do
-				part=$(printf "%s" $(yf_substring "$line" $i 4) | sed -e "s|.|& |g" -e "s|+|_|g")
-				i=$(( i + 4 ))
-				v=0
-				for c in $part; do
-					[ $c = = ] \
-						&& f=$(( f + 1 )) \
-						|| v=$(( ( v << 6 ) + $(yf_index "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_/" $c) - 1 ))
-				done
-				[ $f -gt 0 ] && v=$(( v >> ( f * 2 ) ))
-				s=16
-				while [ $s -ge 0 ]; do
-					d=$(( ( v >> s ) & 255 ))
+	rc=1 # preset, if no newline is present on STDIN, our 'read' will signal instant EOF
+	while read line; do
+		rc=0
+		! [ -z "$(expr "$line" : "\([^A-Z1-6\r]\)")" ] && return 1
+		line=$(printf "%s" $line | sed -e "s|\r||g")
+		[ $(( ${#line} % 8 )) -gt 0 ] && return 1
+		i=0
+		f=0
+		while [ $i -lt ${#line} ]; do
+			part=$(printf "%s" $(yf_substring "$line" $i 8) | sed -e "s|.|& |g")
+			i=$(( i + 8 ))
+			v=0
+			j=0
+			for c in $part; do
+				v=$(( ( v << 5 ) + $(yf_index "ABCDEFGHIJKLMNOPQRSTUVWXYZ123456" $c) - 1 ))
+				j=$(( j + 1 ))
+				[ $(( j % 4 )) -ne 0 ] && continue
+				# process 16 and 24 bits in two separate steps, this avoids
+				# problems with 32-bit-limited arithmetics
+				r=$(( j % 8 ))
+				o=$(( v >> r ))
+				s=$(( 24 - ( r * 2 ) ))
+				v=$(( v & ( 0x00FFFFFF >> ( r * 5 ) ) ))
+				while [ $s -gt 0 ]; do
 					s=$(( s - 8 ))
+					d=$(( ( o >> s ) & 255 ))
 					[ $d -eq 0 ] \
 						&& dd if=/dev/zero bs=1 count=1 2>/dev/null \
 						|| printf "%b" "\0$(( d >> 6 ))$(( ( d >> 3 ) & 7 ))$(( d & 7 ))"
 				done
 			done
 		done
-	fi
+	done
 	return $rc
 )

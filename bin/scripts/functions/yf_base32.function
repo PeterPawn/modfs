@@ -2,87 +2,81 @@
 # vi: set tabstop=4 syntax=sh : # colorize it in 'vi' and use shorter tabstops
 #######################################################################################
 #                                                                                     #
-# base64 - convert STDIN to a base64 string, if no 'base64' command exists, try to    #
-#          run an emulation using a (POSIX-compatible) 'cmp -l' command               #
+# base32 - convert STDIN to a base32 string using AVMs presentation with characters   #
+#          A to Z and 1 to 6                                                          #
 #                                                                                     #
 # parameters:                                                                         #
 #   none                                                                              #
 #                                                                                     #
 # stdin:                                                                              #
-#   the content to convert                                                            #
+#   the content to convert, size should be a multiple of 5 or it will be padded with  #
+#   zero bytes to the next integral boundary of 5                                     #
 #                                                                                     #
 # stdout:                                                                             #
-#   the base64 encoded input                                                          #
+#   the base32 encoded input, size is always a multiple of 8                          #
 #                                                                                     #
 # return code:                                                                        #
 #   0 - stdout value is valid                                                         #
-#   1 - error occured, 'base64' or a POSIX compatible 'cmp' command was not found;    #
+#   1 - error occured, a POSIX compatible 'cmp' command was not found;                #
 #       another possible error is a STDIN descriptor attached to a terminal           #
 #                                                                                     #
 #######################################################################################
 #                                                                                     #
 # U: cmp expr printf                                                                  #
-# W: base64                                                                           #
+# W: -                                                                                #
 # I: -                                                                                #
 # F: -                                                                                #
-# K: base64                                                                           #
+# K: avm encryption fritzbox                                                          #
 #                                                                                     #
 #######################################################################################
-yf_base64()
+yf_base32()
 (
-	yf_base64_encode()
+	yf_base32_append()
 	{
-		[ $1 -eq 0 ] && printf "A" || printf "%c" $(expr "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/" : ".\{$1\}\(.\).*")
+		for x in $*; do
+			b=$(( b + 8 ))
+			v=$(( ( v << 8 ) + $x ))
+			while [ $b -ge 5 ]; do
+				d=$(( v >> ( b - 5 ) ))
+				[ $d -eq 0 ] && printf "A" || printf "%c" $(expr "ABCDEFGHIJKLMNOPQRSTUVWXYZ123456" : ".\{$d\}\(.\).*")
+				v=$(( v & ( 2 ** ( b - 5 ) - 1 ) ))
+				b=$(( b - 5 ))
+			done
+		done
 	}
 
-	yf_base64_append()
-	{
-		if ! [ $1 = eof ]; then
-			l=$(( l + 1 ))
-			v=$(( ( v << 8 ) + $1 ))
-		else
-			[ $l -eq 0 ] && return
-			v=$(( v << ( 8 * ( 3 - l ) ) ))
-		fi
-		if [ $l -eq 3 ] || [ $1 = eof ]; then
-			yf_base64_encode $(( v >> 18 ))
-			yf_base64_encode $(( ( v >> 12 ) & 63 ))
-			[ $l -eq 1 ] && printf "==" && return
-			yf_base64_encode $(( ( v >> 6 ) & 63 ))
-			[ $l -eq 2 ] && printf "=" && return
-			yf_base64_encode $(( v & 63 ))
-			l=0
-			v=0
-			k=$(( k + 1 ))
-			[ $k -eq 19 ] && printf "\n" && k=0
-		fi
-	}
-
-	yf_base64_read_octal()
+	yf_base32_read_octal()
 	{
 		i=1
-		l=0
+		b=0
 		v=0
-		k=0
 		while read pos left right; do
-			while [ $i -lt $pos ]; do # zeroes are equal for 'cmp'
-				yf_base64_append 0
-				i=$(( i + 1 ))
-			done
-			yf_base64_append 0$right
+			if [ $i -lt $pos ]; then
+				unset z
+				while [ $i -lt $pos ]; do # zeroes are equal for 'cmp'
+					[ ${#z} -gt 32 ] && yf_base32_append $z && unset z # output next 16 zeroes
+					z="$z 0"
+					i=$(( i + 1 ))
+				done
+				yf_base32_append $z
+			fi
+			yf_base32_append 0$right
 			i=$(( pos + 1 ))
 		done
-		yf_base64_append eof
+		j=$(( 5 - ( ( i - 1 ) % 5 ) ))
+		if [ $j -ne 5 ]; then
+			unset z
+			while [ $j -gt 0 ]; do
+				z="$z 0"
+				j=$(( j - 1 ))
+			done
+			yf_base32_append $z
+		fi
+		return 0
 	}
 
 	[ -t 0 ] && return 1
-	if command -v base64 2>/dev/null 1>&2 ; then
-		command base64
-		rc=$?
-	else
-		command -v cmp 2>/dev/null 1>&2 || return 1	
-		command cmp -l -- /dev/zero - 2>/dev/null | yf_base64_read_octal
-		printf "\n"
-	fi
+	command -v cmp 2>/dev/null 1>&2 || return 1
+	command cmp -l -- /dev/zero - 2>/dev/null | yf_base32_read_octal
 	return $rc
 )

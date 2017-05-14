@@ -17,14 +17,30 @@
 #   1 - invalid parameter specified                                                   #
 #                                                                                     #
 #######################################################################################
+#                                                                                     #
+# U: sed                                                                              #
+# W: -                                                                                #
+# F: -                                                                                #
+# I: -                                                                                #
+# K: strings                                                                          #
+#                                                                                     #
+#######################################################################################
 yf_trim()
 (
 	dir=${1:-0}
 	[ $dir -lt -1 ] || [ $dir -gt 1 ] && return 1
 	char="${2:-[ \t\r]}"
-	[ ${#char} -gt 1 ] && ( [ "${char#[[]}" = "$char" ] || [ "${char%[]]}" = "$char" ] ) && return 1
-	[ $dir -eq -1 ] && sed -e "s!^${char}*!!g"
-	[ $dir -eq 1 ] && sed -e "s!${char}*\$!!g"
-	[ $dir -eq 0 ] && yf_trim -1 "$char" | yf_trim 1 "$char"
-	return 0
+	if [ ${#char} -gt 1 ]; then
+		if [ "${char#[[]}" = "$char" ] || [ "${char%[]]}" = "$char" ]; then
+			return 1
+		fi
+	fi
+	if [ $dir -eq -1 ]; then
+		sed -e "s!^${char}*!!g"
+	elif [ $dir -eq 1 ]; then
+		sed -e "s!${char}*\$!!g"
+	else
+		sed -e "s!^${char}*!!g" -e "s!${char}*\$!!g"
+	fi
+	return $?
 )
