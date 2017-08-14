@@ -329,24 +329,14 @@ if ! [ -f "$image_file" ]; then
 fi
 ####################################################################################
 #                                                                                  #
-# log some settings to be able to reproduce the same environment, invisible while  #
-# called without shell debug (-x)                                                  #
-#                                                                                  #
-####################################################################################
-# echo "SHELL=$SHELL" >/dev/null
-# echo "$(busybox | sed -n -e '1p')" >/dev/null
-# echo "PATH=$PATH" >/dev/null
-# echo "proc/self/exe=$(ls -l /proc/self/exe)" >/dev/null
-# echo "applets:" >/dev/null
-# busybox --list | while read applet; do echo "$applet" >/dev/null; done
-# eval "n=$(mktemp -d);[ -z \$n ] || rmdir \$n" >/dev/null
-####################################################################################
-#                                                                                  #
 # prepare a temporary directory and cleanup on exit                                #
 #                                                                                  #
 ####################################################################################
-tmp=$(mktemp -d 2>/dev/null)
-[ $? -eq 127 -o ${#tmp} -eq 0 ] && tmp="/tmp/tmp.${0##*/}.$(date +%s).$$" && mkdir -p "$tmp"
+tmp=$(mktemp -d)
+if [ $? -eq 127 ] || [ ${#tmp} -eq 0 ]; then
+	tmp="/tmp/tmp.$(date +%s).$$"
+	mkdir -p "$tmp"
+fi
 trap "rm -r \"$tmp\"" EXIT HUP INT
 ####################################################################################
 #                                                                                  #
