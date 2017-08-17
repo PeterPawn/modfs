@@ -1,1 +1,8 @@
 modfs*.tgz
+add_to_wrapper*
+binutils
+custom
+custom_modscripts
+modnow.sh
+my_modscripts
+utils
