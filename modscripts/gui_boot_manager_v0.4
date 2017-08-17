@@ -592,7 +592,7 @@ html_display()
 						printf 'im Moment ist jedoch "%s" eingestellt.</h4>\n' $current_branding
 						printf 'Bei der Umschaltung des zu verwendenden Systems wird daher auch gleichzeitig das Branding auf "%s" ge&auml;ndert.\n' $alternative_brandings	
 					fi
-					printf '<input type="hidden" name="alternative_branding" value="$alternative_brandings" />\n'
+					printf '<input type="hidden" name="alternative_branding" value="%s" />\n' "$alternative_brandings"
 				fi
 			fi
 			printf '</span>\n'
@@ -643,7 +643,7 @@ html_display()
 						printf 'but currently "%s" is in use.</h4>\n' $current_branding
 						printf 'Switching the system to the alternative partitions will also set the provider/OEM name to "%s" without further questions.\n' $alternative_brandings	
 					fi
-					printf '<input type="hidden" name="alternative_branding" value="$alternative_brandings" />\n'
+					printf '<input type="hidden" name="alternative_branding" value="%s" />\n' "$alternative_brandings"
 				fi
 			fi
 			printf '</span>\n'
@@ -744,9 +744,9 @@ case $step in
 			sed -i "$file" -e "
 /^local savecookie/a\\
 if box.post.linux_fs_start then\\
-local linux_fs_start = box.post.linux_fs_start\\
-local branding = box.post[linux_fs_start..\"_branding\"]\\
-os.execute(\"$binfile switch_to \"..linux_fs_start..\" \"..branding)\\
+local linux_fs_start = string.gsub(box.post.linux_fs_start, \"'\", \"\")\\
+local branding = string.gsub(box.post[linux_fs_start..\"_branding\"], \"'\", \"\")\\
+os.execute(\"$binfile switch_to '\"..linux_fs_start..\"' '\"..branding..\"'\")\\
 end
 /^<form action/a\\
 <div id=\"managed_reboot\" class=\"reboot_managed\">\\
