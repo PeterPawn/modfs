@@ -1017,7 +1017,7 @@ get_description()
 execute_optional_modscript()
 {
 	local script="$1" scriptname="${script##*/}" rootdir="$2" rc=0 supports name language uselang languages header desc msg doit
-	debug "execute_optional_modscript: script=$script, root=$rootdir, mode=$mode"
+	debug "execute_optional_modscript: script=$script, root=$rootdir"
 	header="$($bb sed -n -e "1p" "$script")"
 	if [ x"$header" == x"# MODFS_MODSCRIPT" ]; then
 		supports="$($bb sed -n -e "1,/^# EOH\$/s/^# SUPPORTS \(.*\)/\1/p" "$script")"
