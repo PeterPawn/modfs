@@ -359,7 +359,7 @@ get_localized()
 {
 	local lang=$1 lcfile=$(localedir)/$lang msgno=$2 rc=0 msg
 	shift 2
-	msg=$($bb sed -n -e "/^$msgno=/s/^[0-9]*=\(.*\)/\1/p" $lcfile | $bb sed -e "s/%{error}/\${msgtext_error}/g" | $bb sed -e "s/%{ok}/\${msgtext_ok}/g" | $bb sed -e "s/%{warning}/\${msgtext_warning}/g" | $bb sed -e "s/%{bold}/\${msgtext_bold}/g" | $bb sed -e "s/%{normal}/\${msgtext_normal}/g" | $bb sed -e "s/%{highlight}/\${msgtext_highlight}/g")
+	msg="$($bb sed -n -e "/^$msgno=/s/^[0-9]*=\(.*\)/\1/p" $lcfile | $bb sed -e "s/%{error}/\${msgtext_error}/g" | $bb sed -e "s/%{ok}/\${msgtext_ok}/g" | $bb sed -e "s/%{warning}/\${msgtext_warning}/g" | $bb sed -e "s/%{bold}/\${msgtext_bold}/g" | $bb sed -e "s/%{normal}/\${msgtext_normal}/g" | $bb sed -e "s/%{highlight}/\${msgtext_highlight}/g")"
 	if [ "${#msg}" = "0" ]; then
 		echo "The specified message number $msgno was not found at the language file for '$lang'." 1>&2
 		rc=1
