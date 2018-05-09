@@ -174,5 +174,10 @@ ausgelesen, angezeigt, der neue Wert ermittelt und gesetzt. Anschließend wird d
 neu gestartet und das Ergebnis der Kommunikation mit der FRITZ!Box in der Datei mit dem
 Namen "eva_switch_system.log" im aktuellen Verzeichnis abgelegt.
 
-Coming soon ... the same comfort for Windows users, based on some PowerShell scripts.
+=============================================================================================
 
+Update 09.05.2018
+Auch für Windows-Benutzer gibt es (seit langem) etwas Unterstützung beim Ändern von Variablen
+im Urlader-Environment. Dazu kann man das PowerShell-Skript "EVA-FTP-Client.ps1" aus dem o.a.
+Verzeichnis im "YourFritz"-Repository auf GitHub benutzen ... wie das genau geht, findet man
+in einem Thread im IPPF.
