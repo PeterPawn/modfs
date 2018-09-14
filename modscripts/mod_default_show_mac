@@ -19,7 +19,7 @@ step=$4
 #
 rc=0
 check_filename="$rootdir/usr/www/$TARGET_BRANDING/net/net_overview.js"
-unchanged="newclasses = \"port ip properties four_column\";"
+unchanged="newclasses \?= \?\"port ip properties four_column\";"
 #
 # apply
 #
@@ -27,19 +27,9 @@ patch_file()
 {
 	local home=$(pwd)
 	cd $rootdir
-	$home/bin/$HWRevision/busybox patch -p0 2>/dev/null <<EOT
---- usr/www/$TARGET_BRANDING/net/net_overview.js
-+++ usr/www/$TARGET_BRANDING/net/net_overview.js
-@@ -59,7 +59,7 @@
- var oldclasses, newclasses, basediv;
- basediv = main.contentBox;
- oldclasses = "port ip mac properties";
--newclasses = "port ip properties four_column";
-+newclasses = "port ip mac properties five_column";
- jsl.removeClass(basediv, oldclasses);
- jsl.addClass(basediv, newclasses);
- lib.updateView("name", 1);
-EOT
+	$home/bin/$HWRevision/busybox sed -e \
+		's|\(newclasses \?= \?"port ip\) properties four_column";|\1 mac properties five_column";|' \
+		-i usr/www/$TARGET_BRANDING/net/net_overview.js
 	cd $home
 }
 #
