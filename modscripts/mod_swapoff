@@ -33,10 +33,8 @@ patch_file()
 	$home/bin/$HWRevision/busybox patch -p0 2>/dev/null <<'EOT'
 --- etc/hotplug/storage
 +++ etc/hotplug/storage
-@@ -53,6 +53,19 @@
- msgsend upnpd plugin notify libcloudcds.so "lost_partition:$MPOINT"
- msgsend upnpd plugin notify libgpmsrv.so "lost_partition:$MPOINT"
- msgsend gpmdb "lost_partition:$MPOINT"
+@@ -53,4 +53,17 @@
+ msgsend upnpd plugin notify libmediasrv.so "lost_partition:$MPOINT"
 +# remaining swap _files_ below our $MPOINT
 +sf="$(sed -n -e "s|^\(/var/media/dump_partition/[^ ]*\) *.*|\1|p" /proc/swaps)"
 +[ ${#sf} -gt 0 ] && for f in $sf; do echo "Stop swapping to $f" >/dev/console; swapoff $f; done
@@ -53,17 +51,36 @@ patch_file()
  if ls -l /proc/*/cwd /proc/*/fd/* 2> /dev/null |grep -q "$MPOINT" ; then
  sleep 1
  fi
+--- etc/hotplug/storage
++++ etc/hotplug/storage
+@@ -53,4 +53,17 @@
+ msgsend upnpd plugin notify libmediasrv.so "lost_partition:$MPOINT"
++# remaining swap _files_ below our $MPOINT
++sf="$(sed -n -e "s|^\(/var/media/dump_partition/[^ ]*\) *.*|\1|p" /proc/swaps)"
++[ ${#sf} -gt 0 ] && for f in $sf; do echo "Stop swapping to $f" >/dev/console; swapoff $f; done
++# any swap _partition_ on the same block device as the partition mounted as $MPOINT
++# dismounting the volume is the result of an "eject" requets, so swapping to this
++# device also has to be stopped
++devs="$(sed -n -e "s|^\([^ ]*\) /var/media/dump_partition .*\$|\1|p" /proc/mounts)"
++if [ ${#devs} -gt 0 ]; then
++for dev in $devs; do
++sp="$(sed -n -e "s|^\(${dev%%[0-9]}[^ ]*\).*\$|\1|p" /proc/swaps)"
++[ ${#sp} -gt 0 ] && for p in $sp; do echo "Stop swapping to $p" >/dev/console; swapoff $p; done
++done
++fi
+ msgsend upnpd plugin notify libcloudcds.so "lost_partition:$MPOINT"
+ msgsend upnpd plugin notify libgpmsrv.so "lost_partition:$MPOINT"
+ msgsend gpmdb "lost_partition:$MPOINT"
 --- etc/hotplug/usb.pandu
 +++ etc/hotplug/usb.pandu
-@@ -17,6 +17,11 @@
- ##/etc/hotplug/udev-gsm-usb stop
+@@ -18,5 +18,10 @@
  /etc/hotplug/udev-printer-lp stop
  /etc/hotplug/udev-avmwlan-usb stop
 +# add this line to stop swapping to a device, which doesn't contain any
 +# other partitions, only swap space (partition type 0x82)
 +# if other swap locations are also stopped, it's not a problem, because
 +# ALL storage devices will be stopped soon
-+[ x"$(sed -e "1d" /proc/swaps)" != x"" ] && (echo "Stopping all swap devices" >/dev/console;cat /proc/swaps >/dev/console;swapoff -a;cat /proc/swaps >/dev/console)
++[ -z "$(sed -e "1d" /proc/swaps)" ] || (echo "Stopping all swap devices" >/dev/console;cat /proc/swaps >/dev/console;swapoff -a;cat /proc/swaps >/dev/console)
  /etc/hotplug/storage stop
  /etc/hotplug/aura stop
  /etc/init.d/rc.usbhost stop
