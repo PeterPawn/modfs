@@ -2,9 +2,9 @@
 # SUPPORTS precheck postcheck install language(en,de)
 # NAME mount by label
 # DESCRIPTION en
-# mount USB volumes with their label as mountpoint
+# enforce mount of USB volumes with their label as mountpoint
 # DESCRIPTION de
-# USB-Volumes mit ihrem Label als Mountpoint einbinden
+# USB-Volumes immer mit ihrem Label als Mountpoint einbinden
 # EOH
 #
 # process parameters
