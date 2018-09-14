@@ -159,7 +159,7 @@ nativefilesystems="tmpfs ext2 ext3 ext4 yaffs2"
 #
 # our "internal" constants
 #
-modfs_version=0.4.6-280220180003
+modfs_version=0.5.0-beta-150920180116
 modfs_comment="please look at https://github.com/PeterPawn/modfs for further info"
 bindirname="bin"
 localedirname="locale"
@@ -1972,7 +1972,7 @@ check_firmware_image()
 	else
 		progress 3 96
 		# ok, let's get the filesystem image from it
-		working_directory="$(get_working_directory $extract_space_needed "tmpfs nand storage")"
+		working_directory="$(get_working_directory $extract_space_needed "tmpfs $nand storage")"
 		rc=$?
 		if [ $rc -ne 0 ]; then
 			echo -e "$(get_localized $lang $rc)" 1>&2
@@ -2008,7 +2008,7 @@ check_squashfs_file_version()
 	local squashfsimage="$1" rc=0 working_directory checkdir imageversion sq_version
 	debug "check_squashfs_file_version: src=$squashfsimage"
 	# check squashfs version
-	working_directory="$(get_working_directory 1M "tmpfs nand storage")"
+	working_directory="$(get_working_directory 1M "tmpfs $nand storage")"
 	rc=$?
 	if [ $rc -ne 0 ]; then
 		echo -e "$(get_localized $lang $rc)" 1>&2
@@ -2379,7 +2379,8 @@ check_prerequisites()
 											fi
 											# find enough free local space to unpack the squashfs image
 											progress 1 119
-											path=$(find_free_storage_space $free_space_for_unpack 2>/dev/null)
+											[ $INCLUDE_NAND -eq 1 ] && local_nand="withnand" || local_nand="nonand"
+											path=$(find_free_storage_space $free_space_for_unpack $local_nand 2>/dev/null)
 											rc=$?
 											if [ $rc -eq 0 ]; then
 												progress 3 96
@@ -2701,6 +2702,12 @@ if [ x"$MODFS_DEBUG" != x"0" ]; then
 	MODFS_DEBUG=1
 fi
 #
+# include / exclude NAS NAND flash as working directory
+#
+INCLUDE_NAND=${INCLUDE_NAND:-0}
+! ( [ "$INCLUDE_NAND" = "0" ] && [ "$INCLUDE_NAND" = "1" ] ) && INCLUDE_NAND=0
+[ $INCLUDE_NAND -eq 0 ] && nand="nonand" || nand="nand"
+#
 # FRITZ!Box language environment setting
 #
 lang=$Language
@@ -2887,7 +2894,7 @@ case $source in
 		debug "modfs: running system selected"
 		;;
 	download)
-		working_directory="$(get_working_directory $download_space_needed "tmpfs nand storage")"
+		working_directory="$(get_working_directory $download_space_needed "tmpfs $nand storage")"
 		rc=$?
 		if [ $rc -ne 0 ]; then
 			echo -e "$(get_localized $lang $rc)" 1>&2
@@ -2927,7 +2934,7 @@ case $source in
 						exit $rc
 					fi
 				fi
-				working_directory="$(get_working_directory $extract_space_needed "tmpfs nand storage")"
+				working_directory="$(get_working_directory $extract_space_needed "tmpfs $nand storage")"
 				rc=$?
 				if [ $rc -ne 0 ]; then
 					echo -e "$(get_localized $lang $rc)" 1>&2
@@ -3000,7 +3007,7 @@ case $source in
 		rc=$?
 		if [ $rc -eq 0 ]; then
 			eval "$download_version"
-			working_directory="$(get_working_directory $download_space_needed "tmpfs nand storage")"
+			working_directory="$(get_working_directory $download_space_needed "tmpfs $nand storage")"
 			rc=$?
 			if [ $rc -ne 0 ]; then
 				debug "modfs: unable to get working directory"
@@ -3036,7 +3043,7 @@ case $source in
 						exit $rc
 					fi
 				fi
-				working_directory="$(get_working_directory $fullimage_space_needed "tmpfs nand storage")"
+				working_directory="$(get_working_directory $fullimage_space_needed "tmpfs $nand storage")"
 				rc=$?
 				if [ $rc -ne 0 ]; then
 					echo -e "$(get_localized $lang $rc)" 1>&2
@@ -3111,7 +3118,7 @@ case $source in
 			fi
 		fi
 		if [ $rc -eq 0 ]; then
-			working_directory="$(get_working_directory $fullimage_space_needed "tmpfs nand storage")"
+			working_directory="$(get_working_directory $fullimage_space_needed "tmpfs $nand storage")"
 			rc=$?
 			if [ $rc -ne 0 ]; then
 				echo -e "$(get_localized $lang $rc)" 1>&2
@@ -3191,7 +3198,7 @@ if [ $rc -eq 0 ]; then
 			rc=$?
 			if [ $rc -ne 0 ]; then
 				# not enough space on tmpfs, try non-volatile storage now
-				unpack_directory="$(get_working_directory $free_space_for_unpack "nand storage")"
+				unpack_directory="$(get_working_directory $free_space_for_unpack "$nand storage")"
 				rc=$?
 				if [ $rc -ne 0 ]; then
 					echo -e "$(get_localized $lang $rc)" 1>&2
