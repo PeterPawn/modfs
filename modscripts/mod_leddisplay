@@ -97,6 +97,37 @@ patch_file()
  end
  function write_led_selected(current)
  if (g_led_display==current) then
+--- usr/www/$TARGET_BRANDING/system/led_display.lua
++++ usr/www/$TARGET_BRANDING/system/led_display.lua
+@@ -5,7 +5,6 @@
+ dofile("../templates/global_lua.lua")
+ g_back_to_page = http.get_back_to_page( "/system/led_display.lua" )
+ g_errmsg = nil
+-g_led_display="0"
+ function read_box_values()
+ g_led_display = box.query("box:settings/led_display")
+ end
+@@ -21,9 +20,9 @@
+ function refill_user_input_from_get()
+ g_led_display = check_val(box.get.led_display)
+ end
++read_box_values()
+ if next(box.post) then
+ if box.post.apply then
+-read_box_values()
+ refill_user_input_from_post()
+ local saveset = {}
+ cmtable.add_var(saveset, "box:settings/led_display" ,tostring(g_led_display))
+@@ -39,7 +38,6 @@
+ return
+ end
+ end
+-read_box_values()
+ function write_led_selected(current)
+ if (g_led_display==current) then
+ box.out([[checked="checked"]])
+--- usr/www/$TARGET_BRANDING/system/led_display.lua
++++ usr/www/$TARGET_BRANDING/system/led_display.lua
 @@ -84,12 +81,18 @@
  </p>
  <div class="formular">
