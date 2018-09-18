@@ -707,7 +707,7 @@ copy_wrapper_filesystem()
 						debug "copy_wrapper_filesystem: add_to_wrapper directory '$ADD_TO_WRAPPER' not found"
 					fi
 				fi
-				[ $mrc -eq 0 ] && $bb umount $tmp/wrapperfs
+				[ $mrc -eq 0 ] && $bb umount -d $tmp/wrapperfs
 				$bb umount $tmp/yaffs
 				remove_directory "$tmp"
 				rc=0
@@ -1225,7 +1225,7 @@ extract_rootfs_from_firmware()
 				if [ $rc -ne 0 ]; then
 					rc=41
 				fi
-				$bb umount "$tmpdir/mp"
+				$bb umount -d "$tmpdir/mp"
 			fi
 		fi
 	fi
@@ -1270,8 +1270,6 @@ mount_ext2_image()
 			$bb losetup -r -f -o 256 $src 2>/dev/null
 			rc=$?
 			debug "mount_ext2_image: loop device setup (-r -f -o 256) for $src, rc=$rc"
-			debug "mount_ext2_image: Loop devices list"
-			$bb losetup -a | $debugoutput
 			[ $rc -eq 0 ] && loopdev=$($bb losetup -a | $bb sed -n -e "s|^\([^ ]*\):.*${src:0:63}.*\$|\1|p")
 			if [ ${#loopdev} -eq 0 ]; then
 				debug "mount_ext2_image: unable to find the loop device backed by our image file, aborting"
@@ -1296,7 +1294,7 @@ mount_ext2_image()
 		rc=0
 	fi
 	if [ $rc -eq 0 ]; then
-		$bb mount "$loopdev" "$mp" 2>/dev/null
+		$bb mount -o ro "$loopdev" "$mp" 2>/dev/null
 		rc=$?
 		debug "mount_ext2_image: mounting $loopdev to $mp, rc=$rc"
 	fi
@@ -1350,7 +1348,7 @@ extract_rootfs_from_wrapper()
 			if [ $rc -ne 0 ]; then
 				rc=41
 			fi
-			$bb umount "$tmpdir"
+			$bb umount -d "$tmpdir"
 		fi
 		remove_directory "$tmpdir"
 	fi
@@ -3419,7 +3417,7 @@ fi
 if [ $loopback_used -eq 1 ]; then
 	# unmount and remove loopback partition, if it was used
 	progress 1 142
-	$bb umount "$unpack_directory"
+	$bb umount -d "$unpack_directory"
 	rc=$?
 	if [ $rc -eq 0 ]; then
 		progress 3 96
