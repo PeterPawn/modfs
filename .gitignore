@@ -1,8 +1,9 @@
 modfs*.tgz
 add_to_wrapper*
+atw*
 binutils
-custom
-custom_modscripts
+custom*
 modnow.sh
 my_modscripts
 utils
+*.code-workspace

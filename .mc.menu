@@ -3,15 +3,12 @@
 	version=$(cat .version)
 	Files="bin files locale modscripts contrib LICENSE BOOTSELECTION* modfs"
 	chmod o-x modscripts/*
-	busybox tar -c --exclude=".git*" $Files | gzip -c9 > "modfs-$version.tgz"
-	cp modfs-$version.tgz /ssh/source/srv/www/vhosts/www.yourfritz.de/
+	busybox tar -c --exclude=".git*" --exclude="contrib/custom" $Files | gzip -c9 > "modfs-$version.tgz"
+	cp modfs-$version.tgz /autofs/ssh/source/srv/www/vhosts/www.yourfritz.de/
 	opwd=$(pwd)
-	cd /ssh/source/srv/www/vhosts/www.yourfritz.de
+	cd /autofs/ssh/source/srv/www/vhosts/www.yourfritz.de
 	rm modfs.tgz
 	ln -s modfs-$version.tgz modfs.tgz
-	cp modfs-$version.tgz 7490/
-	chmod 644 modfs-$version.tgz 7490/modfs-$version.tgz
-	chown wwwrun:www modfs-$version.tgz 7490/modfs-$version.tgz
 	cd $opwd
 	echo "Created (and linked) modfs version $version on yourfritz.de"
 	tar tvf modfs-$version.tgz
@@ -27,13 +24,7 @@
 	version=$(cat .version)
 	Files="bin files locale modscripts contrib LICENSE BOOTSELECTION* modfs"
 	chmod o-x modscripts/*
-	busybox tar -c --exclude=".git*" $Files | gzip -c9 > "modfs-$version.tgz"
-	cp modfs-$version.tgz /ssh/source/srv/www/vhosts/www.yourfritz.de/
-	opwd=$(pwd)
-	cd /ssh/source/srv/www/vhosts/www.yourfritz.de
-	cp modfs-$version.tgz 7490/
-	chmod 644 modfs-$version.tgz 7490/modfs-$version.tgz
-	chown wwwrun:www modfs-$version.tgz 7490/modfs-$version.tgz
-	cd $opwd
+	busybox tar -c --exclude=".git*" --exclude="contrib/custom" $Files | gzip -c9 > "modfs-$version.tgz"
+	cp modfs-$version.tgz /autofs/ssh/source/srv/www/vhosts/www.yourfritz.de/
 	echo "Created modfs version $version on yourfritz.de"
 	tar tvf modfs-$version.tgz
