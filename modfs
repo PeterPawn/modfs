@@ -159,7 +159,7 @@ nativefilesystems="tmpfs ext2 ext3 ext4 yaffs2"
 #
 # our "internal" constants
 #
-modfs_version=0.5.0-beta-170920181616
+modfs_version=0.5.0-beta-180920182058
 modfs_comment="please look at https://github.com/PeterPawn/modfs for further info"
 bindirname="bin"
 localedirname="locale"
@@ -1269,6 +1269,9 @@ mount_ext2_image()
 		if [ $? -eq 0 ]; then
 			$bb losetup -r -f -o 256 $src 2>/dev/null
 			rc=$?
+			debug "mount_ext2_image: loop device setup (-r -f -o 256) for $src, rc=$rc"
+			debug "mount_ext2_image: Loop devices list"
+			$bb losetup -a | $debugoutput
 			[ $rc -eq 0 ] && loopdev=$($bb losetup -a | $bb sed -n -e "s|^\([^ ]*\):.*${src:0:63}.*\$|\1|p")
 			if [ ${#loopdev} -eq 0 ]; then
 				debug "mount_ext2_image: unable to find the loop device backed by our image file, aborting"
@@ -1295,6 +1298,7 @@ mount_ext2_image()
 	if [ $rc -eq 0 ]; then
 		$bb mount "$loopdev" "$mp" 2>/dev/null
 		rc=$?
+		debug "mount_ext2_image: mounting $loopdev to $mp, rc=$rc"
 	fi
 	debug "mount_ext2_image: exiting, rc=$rc"
 	return $rc
@@ -2744,6 +2748,11 @@ debug "modfs: Free space"
 $bb df -h | $debugoutput
 debug "modfs: Swap space"
 $bb cat /proc/swaps | $debugoutput
+debug "modfs: Loop devices"
+$bb losetup -a | $debugoutput
+if [ $? -ne 0 ]; then
+	for l in /sys/devices/virtual/block/loop*; do echo /dev/${l##*/}: $(cat $l/loop/offset) $(cat $l/loop/backing_file) 2>/dev/null; done | $debugoutput
+fi
 #
 # we'll store an unlink command for all temporary directories and files here and remove it, if the target is deleted elsewhere
 #
