@@ -1,0 +1,139 @@
+# MODFS_MODSCRIPT
+# SUPPORTS precheck postcheck install language(en,de)
+# NAME add YourFritz key
+# DESCRIPTION en
+# add the public key of YourFritz project to the new image
+# DESCRIPTION de
+# Hinzufügen des öffentlichen YourFritz-Schlüssels zur geänderten Firmware
+# EOH
+#
+# process parameters
+#
+language=$1
+rootdir="$2"
+mode=$3
+step=$4
+[ ${#4} -eq 0 ] && exit 59 # invalid call
+#
+# constants
+#
+modulus="00b4074ef52e5c44f3a1eca1bd8eb3b5f217b82eaa23641adf50ca5bb98f3538ac706a5bb5f15def942bc352f3cd1cdf4ba1f47bc66863d95ecc7576d4f6d6729d396056e8fdf5d2ff5998ff33559104e07934e0c944d764bb881708ed73c0df0b948a9659de65c9940a9f537fcd1450bcdffe5a76f6b8d298ef89c3ce895f9361"
+exponent="010001"
+moduli="$modulus"
+prefer_plugin_key=1
+key_storage="$rootdir/etc"
+key_range="4-9"
+key_name="avm_firmware_public_key"
+key_template="$key_name[$key_range]"
+plugin_key="plugin_global_key.pem"
+#
+# check, if one of the already installed keys is the YourFritz key
+#
+find_key()
+{
+	for key in $key_storage/$key_template $key_storage/$plugin_key; do
+		[ -f "$key" ] && [ "$(sed -n -e "1s|\([0-9a-f]*\)|\1|p" "$key" 2>/dev/null)" = "$1" ] && return 0
+		[ -L "$key" ] && [ -f "$(readlink "$key")" ] && [ "$(sed -n -e "1s|\([0-9a-f]*\)|\1|p" "$key" 2>/dev/null)" = "$1" ] && return 0
+	done
+	return 1
+}
+#
+# find a free slot for the new key
+#
+find_slot()
+{
+	if [ $prefer_plugin_key -eq 1 ] && ! ( [ -f "$key_storage/$plugin_key" ] || [ -L "$key_storage/plugin_key" ] ); then
+		printf "$key_storage/$plugin_key"
+		return 0
+	fi
+	for index in $(seq ${key_range%%-*} ${key_range##*-} | sort -r); do
+		name="$(printf "%s/%s%u" "$key_storage" "$key_name" $index)"
+		if ! ( [ -f "$name" ] || [ -L "$name" ] ); then
+			printf "%s" "$name"
+			return 0
+		fi
+	done
+	if ! ( [ -f "$key_storage/$plugin_key" ] || [ -L "$key_storage/plugin_key" ] ); then
+		printf "$key_storage/$plugin_key"
+		return 0
+	fi
+	return 1
+}
+#
+# install the key as specified file
+#
+install_key()
+{
+	printf "%s\n%s\n" "$2" "$exponent" >"$1"
+}
+#
+# execute the requested step
+#
+rc=0
+#
+case $step in
+	precheck)
+		find_key "$modulus"
+		rc=$?
+		if [ $rc -eq 0 ]; then
+			case "$language" in
+				de)
+					printf "Der öffentliche Schlüssel ist bereits installiert.\n" 1>&2
+					;;
+				*)
+					printf "The public key is installed already.\n" 1>&2
+					;;
+			esac
+			rc=1
+		else
+			rc=0
+		fi
+		;;
+	postcheck)
+		find_key "$modulus"
+		rc=$?
+		if [ $rc -eq 1 ]; then
+			case "$language" in
+				de)
+					printf "Der öffentliche Schlüssel wurde nicht erfolgreich installiert.\n" 1>&2
+					;;
+				*)
+					printf "The public key was NOT installed successfully.\n" 1>&2
+					;;
+			esac
+			rc=1
+		fi
+		;;
+	install)
+		for modulus in $moduli; do
+			name="$(find_slot)"
+			if [ $? -ne 0 ] || [ ${#name} -eq 0 ]; then
+				case "$language" in
+					de)
+						printf "Es ist kein freier Dateiname für den öffentlichen Schlüssel verfügbar.\n" 1>&2
+						;;
+					*)
+						printf "No free file name found for the new public key.\n" 1>&2
+						;;
+				esac
+				rc=1
+			else
+				install_key "$name" "$modulus"
+				case "$language" in
+					de)
+						printf "Der öffentliche Schlüssel wurde als '%s' installiert.\n" "${name##$rootdir/}" 1>&2
+						;;
+					*)
+						printf "Public key was installed to '%s'.\n" "${name##$rootdir/}" 1>&2
+						;;
+				esac
+				rc=0
+			fi
+		done
+		;;
+	*)
+		rc=59
+		;;
+esac
+#
+exit $rc
