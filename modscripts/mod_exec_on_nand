@@ -19,7 +19,7 @@ step=$4
 #
 init_script="etc/init.d/S15-filesys"
 search_string="-t \(yaffs2\|ext4\).*noexec"
-change_command="s:\(-t \(yaffs2\|ext4\).*\)noexec:\1exec:p"
+change_command="s:\(-t \(yaffs2\|ext4\).*\)noexec:\1exec:"
 #
 # execute the requested step
 #
