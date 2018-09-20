@@ -2485,6 +2485,11 @@ get_source()
 get_working_directory()
 {
 	local dir needed="$1" places="$2"
+	if ! [ -z "$MODFS_WORKING_DIR" ]; then
+		debug "get_working_directory: using preselection, MODFS_WORKING_DIR=$MODFS_WORKING_DIR"
+		echo "$MODFS_WORKING_DIR"
+		return 0
+	fi
 	dir="$(find_free_space $needed "$places")"
 	if [ $? -ne 0 ]; then
 		return 52
@@ -3304,22 +3309,26 @@ if [ $rc -eq 0 -a $install_image_only -eq 0 ]; then
 	rc=$?
 	if [ $rc -lt 2 ]; then
 		rc=0
-		# clear input buffer first
-		while read -n 10 -s -t 1; do :; done
-		echo -ne "$(get_localized $lang 150 $unpack_directory/$squashfsdirname)" 1>&2
-		while [ 1 -eq 1 ]; do
-			read abort
-			if [ x"$abort" == x"q" ]; then
-				echo -e "$(get_localized $lang 155)" 1>&2
-				rc=1
-				break
-			else
-				if [ ${#abort} -eq 0 ]; then
-					echo -e "$msgtext_normal" 1>&2
+		if [ "$MODFS_NO_PAUSE_ON_PACK" = "1" ]; then
+			debug "wait_for_key_before_pack: pause skipped due to environment setting"
+		else
+			# clear input buffer first
+			while read -n 10 -s -t 1; do :; done
+			echo -ne "$(get_localized $lang 150 $unpack_directory/$squashfsdirname)" 1>&2
+			while [ 1 -eq 1 ]; do
+				read abort
+				if [ x"$abort" == x"q" ]; then
+					echo -e "$(get_localized $lang 155)" 1>&2
+					rc=1
 					break
+				else
+					if [ ${#abort} -eq 0 ]; then
+						echo -e "$msgtext_normal" 1>&2
+						break
+					fi
 				fi
-			fi
-		done
+			done
+		fi
 	fi
 	debug "modfs: modifications done, rc=$rc"
 fi
