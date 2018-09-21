@@ -1,0 +1,88 @@
+# MODFS_MODSCRIPT
+# SUPPORTS precheck postcheck install language(en,de)
+# NAME start/stop telnet daemon by phone
+# DESCRIPTION en
+# replace the start/stop code of 'dtrace' ( #97*3* / #97*2* ) with start of telnet daemon
+# DESCRIPTION de
+# Telnet-Daemon über die Tastencodes für 'dtrace' starten und stoppen
+# EOH
+#
+# process parameters
+#
+language=$1
+rootdir=$2
+mode=$3
+step=$4
+[ ${#4} -eq 0 ] && exit 59 # invalid call
+#
+# constants and functions
+#
+dtrace_binary="$rootdir/usr/bin/dtrace"
+dtrace_binary_target="/usr/bin/dtrace.bin"
+dtrace_binary_location="$rootdir$dtrace_binary_target"
+#
+install_wrapper()
+{
+	cat >"$dtrace_binary" <<EOF
+#! /bin/sh
+if [ "\$1" = "-D" ] && [ "\$2" = "-dect" ]; then
+	if [ -z "\$(pidof telnetd)" ]; then
+		eventadd 1 "Telnet daemon started by dtrace start sequence from phone"
+		/usr/sbin/telnetd -l /sbin/ar7login -F &
+		telnetd=\$!
+		trap "kill \$telnetd" KILL HUP TERM
+		wait \$telnetd
+		eventadd 1 "Telnet daemon terminated"
+	fi
+	exit
+fi
+cp -a "$dtrace_binary_target" /var/tmp/dtrace 
+exec /var/tmp/dtrace \$*
+EOF
+	chmod a+x "$dtrace_binary"
+}
+#
+# execute the requested step
+#
+rc=0
+case $step in
+	precheck)
+		if [ -f "$dtrace_binary_location" ]; then
+			case "$language" in
+				de)
+					printf "Die Modifikation wurde bereits angewendet.\n" 1>&2
+					;;
+				*)
+					printf "The modification has been applied already.\n" 1>&2
+					;;
+			esac
+			rc=1
+		else
+			rc=0
+		fi
+		;;
+	postcheck)
+		if ! [ -f "$dtrace_binary_location" ] || ! [ -f "$dtrace_binary" ]; then
+			case "$language" in
+				de)
+					printf "Die Modifikation war nicht erfolgreich.\n" 1>&2
+					;;
+				*)
+					printf "The modification was NOT applied successfully.\n" 1>&2
+					;;
+			esac
+			rc=1
+		else
+			rc=0
+		fi
+		;;
+	install)
+		mv "$dtrace_binary" "$dtrace_binary_location"
+		install_wrapper
+		rc=0
+		;;
+	*)
+		rc=59
+		;;
+esac
+exit $rc
