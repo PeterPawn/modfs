@@ -1,0 +1,69 @@
+# MODFS_MODSCRIPT
+# SUPPORTS precheck postcheck install language(en,de)
+# NAME enable calllog processing
+# DESCRIPTION en
+# re-enable the deactivated processing of /var/flash/calllog on incoming calls
+# DESCRIPTION de
+# Verarbeitung der /var/flash/calllog bei eingehenden Anrufen reaktivieren
+# EOH
+#
+# process parameters
+#
+language=$1
+rootdir=$2
+mode=$3
+step=$4
+[ ${#4} -eq 0 ] && exit 59 # invalid call
+#
+# constants and functions
+#
+startup_file="/etc/init.d/rc.voip"
+target_prefix="^[ \t]*"
+target_suffix="telefon "
+private_var="CONFIG_RELEASE=0"
+search_line="$target_prefix$private_var $target_suffix"
+#
+# execute the requested step
+#
+rc=0
+case $step in
+	precheck)
+		grep -q "$search_line" "$rootdir$startup_file" 2>/dev/null
+		rc=$?
+		if [ $rc -eq 0 ]; then
+			case "$language" in
+				de)
+					printf "Die Modifikation wurde bereits angewendet.\n" 1>&2
+					;;
+				*)
+					printf "The modification has been applied already.\n" 1>&2
+					;;
+			esac
+			rc=1
+		else
+			rc=0
+		fi
+		;;
+	postcheck)
+		grep -q "$search_line" "$rootdir$startup_file" 2>/dev/null
+		rc=$?
+		if [ $rc -eq 1 ]; then
+			case "$language" in
+				de)
+					printf "Die Modifikation war nicht erfolgreich.\n" 1>&2
+					;;
+				*)
+					printf "The modification was NOT applied successfully.\n" 1>&2
+					;;
+			esac
+		fi
+		;;
+	install)
+		sed -e "s:\($target_orefix\)\($target_suffix\):\1 $private_var \2:" -i "$rootdir$startup_file"
+		rc=0
+		;;
+	*)
+		rc=59
+		;;
+esac
+exit $rc
