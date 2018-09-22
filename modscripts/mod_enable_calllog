@@ -59,7 +59,7 @@ case $step in
 		fi
 		;;
 	install)
-		sed -e "s:\($target_orefix\)\($target_suffix\):\1 $private_var \2:" -i "$rootdir$startup_file"
+		sed -e "s:\($target_prefix\)\($target_suffix\):\1 $private_var \2:" -i "$rootdir$startup_file"
 		rc=0
 		;;
 	*)
