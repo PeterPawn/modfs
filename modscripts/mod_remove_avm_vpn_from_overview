@@ -1,0 +1,141 @@
+# MODFS_MODSCRIPT
+# SUPPORTS precheck postcheck install language(en,de)
+# NAME remove VPN connections from overview page
+# DESCRIPTION en
+# remove AVM's display of each single (activated) VPN connection from overview page, in case
+# you're using the mod_show_vpn_on_overview patch, too
+# DESCRIPTION de
+# AVM's Anzeige jeder einzelnen (aktivierten) VPN-Verbindung aus der Startseite entfernen,
+# ergibt in Kombination mit dem Hinzufügen der Zusammenfassung aus mod_show_vpn_on_overview
+# am meisten Sinn
+# EOH
+#
+# process parameters
+#
+language=$1
+rootdir=$2
+mode=$3
+step=$4
+[ ${#4} -eq 0 ] && exit 59 # invalid call
+#
+# variables
+#
+rc=0
+check_filename="$rootdir/usr/www/$TARGET_BRANDING/home/home.lua"
+check_trigger="get_Display_Vpn"
+#
+# apply
+#
+check_version()
+{
+	local major=$1
+	local minor=$2
+	local wanted_major=$3
+	local wanted_minor=$4
+
+	[ $major -lt $wanted_major ] && return 0
+	[ $major -gt $wanted_major ] && return 1
+	[ $minor -lt $wanted_minor ] && return 0
+	return 1
+}
+patch_file()
+{
+	local home=$(pwd)
+	cd $rootdir
+	$home/bin/$HWRevision/busybox patch -p0 2>/dev/null <<EOT
+--- usr/www/$TARGET_BRANDING/home/home.lua
++++ usr/www/$TARGET_BRANDING/home/home.lua
+@@ -167,14 +167,7 @@
+ return d
+ end
+ local function get_vpn(data)
+-if not config.VPN or general.is_ip_client() then
+ return nil
+-end
+-local d = {}
+-d.title = TXT([[{?9042:115?}]])
+-d.link = "shareVpn"
+-d.elements = eval_connection.get_Display_Vpn()
+-return d
+ end
+ local function get_plc(data)
+ return nil
+--- usr/www/$TARGET_BRANDING/home/home.js
++++ usr/www/$TARGET_BRANDING/home/home.js
+@@ -443,10 +443,6 @@
+ html2.add(list, create_MultilineItem(data.fonnum));
+ anyEntry=true;
+ }
+-if (data.vpn && data.vpn.elements.length > 0) {
+-html2.add(list, create_vpn_items(data.vpn))
+-anyEntry = true;
+-}
+ if (data.webstorage) {
+ /*Onlinespeicher*/
+ html2.add(list, add_webStorage(data.webstorage));
+EOT
+	cd $home
+}
+#
+# execute steps
+#
+case $step in
+	precheck)
+		major=$(( $(expr "$TARGET_SYSTEM_VERSION" : "[0-9]*\.\([0-9]*\)\.[0-9]*") + 0 ))
+		minor=$(( $(expr "$TARGET_SYSTEM_VERSION" : "[0-9]*\.[0-9]*\.\([0-9]*\)") + 0 ))
+		if check_version $major $minor 6 98; then
+			case "$language" in
+				de)
+					echo "Diese Modifikation ist erst ab FRITZ!OS 06.98 verfügbar." 1>&2
+					;;
+				*)
+					echo "This modification is only available for FRITZ!OS versions above or equal 06.98." 1>&2
+					;;
+			esac
+			rc=1
+		else
+			grep -q "$check_trigger" $check_filename 2>/dev/null 1>&2
+			rc=$?
+			if [ $rc -eq 1 ]; then
+				case "$language" in
+					de)
+						echo "Die Modifikation wurde bereits angewendet oder ist nicht erforderlich." 1>&2
+						;;
+					*)
+						echo "The modification was applied already or isn't necessary." 1>&2
+						;;
+				esac
+				rc=1
+			else
+				rc=0
+			fi
+		fi
+		;;
+	postcheck)
+		grep -q "$check_trigger" $check_filename 2>/dev/null 1>&2
+		rc=$?
+		if [ $rc -eq 0 ]; then
+			case "$language" in
+				de)
+					echo "Die Modifikation war nicht erfolgreich." 1>&2
+					;;
+				*)
+					echo "The modification wasn't applied successfully." 1>&2
+					;;
+			esac
+			rc=1
+		else
+			rc=0
+		fi
+		;;
+	install)
+		for TARGET_BRANDING in $TARGET_BRANDINGS; do
+			patch_file	
+		done
+		rc=0
+		;;
+	*)
+		rc=59
+		;;
+esac
+exit $rc
