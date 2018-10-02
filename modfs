@@ -1076,8 +1076,9 @@ execute_optional_modscript()
 #
 solve_modscript_dependencies()
 {
-	local list="$1"
-	$bb sort $list
+	local list="$1" scriptsdir="$2"
+	$bb sed -n -e "\|^$scriptsdir|p" "$list" | $bb sort
+	$bb sed -e "\|^$scriptsdir|d" "$list" | $bb sort
 }
 #
 # prepare the executable flags of modscripts listed in a custom selection file
@@ -1124,7 +1125,7 @@ prepare_custom_modscripts_selection()
 #
 modify_rootfs()
 {
-	local target="$1" scripts="$2" contribs="$3" rc=0 line lines lrc filelist script donelist tmpdir flags execute
+	local target="$1" scripts="$2" contribs="$3" scriptdirname="$4" rc=0 line lines lrc filelist script donelist tmpdir flags execute
 	tmpdir="$(get_temp_dir)"
 	# short stop to ensure an unique temporary directory name (contains the unix time)
 	$bb sleep 1
@@ -1138,9 +1139,16 @@ modify_rootfs()
 	list="$tmpdir/scriptfiles"
 	filelist="$tmpdir/scripts"
 	donelist="$tmpdir/executed"
-	$bb find "$scripts" "$contribs" -follow -xdev -type f 2>/dev/null >"$list"
+	$bb find "$scripts" -follow -xdev -type f 2>/dev/null >"$list"
+	if ! [ -z "$contribs" ]; then
+		for dir in $($bb find "$contribs" -name "$scriptdirname" -maxdepth 2 -follow -xdev -type d 2>/dev/null); do
+			$bb find "$dir" -follow -xdev -type f 2>/dev/null >>"$list"
+		done
+	fi
 	[ -s "$list" ] && lines=$($bb sed -n -e "\$=" "$list") || lines=0
-	[ $lines -gt 0 ] && solve_modscript_dependencies "$list" >"$filelist" || touch "$filelist"
+	[ $lines -gt 0 ] && solve_modscript_dependencies "$list" "$scripts" >"$filelist" || touch "$filelist"
+	debug "solve_dependencies: final modscripts list"
+	cat "$filelist" | $debugoutput
 	[ -s "$filelist" ] && lines=$($bb sed -n -e "\$=" "$filelist") || lines=0
 	line=0
 	while [ $line -lt $lines ]; do
@@ -3298,14 +3306,17 @@ if [ $rc -eq 0 -a $install_image_only -eq 0 ]; then
 fi
 if [ $rc -eq 0 -a $install_image_only -eq 0 ]; then
 	# modify root file system
-	contribs="$(contribdir)/$scriptdirname"
+	contribs="$(contribdir)"
+	files=0
 	if [ -d "$contribs" ]; then
-		files=$($bb find "$contribs" -follow -xdev -type f 2>/dev/null | $bb wc -l)
+		for dir in $($bb find "$contribs" -name "$scriptdirname" -maxdepth 2 -follow -xdev -type d 2>/dev/null); do
+			files=$(( files + $($bb find "$dir" -follow -xdev -type f 2>/dev/null | $bb wc -l) ))
+		done
 		[ $files -gt 0 ] || contribs=""
 	else
 		contribs=""
 	fi
-	modify_rootfs "$unpack_directory/$squashfsdirname" "$scriptpath/$scriptdirname" "$contribs"
+	modify_rootfs "$unpack_directory/$squashfsdirname" "$scriptpath/$scriptdirname" "$contribs" "$scriptdirname"
 	rc=$?
 	if [ $rc -lt 2 ]; then
 		rc=0
