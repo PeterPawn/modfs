@@ -64,9 +64,17 @@ vpn.connected=vpn.connected + 1
 end
 end
 if (vpn.count_all > 1) then
+if (config.language == \"de\") then
 allconns=[[ Verbindungen gesamt]]
 else
+allconns=[[ connections exist]]
+end
+else
+if (config.language == \"de\") then
 allconns=[[ Verbindung gesamt]]
+else
+allconns=[[ connection exists]]
+end
 end
 if (vpn.activated < vpn.count_all) then
 -- some connections are deactivated
@@ -75,9 +83,17 @@ if (vpn.connected < vpn.activated) then
 if (vpn.connected > 0) then
 -- at least one connection is established, one isn't it and another one is deactivated
 if (vpn.activated ~= vpn.connected) then
+if (config.language == \"de\") then
 vpn.txt=vpn.connected..[[ verbunden (]]..connected_names..[[), ]]..vpn.activated..[[ aktiviert, ]]..vpn.count_all..allconns
 else
+vpn.txt=vpn.connected..[[ active (]]..connected_names..[[), ]]..vpn.activated..[[ activated, ]]..vpn.count_all..allconns
+end
+else
+if (config.language == \"de\") then
 vpn.txt=vpn.connected..[[ verbunden (]]..connected_names..[[), ]]..vpn.count_all..allconns
+else
+vpn.txt=vpn.connected..[[ active (]]..connected_names..[[), ]]..vpn.count_all..allconns
+end
 end
 else
 -- no connection established, but at least one is active and another is deactivated
@@ -86,9 +102,17 @@ end
 else
 -- all activated connections are established
 if (vpn.connected > 0) then
+if (config.language == \"de\") then
 vpn.txt=vpn.connected..[[ aktiviert und verbunden (]]..connected_names..[[), ]]..vpn.count_all..allconns
 else
+vpn.txt=vpn.connected..[[ activated and connected (]]..connected_names..[[), ]]..vpn.count_all..allconns
+end
+else
+if (config.language == \"de\") then
 vpn.txt=[[nicht verbunden, ]]..vpn.activated..[[ aktiviert, ]]..vpn.count_all..allconns
+else
+vpn.txt=[[no active connection, ]]..vpn.activated..[[ activated, ]]..vpn.count_all..allconns
+end
 end
 end
 else
@@ -97,14 +121,26 @@ if (vpn.connected > 0) then
 -- at least on connection established
 if (vpn.connected < vpn.count_all) then
 -- at least one connections isn't established
+if (config.language == \"de\") then
 vpn.txt=vpn.connected..[[ verbunden (]]..connected_names..[[), ]]..vpn.count_all..allconns..[[, alle aktiviert]]
 else
+vpn.txt=vpn.connected..[[ connected (]]..connected_names..[[), ]]..vpn.count_all..allconns..[[, all connections are activated]]
+end
+else
 -- all connections activated and established
+if (config.language == \"de\") then
 vpn.txt=[[alle verbunden (]]..connected_names..[[)]]
+else
+vpn.txt=[[all connections are active (]]..connected_names..[[)]]
+end
 end
 else
 -- all activated, none connected
+if (config.language == \"de\") then
 vpn.txt=[[nicht verbunden, ]]..vpn.count_all..allconns..[[ vorhanden]]
+else
+vpn.txt=[[no active connection, ]]..vpn.count_all..allconns
+end
 end
 end
 return vpn
