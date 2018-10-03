@@ -1,0 +1,79 @@
+# MODFS_MODSCRIPT
+# SUPPORTS precheck postcheck install language(en,de)
+# NAME set fixed branding
+# DESCRIPTION en
+# set a fixed branding of 'avm' from 'rc.conf', ignore any box-specific value
+# DESCRIPTION de
+# Branding fest auf 'avm' einstellen, die Einstellung aus dem Bootloader wird ignoriert
+# EOH
+#
+# process parameters
+#
+language=$1
+rootdir=$2
+mode=$3
+step=$4
+[ ${#4} -eq 0 ] && exit 59 # invalid call
+#
+# execute the requested step
+#
+rc=0
+modfile="$rootdir/etc/init.d/rc.conf"
+lookfor="^export OEM\$"
+changeto="export OEM=avm"
+#
+# run action
+#
+case $step in
+	precheck)
+		if grep -q "$lookfor" "$modfile" 2>/dev/null; then
+			rc=0
+		else
+			if grep -q "^$changeto\$" "$modfile" 2>/dev/null; then
+				case "$language" in
+					de)
+						printf "Die Modifikation wurde bereit angewendet.\n" 1>&2
+						;;
+					*)
+						printf "The modification was applied already.\n" 1>&2
+						;;
+				esac
+			else
+				case "$language" in
+					de)
+						printf "Die Modifikation ist für diese Version nicht anwendbar.\n" 1>&2
+						;;
+					*)
+						printf "The modification is not applicable for this version.\n" 1>&2
+						;;
+				esac
+			fi
+			rc=1
+		fi
+		;;
+
+	postcheck)
+		if grep -q "^$changeto\$" "$modfile" 2>/dev/null; then
+			rc=0
+		else
+			case "$language" in
+				de)
+					printf "Die Modifikation war nicht erfolgreich.\n" 1>&2
+					;;
+				*)
+					printf "The modification was NOT applied successfully.\n" 1>&2
+					;;
+			esac
+			rc=1
+		fi
+		;;
+
+	install)
+		sed -e "s|$lookfor|$changeto|" -i "$modfile"
+		rc=0
+		;;
+	*)
+		rc=59
+		;;
+esac
+exit $rc

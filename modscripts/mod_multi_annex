@@ -1,0 +1,67 @@
+# MODFS_MODSCRIPT
+# SUPPORTS precheck postcheck install language(en,de)
+# NAME multi-annex support
+# DESCRIPTION en
+# re-add annex selection to vendor's GUI
+# DESCRIPTION de
+# Auswahl des DSL-Annex über das GUI auch bei deutscher Firmware
+# EOH
+#
+# process parameters
+#
+language=$1
+rootdir=$2
+mode=$3
+step=$4
+[ ${#4} -eq 0 ] && exit 59 # invalid call
+#
+# execute the requested step
+#
+rc=0
+modfile="$rootdir/etc/init.d/rc.conf"
+lookfor="^export CONFIG_DSL_MULTI_ANNEX=\"n\""
+#
+# run action
+#
+case $step in
+	precheck)
+		if grep -q "$lookfor" "$modfile" 2>/dev/null; then
+			rc=0
+		else
+			case "$language" in
+				de)
+					printf "Die Modifikation wurde bereit angewendet oder ist nicht erforderlich.\n" 1>&2
+					;;
+				*)
+					printf "The modification was applied already or isn't necessary.\n" 1>&2
+					;;
+			esac
+			rc=1
+		fi
+		;;
+
+	postcheck)
+		if grep -q "$lookfor" "$modfile" 2>/dev/null; then
+			case "$language" in
+				de)
+					printf "Die Modifikation war nicht erfolgreich.\n" 1>&2
+					;;
+				*)
+					printf "The modification was NOT applied successfully.\n" 1>&2
+					;;
+			esac
+			rc=1
+		else
+			rc=0
+		fi
+		;;
+
+	install)
+		sed -e "\|$lookfor|d" -i "$modfile"
+		rc=0
+		;;
+	*)
+		rc=59
+		;;
+esac
+exit $rc
