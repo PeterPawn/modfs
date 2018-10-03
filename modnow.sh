@@ -1,7 +1,7 @@
 #! /bin/sh
 
 # add all files from this directory to the 'wrapper' filesystem of target version
-export ADD_TO_WRAPPER=atw_$(uname -r)
+export ADD_TO_WRAPPER="atw_\$TARGET_KERNEL_VERSION"
 
 # debug shell code, creates /var/tmp/modfs_debug_shell.log
 export MODFS_DEBUG_SHELL=1

@@ -698,6 +698,7 @@ copy_wrapper_filesystem()
 				rc=$?
 				debug "copy_wrapper_filesystem: copying done, rc=$rc"
 				if [ -n "$ADD_TO_WRAPPER" ]; then
+					ADD_TO_WRAPPER="$(eval printf "%s" "$ADD_TO_WRAPPER")"
 					if [ -d "$ADD_TO_WRAPPER" ]; then
 						debug "copy_wrapper_filesystem: subdirectory '$ADD_TO_WRAPPER' exists, copying content to the new wrapper partition"
 						cp -a $ADD_TO_WRAPPER/* $tmp/yaffs/
@@ -1130,10 +1131,6 @@ modify_rootfs()
 	# short stop to ensure an unique temporary directory name (contains the unix time)
 	$bb sleep 1
 	debug "modify_rootfs: starting, target=$target, scripts=$scripts, contribs=$contribs"
-	FRITZOS_VERSION="$(get_target_system_version "$target")"
-	KERNEL_VERSION="$(get_target_kernel_version "$target")"
-	BRANDINGS="$(get_target_brandings "$target")"
-	BRANDING="$(get_first_branding "$BRANDINGS")"
 	MODSCRIPT_ENV="$KERNEL_VERSION $FRITZOS_VERSION TARGET_BRANDINGS=\"$BRANDINGS\" TARGET_BRANDING=\"$BRANDING\""
 	prepare_custom_modscripts_selection
 	list="$tmpdir/scriptfiles"
@@ -3304,6 +3301,11 @@ if [ $rc -eq 0 -a $install_image_only -eq 0 ]; then
 	fi
 	debug "modfs: unpacking SquashFS image done, rc=$rc"
 fi
+FRITZOS_VERSION="$(get_target_system_version "$unpack_directory/$squashfsdirname")"
+KERNEL_VERSION="$(get_target_kernel_version "$unpack_directory/$squashfsdirname")"
+BRANDINGS="$(get_target_brandings "$unpack_directory/$squashfsdirname")"
+BRANDING="$(get_first_branding "$BRANDINGS")"
+eval $KERNEL_VERSION $FRITZOS_VERSION TARGET_BRANDINGS=\"$BRANDINGS\" TARGET_BRANDING=\"$BRANDING\"
 if [ $rc -eq 0 -a $install_image_only -eq 0 ]; then
 	# modify root file system
 	contribs="$(contribdir)"
