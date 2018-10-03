@@ -35,7 +35,7 @@ if (general.is_ip_client() or not general.is_expert()) then
 return nil
 end
 local query=\"vpn:settings/connection/list(name,activated,state)\"
-local vpn_conns=general.listquery(query)
+local vpn_conns=core.listquery(query)
 local connected_names=\"\"
 if (#vpn_conns == 0) then
 -- no VPN connection defined
