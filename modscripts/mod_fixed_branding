@@ -2,9 +2,9 @@
 # SUPPORTS precheck postcheck install language(en,de)
 # NAME set fixed branding
 # DESCRIPTION en
-# set a fixed branding of 'avm' from 'rc.conf', ignore any box-specific value
+# set a fixed branding from 'rc.conf', ignore any box-specific value
 # DESCRIPTION de
-# Branding fest auf 'avm' einstellen, die Einstellung aus dem Bootloader wird ignoriert
+# Branding fest einstellen in der 'rc.conf', die Einstellung aus dem Bootloader wird ignoriert
 # EOH
 #
 # process parameters
@@ -15,12 +15,26 @@ mode=$3
 step=$4
 [ ${#4} -eq 0 ] && exit 59 # invalid call
 #
+# get 'avm' or 'avme' branding as preference, if one of them is supported
+#
+get_branding_value()
+{
+	for brand in $TARGET_BRANDINGS; do
+		[ "$brand" = "avm" ] && printf "%s" "$brand" && return
+		[ "$brand" = "avme" ] && printf "%s" "$brand" && return
+	done
+	set -- $TARGET_BRANDINGS
+	printf "%s" "$1"
+	return
+}
+#
 # execute the requested step
 #
 rc=0
 modfile="$rootdir/etc/init.d/rc.conf"
 lookfor="^export OEM\$"
-changeto="export OEM=avm"
+MOD_FIXED_BRANDING_VALUE="${MOD_FIXED_BRANDING_VALUE:-$(get_branding_value)}"
+changeto="export OEM=$MOD_FIXED_BRANDING_VALUE"
 #
 # run action
 #
