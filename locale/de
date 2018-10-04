@@ -109,7 +109,7 @@
 169=Es wurde keine passende Vorlage unter '%s' gefunden.
 170=Bitte den Dateinamen des Images - entweder ein komplettes Firmware-Image (im tar-Format) oder\nein bereits extrahiertes squashfs-Image (kein komplettes Wrapper-Dateisystem, nur das dort\nenthaltene root-Dateisystem) - eingeben, zum Abbrechen ein einzelnes 'q' verwenden : %{bold}
 171=%{normal}Die angegebene Datei '%s' wurde nicht gefunden.\n%{normal}
-172=\nDie Modifikation '%s' wird verarbeitet ...
+172=\nDie Modifikation '%{bold}%s%{normal}' wird verarbeitet ...
 173=Überprüfen der unterstützten Sprachen ...
 174=%{warning} fallback to english%{normal}
 175=Überprüfen der Voraussetzungen für die Modifikation ...
@@ -117,9 +117,9 @@
 177=%{error} Fehler (%d)%{normal}
 178=Modifikation wird ausgeführt ...
 179=Überprüfen des Erfolgs der Modifikation ...
-180=\nDie Modifikation '%s' wurde angewendet, Fehlercode = %d.
+180=\nDie Modifikation '%{bold}%s%{normal}' wurde angewendet, Fehlercode = %d.
 181=keine Beschreibung vorhanden
-182=Soll die Modifikation '%s' mit folgender Beschreibung\n%{bold}%s%{normal}\nangewendet werden?
+182=Soll die Modifikation '%{bold}%s%{normal}' mit folgender Beschreibung\n%{bold}%s%{normal}\nangewendet werden?
 183=System kopiert, das Gerät wird jetzt neu gestartet ...
 186=Die Auswahl des 'update'-Modus erfordert eine neuere Firmware-Version vom Hersteller.
 187=Die neueste Versionsnummer konnte nicht ermittelt werden, Abbruch.
@@ -137,7 +137,7 @@
 199=Die angegebene Datei '%{bold}%s%{normal}' wird als Quelle für die Aktualisierung genutzt.
 200=Die angegebene Datei '%{error}%s%{normal}' ist nicht vorhanden oder kein gültiges Firmware-Image.
 201=Die Angabe einer Datei nach dem 'update'-Parameter unterbindet jede Versionprüfung.\nSomit ist jeder selbst dafür zuständig, die Kompatibilität der vorhandenen Einstellungen\nmit dem verwendeten System sicherzustellen, speziell wenn ein Downgrade ausgeführt wurde\noder ggf. die 'Werkseinstellungen' wiederherzustellen.
-202=Die erzeugte Image-Datei wird nach '%s' kopiert ...
+202=Die erzeugte Image-Datei wird nach '%{bold}%s%{normal}' kopiert ...
 203=\nSoll das alternative System beim nächsten Start verwendet werden?
 204=Das neue root-Dateisystem wurde erfolgreich in die inaktive Partition kopiert.\n\n%{bold}Beim nächsten Start der Box wird weiterhin das aktuell laufende System benutzt.\n%{normal}
 205=Die Signatur der Datei konnte nicht erfolgreich verifiziert werden oder die Datei wurde verändert.

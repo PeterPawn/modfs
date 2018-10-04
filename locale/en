@@ -109,7 +109,7 @@
 169=There was no appropriate template found at '%s'.
 170=Please enter the image file name - it may be a complete firmware image (as a tar file) or an\nalready extracted squashfs image (not the complete wrapper file system image, only the\ntherein contained root file system image), to abort processing enter a single 'q' as name : %{bold}
 171=%{normal}The specified file '%s' was not found.\n%{normal}
-172=\nProcessing modification script file '%s' ...
+172=\nProcessing modification script file '%{bold}%s%{normal}' ...
 173=Checking supported languages ...
 174=%{warning} fallback to english%{normal}
 175=Checking preconditions for that modification script ...
@@ -117,9 +117,9 @@
 177=%{error} failed (%d)%{normal}
 178=Executing modification script ...
 179=Checking modification result ...
-180=\nModification script '%s' has been executed, error code was %d.
+180=\nModification script '%{bold}%s%{normal}' has been executed, error code was %d.
 181=no description available
-182=Do you want to apply the modification '%s' with the following description:\n%{bold}%s%{normal}\nChoose 'y' to apply or 'n' to skip.
+182=Do you want to apply the modification '%{bold}%s%{normal}' with the following description:\n%{bold}%s%{normal}\nChoose 'y' to apply or 'n' to skip.
 183=System copied, your device will be restarted now ...
 186=You've selected 'update' mode and a newer version is looked up from manufacturer's server.
 187=Unable to retrieve the latest version number, can't fulfill your 'update' request, terminating.
@@ -137,7 +137,7 @@
 199=Using the specified file '%{bold}%s%{normal}' as update source.
 200=The specified file '%{error}%s%{normal}' is missing or not a valid firmware image.
 201=You've specified 'update' operation and provided the file name of the new firmware image.\nNo version check will be performed and it's your own responsibility to ensure that settings\nare compatible or to clean up any previous settings manually.
-202=Copying the created image file to '%s' ...
+202=Copying the created image file to '%{bold}%s%{normal}' ...
 203=\nDo you want to use the newly installed system at next reboot?
 204=The new root file system has been installed into the inactive Partition.\n\n%{bold}Your device will still use the running system at next restart.\n%{normal}
 205=Signature verification failed due to missing components or the firmware image was manipulated.

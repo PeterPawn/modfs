@@ -73,6 +73,8 @@ shl="$bb sh"
 testvalue="/bin/testvalue"
 # the name of the ring buffer utility from the vendor
 debugoutput="/bin/showshringbuf -i \$scriptname"
+## the name of the ring buffer utility from the vendor
+debugtest="/bin/showshringbuf -?"
 # our debug ring buffer file name
 ringbufferfile="/var/.srb_\$scriptname"
 # our custom modscript selection file name
@@ -159,7 +161,7 @@ nativefilesystems="tmpfs ext2 ext3 ext4 yaffs2"
 #
 # our "internal" constants
 #
-modfs_version=0.5.0-beta-031020182112
+modfs_version=0.5.0-beta-051020180102
 modfs_comment="please look at https://github.com/PeterPawn/modfs for further info"
 bindirname="bin"
 localedirname="locale"
@@ -916,21 +918,30 @@ execute_modscript()
 				[ x"$mode" == xauto ] && progress 3 174
 				uselang=en
 			fi
-			progress 1 175
-			opt=$(is_supported 'precheck' "$supports")
-			if [ $?	-eq 1 ]; then
-				# execute pre check
-				msg="$(eval export $MODSCRIPT_ENV;$shl $scriptwrapper $script $uselang $rootdir $mode precheck 2>&1)"
-				rc=$?
-				if [ $rc -gt 0 ]; then
-					progress 3 177 $rc
-					echo "$msg" 1>&2
+			if [ x"$mode" == xauto -o x"$mode" == xprecheck ]; then
+				rc=0
+				progress 1 175
+				opt=$(is_supported 'precheck' "$supports")
+				if [ $?	-eq 1 ]; then
+					# execute pre check
+					msg="$(eval export $MODSCRIPT_ENV;$shl $scriptwrapper $script $uselang $rootdir $mode precheck 2>&1)"
+					rc=$?
+					if [ $rc -gt 0 ]; then
+						progress 3 177 $rc
+						echo "$msg" 1>&2
+					else
+						progress 3 96
+						[ ${#msg} -gt 0 ] && echo -e "$msg" 1>&2
+					fi
 				else
-					progress 3 96
-					[ ${#msg} -gt 0 ] && echo -e "$msg" 1>&2
+					progress 3 176
+				fi
+				if [ x"$mode" == xprecheck ]; then
+					debug "execute_modscript: exiting, rc=$rc"
+					return $rc
 				fi
 			else
-				progress 3 176
+				rc=0
 			fi
 			if [ $rc -eq 0 ]; then
 				progress 1 178
@@ -1025,40 +1036,50 @@ execute_optional_modscript()
 		name="$($bb sed -n -e "1,/^# EOH\$/s/^# NAME \(.*\)/\1/p" "$script")"
 		name="${name// /\\ }"
 		if [ ${#name} -gt 0 -a ${#supports} -gt 0 ]; then
-			echo -e "$(get_localized $lang 172 "$name")" 1>&2
-			progress 1 173
-			language="$(is_supported 'language' "$supports")"
+			pc="$(is_supported 'precheck' "$supports")"
 			if [ $? -eq 1 ]; then
-				languages="${language##language(}"
-				languages="${languages%)}"
-				uselang=$(IFS=, set -- $languages; for lng in $@; do [ $lng == $lang ] && echo $lng && break; done)
-				if [ ${#uselang} -eq 0 ]; then
+				execute_modscript "$script" "$rootdir" precheck
+				rc=$?
+				debug "execute_optional_modscript: precheck result=$rc"
+			else
+				rc=0
+			fi
+			if [ $? -eq 0 ]; then
+				echo -e "$(get_localized $lang 172 "$name")" 1>&2
+				progress 1 173
+				language="$(is_supported 'language' "$supports")"
+				if [ $? -eq 1 ]; then
+					languages="${language##language(}"
+					languages="${languages%)}"
+					uselang=$(IFS=, set -- $languages; for lng in $@; do [ $lng == $lang ] && echo $lng && break; done)
+					if [ ${#uselang} -eq 0 ]; then
+						progress 3 174
+						uselang=en
+					else
+						progress 3 96
+					fi
+				else
 					progress 3 174
 					uselang=en
-				else
-					progress 3 96
 				fi
-			else
-				progress 3 174
-				uselang=en
-			fi
-		 	$bb sleep 1
-			desc="$($bb sed -n -e "/^# DESCRIPTION $uselang\$/=" "$script")"
-			if [ ${#desc} -eq 0 ]; then
-				desc="$($bb sed -n -e "/^# DESCRIPTION\$/=" "$script")"
+				$bb sleep 1
+				desc="$($bb sed -n -e "/^# DESCRIPTION $uselang\$/=" "$script")"
 				if [ ${#desc} -eq 0 ]; then
-					desc="$(get_localized $lang 181)"
+					desc="$($bb sed -n -e "/^# DESCRIPTION\$/=" "$script")"
+					if [ ${#desc} -eq 0 ]; then
+						desc="$(get_localized $lang 181)"
+					else
+						desc="$(get_description - "$script")"
+					fi
 				else
-					desc="$(get_description - "$script")"
+					desc="$(get_description $uselang "$script")"
 				fi
-			else
-				desc="$(get_description $uselang "$script")"
-			fi
-			msg="$(get_localized $lang 182 "$name" "%description%")"
-			msg="${msg//%description%/$desc}"
-			doit=$(ask_yes_or_no n "$msg")
-			if [ x$doit == xY ]; then
-				execute_modscript "$script" "$rootdir" onrequest
+				msg="$(get_localized $lang 182 "$name" "%description%")"
+				msg="${msg//%description%/$desc}"
+				doit=$(ask_yes_or_no n "$msg")
+				if [ x$doit == xY ]; then
+					execute_modscript "$script" "$rootdir" onrequest
+				fi
 			fi
 		else
 			echo -e "$(get_localized $lang 60 "${scriptname}")" 1>&2
@@ -2646,26 +2667,31 @@ spinner()
 #
 init_ringbuffer_file()
 {
-	local file="$1" size=$2 maxoff maxstr
-	maxoff=$(( size * 1024 - 1 ))
+	local file="$1" size=$2 value offset newformat=0 mask
+	$debugtest -? 2>&1 | grep -q -- '-m[ \t]*- print' && newformat=1
 	$bb dd if=/dev/zero of=$file bs=1024 count=$size 2>/dev/null
 	# signature
-	echo -ne "\\xF9\\x13\\x66\\x8E" | $bb dd of=$file bs=4 count=1 conv=notrunc seek=0 2>/dev/null
-	# first entry
-	echo -ne "\\x00\\x00\\x00\\x14" | $bb dd of=$file bs=4 count=1 conv=notrunc seek=1 2>/dev/null
-	# last entry
-	echo -ne "\\x00\\x00\\x00\\x14" | $bb dd of=$file bs=4 count=1 conv=notrunc seek=2 2>/dev/null
-	# next entry
-	echo -ne "\\x00\\x00\\x00\\x14" | $bb dd of=$file bs=4 count=1 conv=notrunc seek=3 2>/dev/null
-	maxoff=$(printf "%08x" $maxoff)
-	maxstr=""
-	while [ ${#maxoff} -gt 0 ]; do
-		maxstr="${maxstr}\\\\x${maxoff:0:2}"
-		maxoff="${maxoff:2}"
+	printf "\371\023\146\216" | $bb dd of=$file bs=4 count=1 conv=notrunc seek=0 2>/dev/null
+	if [ $newformat -eq 0 ]; then
+		value=$(( size * 1024 - 1 ))
+		# first entry
+		printf "\024" | $bb dd of=$file bs=1 count=1 conv=notrunc seek=7 2>/dev/null
+		# last entry
+		printf "\024" | $bb dd of=$file bs=1 count=1 conv=notrunc seek=11 2>/dev/null
+		# next entry
+		printf "\024" | $bb dd of=$file bs=1 count=1 conv=notrunc seek=15 2>/dev/null
+		offset=19
+	else
+		value=$(( size * 1024 ))
+		offset=15
+	fi
+	while [ $value -gt 0 ]; do
+		mask=$(printf "\\%03o" $(( value % 8 )))
+		printf "$mask" | $bb dd of=$file bs=1 count=1 conv=notrunc seek=$offset 2>/dev/null
+		offset=$(( offset - 1 ))
+		value=$(( value >> 8 ))
 	done
-	# max. offset
-	eval echo -ne "$maxstr" | $bb dd of=$file bs=4 count=1 conv=notrunc seek=4 2>/dev/null
-	echo -n "with a $size KB buffer" 1>&2
+	printf "with a %s KB buffer%s" "$size" "$([ $newformat -eq 1 ] && printf " (new format)")" 1>&2
 }
 #
 # execution starts here, if called as shell script
