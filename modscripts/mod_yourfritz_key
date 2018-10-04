@@ -78,10 +78,10 @@ case $step in
 		if [ $rc -eq 0 ]; then
 			case "$language" in
 				de)
-					printf "Der öffentliche Schlüssel ist bereits installiert.\n" 1>&2
+					printf "Der öffentliche Schlüssel ist bereits installiert.\n"
 					;;
 				*)
-					printf "The public key is installed already.\n" 1>&2
+					printf "The public key is installed already.\n"
 					;;
 			esac
 			rc=1
@@ -95,10 +95,10 @@ case $step in
 		if [ $rc -eq 1 ]; then
 			case "$language" in
 				de)
-					printf "Der öffentliche Schlüssel wurde nicht erfolgreich installiert.\n" 1>&2
+					printf "Der öffentliche Schlüssel wurde nicht erfolgreich installiert.\n"
 					;;
 				*)
-					printf "The public key was NOT installed successfully.\n" 1>&2
+					printf "The public key was NOT installed successfully.\n"
 					;;
 			esac
 			rc=1
@@ -110,10 +110,10 @@ case $step in
 			if [ $? -ne 0 ] || [ ${#name} -eq 0 ]; then
 				case "$language" in
 					de)
-						printf "Es ist kein freier Dateiname für den öffentlichen Schlüssel verfügbar.\n" 1>&2
+						printf "Es ist kein freier Dateiname für den öffentlichen Schlüssel verfügbar.\n"
 						;;
 					*)
-						printf "No free file name found for the new public key.\n" 1>&2
+						printf "No free file name found for the new public key.\n"
 						;;
 				esac
 				rc=1
@@ -121,10 +121,10 @@ case $step in
 				install_key "$name" "$modulus"
 				case "$language" in
 					de)
-						printf "Der öffentliche Schlüssel wurde als '%s' installiert.\n" "${name##$rootdir/}" 1>&2
+						printf "Der öffentliche Schlüssel wurde als '%s' installiert.\n" "${name##$rootdir/}"
 						;;
 					*)
-						printf "Public key was installed to '%s'.\n" "${name##$rootdir/}" 1>&2
+						printf "Public key was installed to '%s'.\n" "${name##$rootdir/}"
 						;;
 				esac
 				rc=0

@@ -43,10 +43,10 @@ case $step in
 		if [ $? -eq 0 ]; then
 			case "$language" in
 				de)
-					echo "Die Modifikation wurde bereit angewendet." 1>&2
+					echo "Die Modifikation wurde bereit angewendet."
 					;;
 				*)
-					echo "The hook is already installed." 1>&2
+					echo "The hook is already installed."
 					;;
 			esac
 			rc=1
@@ -59,10 +59,10 @@ case $step in
 		if [ $? -ne 0 ]; then
 			case "$language" in
 				de)
-					echo "Die Modifikation war nicht erfolgreich." 1>&2
+					echo "Die Modifikation war nicht erfolgreich."
 					;;
 				*)
-					echo "The hook could not be installed." 1>&2
+					echo "The hook could not be installed."
 					;;
 			esac
 			rc=1

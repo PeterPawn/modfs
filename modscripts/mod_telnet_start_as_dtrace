@@ -50,10 +50,10 @@ case $step in
 		if [ -f "$dtrace_binary_location" ]; then
 			case "$language" in
 				de)
-					printf "Die Modifikation wurde bereits angewendet.\n" 1>&2
+					printf "Die Modifikation wurde bereits angewendet.\n"
 					;;
 				*)
-					printf "The modification has been applied already.\n" 1>&2
+					printf "The modification has been applied already.\n"
 					;;
 			esac
 			rc=1
@@ -65,10 +65,10 @@ case $step in
 		if ! [ -f "$dtrace_binary_location" ] || ! [ -f "$dtrace_binary" ]; then
 			case "$language" in
 				de)
-					printf "Die Modifikation war nicht erfolgreich.\n" 1>&2
+					printf "Die Modifikation war nicht erfolgreich.\n"
 					;;
 				*)
-					printf "The modification was NOT applied successfully.\n" 1>&2
+					printf "The modification was NOT applied successfully.\n"
 					;;
 			esac
 			rc=1

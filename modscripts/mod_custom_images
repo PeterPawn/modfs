@@ -40,10 +40,10 @@ case $step in
 		if [ -e "$check_filename" ]; then
 			case "$language" in
 				de)
-					echo "Die Modifikation wurde bereits angewendet." 1>&2
+					echo "Die Modifikation wurde bereits angewendet."
 					;;
 				*)
-					echo "The modification is already present." 1>&2
+					echo "The modification is already present."
 					;;
 			esac
 			rc=1
@@ -55,10 +55,10 @@ case $step in
 		if [ ! -e "$check_filename" ]; then
 			case "$language" in
 				de)
-					echo "Die Modifikation war nicht erfolgreich." 1>&2
+					echo "Die Modifikation war nicht erfolgreich."
 					;;
 				*)
-					echo "The new startup file cannot be found." 1>&2
+					echo "The new startup file cannot be found."
 					;;
 			esac
 			rc=1

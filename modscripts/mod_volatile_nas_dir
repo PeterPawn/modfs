@@ -36,10 +36,10 @@ case $step in
 		if [ $rc -eq 0 ]; then
 			case "$language" in
 				de)
-					printf "Die Modifikation wurde bereits ausgeführt.\n" 1>&2
+					printf "Die Modifikation wurde bereits ausgeführt.\n"
 					;;
 				*)
-					printf "The patch has been applied already.\n" 1>&2
+					printf "The patch has been applied already.\n"
 					;;
 			esac
 			rc=1
@@ -53,16 +53,24 @@ case $step in
 		if [ $rc -eq 1 ]; then
 			case "$language" in
 				de)
-					printf "Die Modifikation wurde NICHT erfolgreich ausgeführt.\n" 1>&2
+					printf "Die Modifikation wurde NICHT erfolgreich ausgeführt.\n"
 					;;
 				*)
-					printf "The patch was NOT applied successfully.\n" 1>&2
+					printf "The patch was NOT applied successfully.\n"
 					;;
 			esac
 		fi
 		;;
 	install)
 		printf "%s\n%s\n" "$mkdir_command" "$mount_command" >> "$rootdir/$init_script"
+		case "$language" in
+			de)
+				printf "Unter dem NAS-Pfad '%s' wird zusätzlich ein flüchtiger Speicher%sverfügbar gemacht.\n" "$directory_name" "$([ -z "$limited" ] || printf " (Größe: %d) " "$limit_space")"
+				;;
+			*)
+				printf "NAS mount-point '%s' added with%svolatile memory.\n" "$directory_name" "$([ -z "$limited" ] || printf " %dB of " "$limit_space")"
+				;;
+		esac
 		rc=0
 		;;
 	*)

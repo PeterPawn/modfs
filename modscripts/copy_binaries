@@ -24,9 +24,10 @@ case $step in
 		eval srcfile=$srcfile
 		if [ -r $srcfile ]; then
 			gunzip -c $srcfile | tar x -C $rootdir
+			printf "Copied contents of '%s' to target filesystem.\n" "$srcfile"
 			rc=0
 		else
-			echo "Unable to find binaries file '$srcfile' to be unpacked."
+			printf "Unable to find binaries file '%s' to be unpacked.\n" "$srcfile"
 			rc=3
 		fi
 		;;

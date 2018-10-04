@@ -26,10 +26,10 @@ case $step in
 		if [ $rc -eq 0 ]; then
 			case "$language" in
 				de)
-					echo "Die Modifikation wurde bereits angewendet oder ist nicht erforderlich." 1>&2
+					echo "Die Modifikation wurde bereits angewendet oder ist nicht erforderlich."
 					;;
 				*)
-					echo "The startup file is modified already or modification isn't necessary." 1>&2
+					echo "The startup file is modified already or modification isn't necessary."
 					;;
 			esac
 			rc=1
@@ -43,10 +43,10 @@ case $step in
 		if [ $rc -eq 1 ]; then
 			case "$language" in
 				de)
-					echo "Die Modifikation war nicht erfolgreich." 1>&2
+					echo "Die Modifikation war nicht erfolgreich."
 					;;
 				*)
-					echo "The startup file seems to be unmodified." 1>&2
+					echo "The startup file seems to be unmodified."
 					;;
 			esac
 			rc=1

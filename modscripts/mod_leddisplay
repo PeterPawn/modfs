@@ -34,7 +34,7 @@ patch_file()
 {
 	local home=$(pwd)
 	cd $rootdir
-	$home/bin/$HWRevision/busybox patch -p0 2>/dev/null <<EOT
+	$home/bin/$HWRevision/busybox patch -p0 2>/dev/null 1>/dev/null <<EOT
 --- usr/www/$TARGET_BRANDING/menus/menu_data.lua
 +++ usr/www/$TARGET_BRANDING/menus/menu_data.lua
 @@ -1215,6 +1215,11 @@
@@ -164,10 +164,10 @@ case $step in
 		if [ $rc -eq 0 ]; then
 			case "$language" in
 				de)
-					echo "Die Modifikation wurde bereits angewendet." 1>&2
+					echo "Die Modifikation wurde bereits angewendet."
 					;;
 				*)
-					echo "The modification is already present." 1>&2
+					echo "The modification is already present."
 					;;
 			esac
 			rc=1
@@ -181,10 +181,10 @@ case $step in
 		if [ $rc -eq 1 ]; then
 			case "$language" in
 				de)
-					echo "Die Modifikation war nicht erfolgreich." 1>&2
+					echo "Die Modifikation war nicht erfolgreich."
 					;;
 				*)
-					echo "The menu file seems to be unmodified." 1>&2
+					echo "The menu file seems to be unmodified."
 					;;
 			esac
 			rc=1

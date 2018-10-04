@@ -42,7 +42,7 @@ patch_file()
 {
 	local home=$(pwd)
 	cd $rootdir
-	$home/bin/$HWRevision/busybox patch -p0 2>/dev/null <<EOT
+	$home/bin/$HWRevision/busybox patch -p0 2>/dev/null 1>/dev/null <<EOT
 --- usr/www/$TARGET_BRANDING/home/home.lua
 +++ usr/www/$TARGET_BRANDING/home/home.lua
 @@ -167,14 +167,7 @@
@@ -86,10 +86,10 @@ case $step in
 		if check_version $major $minor 6 98; then
 			case "$language" in
 				de)
-					echo "Diese Modifikation ist erst ab FRITZ!OS 06.98 verfügbar." 1>&2
+					echo "Diese Modifikation ist erst ab FRITZ!OS 06.98 verfügbar."
 					;;
 				*)
-					echo "This modification is only available for FRITZ!OS versions above or equal 06.98." 1>&2
+					echo "This modification is only available for FRITZ!OS versions above or equal 06.98."
 					;;
 			esac
 			rc=1
@@ -99,10 +99,10 @@ case $step in
 			if [ $rc -eq 1 ]; then
 				case "$language" in
 					de)
-						echo "Die Modifikation wurde bereits angewendet oder ist nicht erforderlich." 1>&2
+						echo "Die Modifikation wurde bereits angewendet oder ist nicht erforderlich."
 						;;
 					*)
-						echo "The modification was applied already or isn't necessary." 1>&2
+						echo "The modification was applied already or isn't necessary."
 						;;
 				esac
 				rc=1
@@ -117,10 +117,10 @@ case $step in
 		if [ $rc -eq 0 ]; then
 			case "$language" in
 				de)
-					echo "Die Modifikation war nicht erfolgreich." 1>&2
+					echo "Die Modifikation war nicht erfolgreich."
 					;;
 				*)
-					echo "The modification wasn't applied successfully." 1>&2
+					echo "The modification wasn't applied successfully."
 					;;
 			esac
 			rc=1

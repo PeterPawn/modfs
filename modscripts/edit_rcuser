@@ -108,10 +108,10 @@ case $step in
 		if [ -f "$modfile" ]; then
 			case "$language" in
 				de)
-					echo "Die Modifikation wurde bereit angewendet." 1>&2
+					echo "Die Modifikation wurde bereit angewendet."
 					;;
 				*)
-					echo "The new command file 'edit_rcuser' is present already." 1>&2
+					echo "The new command file 'edit_rcuser' is present already."
 					;;
 			esac
 			rc=1
@@ -123,10 +123,10 @@ case $step in
 		if [ ! -x "$modfile" ]; then
 			case "$language" in
 				de)
-					echo "Die Modifikation war nicht erfolgreich." 1>&2
+					echo "Die Modifikation war nicht erfolgreich."
 					;;
 				*)
-					echo "The modification has failed, the executable file is missing." 1>&2
+					echo "The modification has failed, the executable file is missing."
 					;;
 			esac
 			rc=1

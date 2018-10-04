@@ -170,10 +170,10 @@ case $step in
 		if [ -L $rootdir$inithook ]; then
 			case "$language" in
 				de)
-					echo "Die Modifikation wurde bereit angewendet." 1>&2
+					echo "Die Modifikation wurde bereit angewendet."
 					;;
 				*)
-					echo "The hooks are already installed." 1>&2
+					echo "The hooks are already installed."
 					;;
 			esac
 			rc=1
@@ -185,10 +185,10 @@ case $step in
 		if ! [ -L $rootdir$inithook ]; then
 			case "$language" in
 				de)
-					echo "Die Modifikation war nicht oder nur teilweise erfolgreich." 1>&2
+					echo "Die Modifikation war nicht oder nur teilweise erfolgreich."
 					;;
 				*)
-					echo "Some hooks have failed to be installed." 1>&2
+					echo "Some hooks have failed to be installed."
 					;;
 			esac
 			rc=1

@@ -126,7 +126,7 @@ index_of_item()
 count_of_items()
 (
 	set -- $*
-	printf $# 
+	printf $#
 )
 ##############################################################################
 #                                                                            #
@@ -556,7 +556,7 @@ html_display()
 				printf '<label for="radioAlternative">das derzeit inaktive System</label><br /><br />\n'
 				if [ $alternative_version = unbekannt ]; then
 					printf 'Das System in den alternativen Partitionen kann nicht identifiziert werden, es k&ouml;nnte besch&auml;digt sein.<br />\n'
-					printf 'Eine Umschaltung auf dieses System sollte nur ausgef&uuml;hrt werden, wenn man sich wirklich sehr sicher ist, was man da tut.<br /><br />\n' 
+					printf 'Eine Umschaltung auf dieses System sollte nur ausgef&uuml;hrt werden, wenn man sich wirklich sehr sicher ist, was man da tut.<br /><br />\n'
 				else
 					printf 'Version %s vom %s (linux_fs_start=%d), das System wurde am %s zuletzt modifiziert<br /><br />\n' \
 						$alternative_version "$alternative_date" $(( ( $(get_system_switch) + 1 ) % 2 )) "$alternative_fsdate"
@@ -607,7 +607,7 @@ html_display()
 			if [ $alternative_is_missing -eq 0 ]; then
 				if [ $alternative_version = unknown ]; then
 					printf 'Unable to identify the installed system in the alternative partitions, it could have been damaged or was missing/deleted.<br />\n'
-					printf 'Switching to this system may prevent your device from starting correctly - you should be really sure, what you are doing in this case.<br /><br />\n' 
+					printf 'Switching to this system may prevent your device from starting correctly - you should be really sure, what you are doing in this case.<br /><br />\n'
 				else
 					printf 'version %s - originally built on %s (linux_fs_start=%d), this system was last modified on %s<br /><br />\n' \
 						$alternative_version "$alternative_date" $(( ( $(get_system_switch) + 1 ) % 2 )) "$alternative_fsdate"
@@ -698,10 +698,10 @@ case $step in
 		if [ $rc -eq 0 ]; then
 			case "$language" in
 				de)
-					echo "Die Modifikation wurde bereit angewendet." 1>&2
+					echo "Die Modifikation wurde bereit angewendet."
 					;;
 				*)
-					echo "The GUI file was already modified." 1>&2
+					echo "The GUI file was already modified."
 					;;
 			esac
 			rc=1
@@ -711,10 +711,10 @@ case $step in
 			if [ $rc -ne 0 ]; then
 				case "$language" in
 					de)
-						echo "Dieses Gerät unterstützt keine 'dual boot'-Möglichkeit." 1>&2
+						echo "Dieses Gerät unterstützt keine 'dual boot'-Möglichkeit."
 						;;
 					*)
-						echo "This device doesn't support booting the system software an alternative partition set." 1>&2
+						echo "This device doesn't support booting the system software an alternative partition set."
 						;;
 				esac
 				rc=1
@@ -729,10 +729,10 @@ case $step in
 		if [ $rc -eq 1 ]; then
 			case "$language" in
 				de)
-					echo "Die Modifikation war nicht erfolgreich." 1>&2
+					echo "Die Modifikation war nicht erfolgreich."
 					;;
 				*)
-					echo "The GUI file seems to be unmodified." 1>&2
+					echo "The GUI file seems to be unmodified."
 					;;
 			esac
 			rc=1

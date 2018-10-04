@@ -32,10 +32,10 @@ case $step in
 		if [ $rc -eq 1 ]; then
 			case "$language" in
 				de)
-					printf "Die Modifikation wurde bereits ausgeführt oder ist nicht erforderlich.\n" 1>&2
+					printf "Die Modifikation wurde bereits ausgeführt oder ist nicht erforderlich.\n"
 					;;
 				*)
-					printf "The patch was applied already or is not necessary.\n" 1>&2
+					printf "The patch was applied already or is not necessary.\n"
 					;;
 			esac
 			rc=1
@@ -49,10 +49,10 @@ case $step in
 		if [ $rc -eq 0 ]; then
 			case "$language" in
 				de)
-					printf "Die Modifikation wurde NICHT erfolgreich ausgeführt.\n" 1>&2
+					printf "Die Modifikation wurde NICHT erfolgreich ausgeführt.\n"
 					;;
 				*)
-					printf "The patch was NOT applied successfully.\n" 1>&2
+					printf "The patch was NOT applied successfully.\n"
 					;;
 			esac
 			rc=1

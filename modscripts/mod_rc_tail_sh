@@ -35,10 +35,10 @@ case $step in
 		if [ $rc -eq 0 ]; then
 			case "$language" in
 				de)
-					echo "Die Modifikation wurde bereit angewendet." 1>&2
+					echo "Die Modifikation wurde bereit angewendet."
 					;;
 				*)
-					echo "The startup file is modified already." 1>&2
+					echo "The startup file is modified already."
 					;;
 			esac
 			rc=1
@@ -52,10 +52,10 @@ case $step in
 		if [ $rc -eq 1 ]; then
 			case "$language" in
 				de)
-					echo "Die Modifikation war nicht erfolgreich." 1>&2
+					echo "Die Modifikation war nicht erfolgreich."
 					;;
 				*)
-					echo "The startup file seems to be unmodified." 1>&2
+					echo "The startup file seems to be unmodified."
 					;;
 			esac
 			rc=1
@@ -68,11 +68,11 @@ case $step in
 				case "$language" in
 					de)
 						echo "eventadd 1 \"Die Datei rc.user (TFFS-Minor-ID $minor) wird abgearbeitet ...\"" >"$tmpdir/tffs"
-						echo -e "Die Datei 'rc.user/debug.cfg' war leer, es wurde ein Kommando zum Protokollieren\ndes Starts im Eventlog eingefügt." 1>&2
+						echo -e "Die Datei 'rc.user/debug.cfg' war leer, es wurde ein Kommando zum Protokollieren\ndes Starts im Eventlog eingefügt."
 						;;
 					*)
 						echo "eventadd 1 \"The commands within the file 'rc.user' (TFFS minor id $minor) will be executed now ...\"" >"$tmpdir/tffs"
-						echo -e "Your command file 'rc.user/debug.cfg' was empty. A command to log the start of\nexecution was added to it." 1>&2
+						echo -e "Your command file 'rc.user/debug.cfg' was empty. A command to log the start of\nexecution was added to it."
 						;;
 				esac
 			fi

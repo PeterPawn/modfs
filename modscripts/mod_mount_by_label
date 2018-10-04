@@ -45,10 +45,10 @@ case $step in
 			if [ $rc -eq 0 ]; then
 				case "$language" in
 					de)
-						echo "Die Modifikation wurde bereit angewendet." 1>&2
+						echo "Die Modifikation wurde bereit angewendet."
 						;;
 					*)
-						echo "The startup file is modified already." 1>&2
+						echo "The startup file is modified already."
 						;;
 				esac
 				rc=1
@@ -58,10 +58,10 @@ case $step in
 		else
 			case "$language" in
 				de)
-					echo "Die Modifikation ist für diese Version nicht möglich." 1>&2
+					echo "Die Modifikation ist für diese Version nicht möglich."
 					;;
 				*)
-					echo "Wrong system version for this modification." 1>&2
+					echo "Wrong system version for this modification."
 					;;
 			esac
 			rc=1
@@ -79,10 +79,10 @@ case $step in
 		if [ $rc -eq 1 ]; then
 			case "$language" in
 				de)
-					echo "Die Modifikation war nicht erfolgreich." 1>&2
+					echo "Die Modifikation war nicht erfolgreich."
 					;;
 				*)
-					echo "The startup file seems to be unmodified." 1>&2
+					echo "The startup file seems to be unmodified."
 					;;
 			esac
 			rc=1

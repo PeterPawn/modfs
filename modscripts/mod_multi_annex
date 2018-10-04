@@ -30,10 +30,10 @@ case $step in
 		else
 			case "$language" in
 				de)
-					printf "Die Modifikation wurde bereit angewendet oder ist nicht erforderlich.\n" 1>&2
+					printf "Die Modifikation wurde bereit angewendet oder ist nicht erforderlich.\n"
 					;;
 				*)
-					printf "The modification was applied already or isn't necessary.\n" 1>&2
+					printf "The modification was applied already or isn't necessary.\n"
 					;;
 			esac
 			rc=1
@@ -44,10 +44,10 @@ case $step in
 		if grep -q "$lookfor" "$modfile" 2>/dev/null; then
 			case "$language" in
 				de)
-					printf "Die Modifikation war nicht erfolgreich.\n" 1>&2
+					printf "Die Modifikation war nicht erfolgreich.\n"
 					;;
 				*)
-					printf "The modification was NOT applied successfully.\n" 1>&2
+					printf "The modification was NOT applied successfully.\n"
 					;;
 			esac
 			rc=1
