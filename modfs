@@ -161,7 +161,7 @@ nativefilesystems="tmpfs ext2 ext3 ext4 yaffs2"
 #
 # our "internal" constants
 #
-modfs_version=0.5.0-beta-051020180102
+modfs_version=0.5.0-beta-061020181752
 modfs_comment="please look at https://github.com/PeterPawn/modfs for further info"
 bindirname="bin"
 localedirname="locale"
@@ -924,20 +924,19 @@ execute_modscript()
 				opt=$(is_supported 'precheck' "$supports")
 				if [ $?	-eq 1 ]; then
 					# execute pre check
-					msg="$(eval export $MODSCRIPT_ENV;$shl $scriptwrapper $script $uselang $rootdir $mode precheck 2>&1)"
+					msg="$(eval export $MODSCRIPT_ENV;$shl $scriptwrapper $script $uselang $rootdir $mode precheck)"
 					rc=$?
 					if [ $rc -gt 0 ]; then
 						progress 3 177 $rc
-						echo "$msg" 1>&2
+						echo -e "${msgtext_bold}$msg${msgtext_normal}" 1>&2
 					else
 						progress 3 96
-						[ ${#msg} -gt 0 ] && echo -e "$msg" 1>&2
+						[ ${#msg} -gt 0 ] && echo -e "${msgtext_bold}$msg${msgtext_normal}" 1>&2
 					fi
 				else
 					progress 3 176
 				fi
 				if [ x"$mode" == xprecheck ]; then
-					debug "execute_modscript: exiting, rc=$rc"
 					return $rc
 				fi
 			else
@@ -945,26 +944,26 @@ execute_modscript()
 			fi
 			if [ $rc -eq 0 ]; then
 				progress 1 178
-				msg="$(eval export $MODSCRIPT_ENV;$shl $scriptwrapper $script $uselang $rootdir $mode install 2>&1)"
+				msg="$(eval export $MODSCRIPT_ENV;$shl $scriptwrapper $script $uselang $rootdir $mode install)"
 				rc=$?
 				if [ $rc -gt 0 ]; then
 					progress 3 177 $rc
-					echo "$msg" 1>&2
+					echo -e "${msgtext_bold}$msg${msgtext_normal}" 1>&2
 				else
 					progress 3 96
-					[ ${#msg} -gt 0 ] && echo -e "$msg" 1>&2
+					[ ${#msg} -gt 0 ] && echo -e "${msgtext_bold}$msg${msgtext_normal}" 1>&2
 					progress 1 179
 					opt=$(is_supported 'postcheck' "$supports")
 					if [ $?	-eq 1 ]; then
 						# execute post check
-						msg="$(eval export $MODSCRIPT_ENV;$shl $scriptwrapper $script $uselang $rootdir $mode postcheck 2>&1)"
+						msg="$(eval export $MODSCRIPT_ENV;$shl $scriptwrapper $script $uselang $rootdir $mode postcheck)"
 						rc=$?
 						if [ $rc -gt 0 ]; then
 							progress 3 177 $rc
-							echo "$msg" 1>&2
+							echo -e "${msgtext_bold}$msg${msgtext_normal}" 1>&2
 						else
 							progress 3 96
-							[ ${#msg} -gt 0 ] && echo -e "$msg" 1>&2
+							[ ${#msg} -gt 0 ] && echo -e "${msgtext_bold}$msg${msgtext_normal}" 1>&2
 						fi
 					else
 						progress 3 176
@@ -1036,6 +1035,7 @@ execute_optional_modscript()
 		name="$($bb sed -n -e "1,/^# EOH\$/s/^# NAME \(.*\)/\1/p" "$script")"
 		name="${name// /\\ }"
 		if [ ${#name} -gt 0 -a ${#supports} -gt 0 ]; then
+			echo -e "$(get_localized $lang 172 "$name")" 1>&2
 			pc="$(is_supported 'precheck' "$supports")"
 			if [ $? -eq 1 ]; then
 				execute_modscript "$script" "$rootdir" precheck
@@ -1044,8 +1044,7 @@ execute_optional_modscript()
 			else
 				rc=0
 			fi
-			if [ $? -eq 0 ]; then
-				echo -e "$(get_localized $lang 172 "$name")" 1>&2
+			if [ $rc -eq 0 ]; then
 				progress 1 173
 				language="$(is_supported 'language' "$supports")"
 				if [ $? -eq 1 ]; then
@@ -1080,6 +1079,8 @@ execute_optional_modscript()
 				if [ x$doit == xY ]; then
 					execute_modscript "$script" "$rootdir" onrequest
 				fi
+			else
+				echo 1>&2
 			fi
 		else
 			echo -e "$(get_localized $lang 60 "${scriptname}")" 1>&2
@@ -2686,7 +2687,7 @@ init_ringbuffer_file()
 		offset=15
 	fi
 	while [ $value -gt 0 ]; do
-		mask=$(printf "\\%03o" $(( value % 8 )))
+		mask=$(printf "\\%03o" $(( value % 256 )))
 		printf "$mask" | $bb dd of=$file bs=1 count=1 conv=notrunc seek=$offset 2>/dev/null
 		offset=$(( offset - 1 ))
 		value=$(( value >> 8 ))
@@ -3356,7 +3357,7 @@ if [ $rc -eq 0 -a $install_image_only -eq 0 ]; then
 			echo -ne "$(get_localized $lang 150 $unpack_directory/$squashfsdirname)" 1>&2
 			while [ 1 -eq 1 ]; do
 				read abort
-				if [ x"$abort" == x"q" ]; then
+				if [ "$abort" = "q" ] || [ "$abort" = "Q" ]; then
 					echo -e "$(get_localized $lang 155)" 1>&2
 					rc=1
 					break
@@ -3492,6 +3493,12 @@ fi
 #
 # temporary directories to remove
 #
+if [ "$abort" = "Q" ]; then
+	save_directory="${unpack_directory%/*}/modfs_rootdir"
+	[ -d "$save_directory" ] && $bb rm -r "$save_directory"
+	$bb mv "$unpack_directory/$squashfsdirname" "$save_directory" 2>/dev/null
+	echo -e "$(get_localized $lang 223 "$save_directory")" 1>&2
+fi
 remove_directory "$unpack_directory"
 remove_directory "$image_directory"
 #
