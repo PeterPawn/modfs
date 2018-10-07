@@ -112,6 +112,8 @@ extract_space_needed="48M"
 # exists together with the "cutted" image (during "dd" execution) for a short time,
 # the extracted SquashFS image will be smaller than the second ext2 copy
 fullimage_space_needed="100M"
+# needed swap space at all (MB)
+swap_space_needed="256"
 # the "normal" base for temporary files and directories
 tmpfsbasedir="/var/tmp"
 # known native file system types, we can use them without a container
@@ -2444,6 +2446,44 @@ check_prerequisites()
 	return $rc
 }
 #
+# check available swap space
+#
+# $1 - needed swap space in MB
+#
+check_swap_space()
+{
+	local required="$1" msg space_required space_available=0 rc device devtype size more
+	msg="$(get_localized $lang 224 $hwrevname)" 1>&2
+	echo -n -e "$msg" 1>&2
+	if [ "$MODFS_WITHOUT_SWAP" = "i_am_sure" ]; then
+		progress 3 95
+		debug "check_swap_space: skip check due to set environment variable"
+		return 0
+	fi
+	debug "check_swap_space: requested space=$required MB"
+	space_required=$(( required * 1024 * 1024 ))
+	while read device devtype size more; do
+		[ "$devtype" = "file" ] && space_available=$(( space_available + ( size * 1024 ) ))
+		[ "$devtype" = "partition" ] && space_available=$(( space_available + ( size * 1024 ) ))
+	done </proc/swaps
+	if [ $space_available -eq 0 ]; then
+		progress 3 97
+		msg="$(get_localized $lang 225)" 1>&2
+		echo -e "$msg\n" 1>&2
+		rc=1
+	elif [ $space_available -lt $space_required ]; then
+		progress 3 97
+		msg="$(get_localized $lang 226 $required $(( space_available / 1024 / 1024 )))" 1>&2
+		echo -e "$msg\n" 1>&2
+		rc=1
+	else
+		progress 3 96
+		rc=0
+	fi
+	debug "check_swap_space: finished, rc=$rc, space available=$space_available"
+	return $rc
+}
+#
 # get source selection
 #
 get_source()
@@ -2912,6 +2952,9 @@ if [ $prerc -eq 32 ]; then
 		fi
 	fi
 fi
+[ $prerc -ne 0 ] && exit $prerc
+check_swap_space $swap_space_needed
+prerc=$?
 [ $prerc -ne 0 ] && exit $prerc
 echo -e "$(get_localized $lang 107 "$(get_system_version)")\n" 1>&2
 if [ $install_image_only -eq 1 ]; then

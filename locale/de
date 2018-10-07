@@ -146,3 +146,7 @@
 208=Es wurde keine Quelle für den Download der Version %s gefunden.
 209=Fehler beim Ermitteln einer Download-URL für die Version %s, Abbruch.
 222=Fehler beim Ermitteln des Dateisystemtyps der Image-Datei.
+223=\n%{error}Das modifizierte root-Dateisystem wurde nicht gelöscht und steht unter dem Pfad %{normal}'%{bold}%s%{normal}'%{error} weiterhin zur Verfügung.\n%{normal}Das Verzeichnis muss später von Hand gelöscht werden.
+224=Überprüfen des verfügbaren Swap-Space ...
+225=\n%{error}Es steht kein Swap-Space auf diesem System zur Verfügung, die erfolgreiche Ausführung von '%{normal}%{bold}modfs%{normal}%{error}'\nist unwahrscheinlich. Deshalb wird die Ausführung abgebrochen.%{normal}
+226=\n%{error}Es steht nicht genug Swap-Space auf diesem System zur Verfügung (erforderlich: %{normal}%{bold}%s%{normal}%{error} MB, vorhanden: %{normal}%{bold}%s%{normal}%{error} MB),\ndie erfolgreiche Ausführung von '%{normal}%{bold}modfs%{error} ist unwahrscheinlich. Deshalb wird die Ausführung abgebrochen.%{normal}

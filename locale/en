@@ -146,3 +146,7 @@
 208=No download source for version %s could be found.
 209=Error looking up download source for version %s, aborted.
 222=Error detecting filesystem on image file.
+223=\n%{error}The modified root filesystem was kept under the path %{normal}'%{bold}%s%{normal}'%{error} and may be inspected further now.\n%{normal}The directory has to be removed later manually.
+224=Check available swap space ...
+225=\n%{error}There is no swap space available on this system. A successful execution of '%{normal}%{bold}modfs%{normal}%{error}'\nis not really expected, therefore execution will be aborted now.%{normal}
+226=\n%{error}There is not enough swap space available on this system (required: %{normal}%{bold}%s%{normal}%{error} MB, available: %{normal}%{bold}%s%{normal}%{error} MB) and\nthe probability of a successful execution of '%{normal}%{bold}modfs%{error} is low. Therefore execution will be aborted now.%{normal}
