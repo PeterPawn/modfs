@@ -5,13 +5,14 @@
 	chmod o-x modscripts/*
 	busybox tar -c --exclude=".git*" --exclude="contrib/custom" $Files | gzip -c9 > "modfs-$version.tgz"
 	cp modfs-$version.tgz /autofs/ssh/source/srv/www/vhosts/www.yourfritz.de/
+	chown wwwrun:www /autofs/ssh/source/srv/www/vhosts/www.yourfritz.de/modfs-$version.tgz
 	opwd=$(pwd)
 	cd /autofs/ssh/source/srv/www/vhosts/www.yourfritz.de
 	rm modfs.tgz
 	ln -s modfs-$version.tgz modfs.tgz
 	cd $opwd
 	echo "Created (and linked) modfs version $version on yourfritz.de"
-	tar tvf modfs-$version.tgz
+	tar -t -v -f modfs-$version.tgz
 
 2	Update modfs version timestamp
 	version="$(cat .version)"
@@ -26,5 +27,6 @@
 	chmod o-x modscripts/*
 	busybox tar -c --exclude=".git*" --exclude="contrib/custom" $Files | gzip -c9 > "modfs-$version.tgz"
 	cp modfs-$version.tgz /autofs/ssh/source/srv/www/vhosts/www.yourfritz.de/
+	chown wwwrun:www /autofs/ssh/source/srv/www/vhosts/www.yourfritz.de/modfs-$version.tgz
 	echo "Created modfs version $version on yourfritz.de"
-	tar tvf modfs-$version.tgz
+	tar -t -v -f modfs-$version.tgz
