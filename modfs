@@ -161,7 +161,7 @@ nativefilesystems="tmpfs ext2 ext3 ext4 yaffs2"
 #
 # our "internal" constants
 #
-modfs_version=0.5.0-beta-061020181752
+modfs_version=0.5.0-071020182008
 modfs_comment="please look at https://github.com/PeterPawn/modfs for further info"
 bindirname="bin"
 localedirname="locale"
@@ -2708,8 +2708,22 @@ scriptname="${scriptfile##*/}"
 bb="$(bindir)/busybox"
 shl="$bb sh"
 if [ x"$MODFS_RUN_SHELL" != x"1" ]; then
+	tgt="$(readlink "$(bindir)")"
+	tgtsuf="${tgt%%_*}"
+	if ! [ "$tgtsuf" = "$tgt" ]; then
+		pd="$bindirname/${tgtsuf}_$(uname -r)"
+		[ -d "$pd" ] && tgtexists=1 || tgtexists=0
+		if [ $tgtexists -eq 1 ] && ! [ "$bindirname/$tgt" = "$pd" ]; then
+			( cd "$scriptpath/$bindirname"; ln -s -f -n -T "${pd##*/}" $HWRevision )
+			printf "${msgtext_bold}Information: Changed binaries directory link to versions for kernel '%s'.${msgtext_normal}\n" "$(uname -r)" 1>&2
+		else
+			if [ $tgtexists -eq 0 ]; then
+				printf "${msgtext_warning}Warning:${msgtext_normal}${msgtext_bold} No binaries directory for kernel version '%s' found.${msgtext_normal}\n" "$(uname -r)" 1>&2
+			fi
+		fi
+	fi
 	mkdir -p /var/run/modfs
-	ln -s $bb /var/run/modfs/sh
+	ln -s -f $bb /var/run/modfs/sh
 	oldpath="$PATH"
 	export PATH=$(bindir)
 	export MODFS_RUN_SHELL=1
