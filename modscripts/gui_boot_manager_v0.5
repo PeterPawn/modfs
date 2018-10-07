@@ -47,7 +47,9 @@ install_call()
 }
 install_backend()
 {
-	cp -a "$srcdir/$backend" "$backenddir"
+	cp -a "$srcdir/$backend" "$backenddir" 2>/dev/null
+	chmod 755 "$backenddir$backend" 2>/dev/null
+	chown 0:0 "$backenddir$backend" 2>/dev/null
 }
 #
 # execute requested action
@@ -88,6 +90,9 @@ case $step in
 	postcheck)
 		find_line
 		rc=$?
+		if [ $rc -eq 0 ]; then
+			[ "$(stat -c %u:%g:%a "$backenddir$backend" 2>/dev/null)" = "0:0:755" ] || rc=1
+		fi
 		if [ $rc -eq 1 ]; then
 			case "$language" in
 				de)
