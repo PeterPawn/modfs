@@ -3328,12 +3328,12 @@ if [ $rc -eq 0 -a $install_image_only -eq 0 ]; then
 	fi
 	debug "modfs: unpacking SquashFS image done, rc=$rc"
 fi
-FRITZOS_VERSION="$(get_target_system_version "$unpack_directory/$squashfsdirname")"
-KERNEL_VERSION="$(get_target_kernel_version "$unpack_directory/$squashfsdirname")"
-BRANDINGS="$(get_target_brandings "$unpack_directory/$squashfsdirname")"
-BRANDING="$(get_first_branding "$BRANDINGS")"
-eval $KERNEL_VERSION $FRITZOS_VERSION TARGET_BRANDINGS=\"$BRANDINGS\" TARGET_BRANDING=\"$BRANDING\"
 if [ $rc -eq 0 -a $install_image_only -eq 0 ]; then
+	FRITZOS_VERSION="$(get_target_system_version "$unpack_directory/$squashfsdirname")"
+	KERNEL_VERSION="$(get_target_kernel_version "$unpack_directory/$squashfsdirname")"
+	BRANDINGS="$(get_target_brandings "$unpack_directory/$squashfsdirname")"
+	BRANDING="$(get_first_branding "$BRANDINGS")"
+	eval $KERNEL_VERSION $FRITZOS_VERSION TARGET_BRANDINGS=\"$BRANDINGS\" TARGET_BRANDING=\"$BRANDING\"
 	# modify root file system
 	contribs="$(contribdir)"
 	files=0
@@ -3356,7 +3356,11 @@ if [ $rc -eq 0 -a $install_image_only -eq 0 ]; then
 			while read -n 10 -s -t 1; do :; done
 			echo -ne "$(get_localized $lang 150 $unpack_directory/$squashfsdirname)" 1>&2
 			while [ 1 -eq 1 ]; do
-				read abort
+				if [ "$MODFS_ABORT_BEFORE_PACK" = "Q" ]; then
+					abort=$MODFS_ABORT_BEFORE_PACK
+				else
+					read abort
+				fi
 				if [ "$abort" = "q" ] || [ "$abort" = "Q" ]; then
 					echo -e "$(get_localized $lang 155)" 1>&2
 					rc=1

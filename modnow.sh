@@ -10,7 +10,10 @@ export MODFS_DEBUG_SHELL=1
 export MODFS_WORKING_DIR=/var/media/ftp/system
 
 # skip pause in front of "mksquashfs"
-export MODFS_NO_PAUSE_ON_PACK=1
+export MODFS_NO_PAUSE_ON_PACK=${PACK:-0}
+
+# abort and keep the modified directory structure
+export MODFS_ABORT_BEFORE_PACK=${NOPACK:-0}
 
 # directory name and (optional) size limit for volatile NAS storage
 #export MOD_VOLATILE_NAS_DIR_DIRNAME="nostore"
@@ -21,5 +24,5 @@ export MODFS_NO_PAUSE_ON_PACK=1
 
 # save debug output to local file(s)
 d=$(date +%s)
-showshringbuf modfs >./modfs.log.$d
 [ -f /var/tmp/modfs_debug_shell.log ] && cp -a /var/tmp/modfs_debug_shell.log ./modfs_debug_shell.log.$d
+showshringbuf modfs >./modfs.log.$d
