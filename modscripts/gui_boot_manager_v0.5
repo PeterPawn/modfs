@@ -26,6 +26,8 @@ tgtdir="/usr/bin/"
 patchfile="patch_system_reboot_lua.patch"
 backenddir="$rootdir$tgtdir"
 backend="gui_bootmanager"
+cache_from="/etc/init.d/S85-apps"
+cache_output="html_display"
 #
 # some helpers
 #
@@ -50,6 +52,11 @@ install_backend()
 	cp -a "$srcdir/$backend" "$backenddir" 2>/dev/null
 	chmod 755 "$backenddir$backend" 2>/dev/null
 	chown 0:0 "$backenddir$backend" 2>/dev/null
+}
+install_cache_output()
+{
+	grep -q "^$tgtdir$backend" "$rootdir/$cache_from" 2>/dev/null && return
+	printf "%s%s %s >/dev/null 2>/dev/null\n" "$tgtdir" "$backend" "$cache_output" >>"$rootdir/$cache_from"
 }
 #
 # execute requested action
@@ -111,6 +118,7 @@ case $step in
 			install_call
 		done
 		install_backend
+		install_cache_output
 		rc=0
 		;;
 	*)
