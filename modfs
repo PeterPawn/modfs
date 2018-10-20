@@ -163,7 +163,7 @@ nativefilesystems="tmpfs ext2 ext3 ext4 yaffs2"
 #
 # our "internal" constants
 #
-modfs_version=0.5.1-beta-131020181840
+modfs_version=0.5.1-beta-211020180005
 modfs_comment="please look at https://github.com/PeterPawn/modfs for further info"
 bindirname="bin"
 localedirname="locale"
@@ -2613,12 +2613,12 @@ get_version_from_manufacturer()
 	[ $target == current ] && opt="-c"
 	curr="$(get_system_version)"
 	[ $target == current ] && progress 1 207 "$curr" || progress 1 188
-	res="$($shl $scriptwrapper $(scriptdir)/check_update $opt)"
+	res="$($shl $scriptwrapper $(scriptdir)/juis_check -n -l -p $opt 2>/dev/null)"
 	rc=$?
 	if [ $rc -ne 0 ]; then
 		progress 3 97
-		debug "get_version_from_manufacturer: error $rc returned from check_update"
-		if [ $rc -eq 1 ]; then
+		debug "get_version_from_manufacturer: error $rc returned from juis_check"
+		if [ $rc -eq 2 ]; then
 			if [ $target == current ]; then
 				echo "$(get_localized $lang 208 $curr)" 1>&2
 				rc=208
@@ -2638,7 +2638,7 @@ get_version_from_manufacturer()
 	else
 		eval "$res"
 		if [ $target == current ]; then 
-			debug "get_version_from_manufacturer: found current version $NewVersion, URL=$DownloadURL"
+			debug "get_version_from_manufacturer: found current version $NewVersion, URL=$URL"
 			compare_versions "$NewVersion" "$(get_system_version)"
 			comp=$?
 			if [ $comp -eq 1 ]; then
@@ -2653,11 +2653,11 @@ get_version_from_manufacturer()
 			progress 3 96
 			ShowVersion=$(printf "%s" "$NewVersion" | sed -e "y/ /_/")
 			echo "$(get_localized $lang 189 "$ShowVersion")" 1>&2
-			debug "get_version_from_manufacturer: found new version $NewVersion, URL=$DownloadURL"
+			debug "get_version_from_manufacturer: found new version $NewVersion, URL=$URL"
 		fi
 	fi
 	debug "get_version_from_manufacturer: exiting, rc=$rc"
-	[ $rc -eq 0 ] && echo "$res"
+	[ $rc -eq 0 ] && printf "DownloadURL=%s\nNewVersion=%s\n" "$URL" "$NewVersion"
 	return $rc
 }
 #
@@ -2950,6 +2950,9 @@ if [ $prerc -eq 32 ]; then
 			echo -e "$(get_localized $lang 183)" 1>&2
 			prerc=0
 		fi
+	else
+		debug "modfs: continuing with a different kernel version"
+		prerc=0
 	fi
 fi
 [ $prerc -ne 0 ] && exit $prerc
@@ -3004,7 +3007,6 @@ case $source in
 		fi
 		debug "modfs: working directory=$working_directory"
 		version="$(get_system_version)"
-		progress 1 121 "$version"
 		download_directory="$working_directory/$($bb date +%s)"
 		$bb mkdir -p "$download_directory"
 		echo "$bb rm -r $download_directory" >>$tempfilelist
@@ -3013,6 +3015,7 @@ case $source in
 		rc=$?
 		if [ $rc -eq 0 ]; then
 			eval "$download_version"
+			progress 1 121 "$version"
 			download_firmware "$download_directory/$firmwarestoragename" "$DownloadURL"
 			rc=$?
 			if [ $rc -ne 0 ]; then
