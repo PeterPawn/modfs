@@ -1723,7 +1723,7 @@ find_free_storage_space()
 			fi
 		fi
 		if [ $rc -ne 0 ]; then
-			out="$out $(get_possible_usb_mountpoints | check_space $needed)"
+			out="$out${out:+ }$(get_possible_usb_mountpoints | check_space $needed)"
 			if [ ${#out} -gt 0 ]; then
 				echo "$out"
 				rc=0
