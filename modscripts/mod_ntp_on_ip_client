@@ -1,0 +1,85 @@
+# MODFS_MODSCRIPT
+# SUPPORTS precheck postcheck install language(en,de)
+# NAME NTP settings on IP client
+# DESCRIPTION en
+# enable NTP server settings even on IP client devices
+# DESCRIPTION de
+# NTP-Einstellungen auch auf einer IP-Client-Box zugänglich machen
+# EOH
+#
+# process parameters
+#
+language=$1
+rootdir=$2
+mode=$3
+step=$4
+[ ${#4} -eq 0 ] && exit 59 # invalid call
+#
+# execute the requested step
+#
+rc=0
+modfile="$rootdir/usr/www/%s/net/net_settings.lua"
+lookfor="^if config.CHRONY and not general.is_ip_client() then\$"
+replacewith="if config.CHRONY then"
+#
+# helpers
+#
+check()
+{
+	set -- $TARGET_BRANDINGS
+	file="$(printf "$modfile" "$1")"
+	grep -q "$lookfor" "$file" 2>/dev/null
+}
+patch()
+{
+	while [ $# -gt 0 ]; do
+		file="$(printf "$modfile" "$1")"
+		sed -e "/$lookfor/s|.*|$replacewith|" -i "$file"
+		shift
+	done
+}
+#
+# run action
+#
+case $step in
+	precheck)
+		if check; then
+			rc=0
+		else
+			case "$language" in
+				de)
+					printf "Die Modifikation wurde bereit angewendet oder ist nicht erforderlich.\n"
+					;;
+				*)
+					printf "The modification was applied already or isn't necessary.\n"
+					;;
+			esac
+			rc=1
+		fi
+		;;
+
+	postcheck)
+		if check; then
+			case "$language" in
+				de)
+					printf "Die Modifikation war nicht erfolgreich.\n"
+					;;
+				*)
+					printf "The modification was NOT applied successfully.\n"
+					;;
+			esac
+			rc=1
+		else
+			rc=0
+		fi
+		;;
+
+	install)
+		patch $TARGET_BRANDINGS
+		rc=0
+		;;
+	*)
+		rc=59
+		;;
+esac
+exit $rc
