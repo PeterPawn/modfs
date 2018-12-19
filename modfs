@@ -857,10 +857,19 @@ get_target_system_version()
 {
 	local rootdir="$1" version subversion date rc=0 var
 	version_major="$($bb sed -n -e "s/^export CONFIG_VERSION_MAJOR=\"\(.*\)\"\$/\1/p" "$rootdir/etc/init.d/rc.conf" | $bb sed -n -e "\$p")"
-	for var in version subversion date; do
-		eval "$($bb sed -n -e "s/^export FIRMWARE_$(uppercase $var)=\"\?\([^\"]*\)\"\?\$/$var=\"\1\"/p" "$rootdir/etc/version" | $bb sed -e "s/CONFIG_VERSION_MAJOR/version_major/")"
-	done
-	[ ${#subversion} -eq 0 ] && subversion="$($bb sed -n -e "/--project)/N;s|\n||p" "$rootdir/etc/version" | $bb sed -n -e "s|.*echo \(.*\)|\1|p")"
+	if [ -z "$($bb sed -n -e "/^[ \t]*export FIRMWARE_VERSION=/p" "$rootdir/etc/version")" ]; then
+		major="$($bb sed -n -e "s/^export CONFIG_VERSION_MAJOR=\"\?\([^\"]*\)\"\?\$/\1/p" "$rootdir/etc/init.d/rc.conf" | sed -e "/^10\$/d")"
+		for var in version subversion; do
+			eval "$($bb sed -n -e "s/^export CONFIG_$(uppercase $var)=\"\?\([^\"]*\)\"\?\$/$var=\"\1\"/p" "$rootdir/etc/init.d/rc.conf")"
+		done
+		date="$(date +%d.%m.%Y\ %H:%M:%S -d @$(stat -c %Y "$rootdir/etc/version"))"
+		version="$major.$version"
+	else
+		for var in version subversion date; do
+			eval "$($bb sed -n -e "s/^export FIRMWARE_$(uppercase $var)=\"\?\([^\"]*\)\"\?\$/$var=\"\1\"/p" "$rootdir/etc/version" | $bb sed -e "s/CONFIG_VERSION_MAJOR/version_major/")"
+		done
+		[ ${#subversion} -eq 0 ] && subversion="$($bb sed -n -e "/--project)/N;s|\n||p" "$rootdir/etc/version" | $bb sed -n -e "s|.*echo \(.*\)|\1|p")"
+	fi
 	debug "get_target_system_version: version=\"$version\", subversion=\"$subversion\", date=\"$date\", rc=$rc"
 	echo "TARGET_SYSTEM_VERSION=\"$version\" TARGET_SYSTEM_SUBVERSION=\"$subversion\" TARGET_SYSTEM_DATE=\"$date\""
 }
@@ -1426,10 +1435,19 @@ get_system_version()
 {
 	local rootdir="$1" version subversion date rc=0 var
 	version_major="$($bb sed -n -e "s/^export CONFIG_VERSION_MAJOR=\"\(.*\)\"\$/\1/p" "$rootdir/etc/init.d/rc.conf" | $bb sed -n -e "\$p")"
-	for var in version subversion date; do
-		eval "$($bb sed -n -e "s/^export FIRMWARE_$(uppercase $var)=\"\?\([^\"]*\)\"\?\$/$var=\"\1\"/p" "$rootdir/etc/version" | $bb sed -e "s/CONFIG_VERSION_MAJOR/version_major/")"
-	done
-	[ ${#subversion} -eq 0 ] && subversion="$($bb sed -n -e "/--project)/N;s|\n||p" "$rootdir/etc/version" | $bb sed -n -e "s|.*echo \(.*\)|-\1|p")"
+	if [ -z "$($bb sed -n -e "/^[ \t]*export FIRMWARE_VERSION=/p" "$rootdir/etc/version")" ]; then
+		major="$($bb sed -n -e "s/^export CONFIG_VERSION_MAJOR=\"\?\([^\"]*\)\"\?\$/\1/p" "$rootdir/etc/init.d/rc.conf" | sed -e "/^10\$/d")"
+		for var in version subversion; do
+			eval "$($bb sed -n -e "s/^export CONFIG_$(uppercase $var)=\"\?\([^\"]*\)\"\?\$/$var=\"\1\"/p" "$rootdir/etc/init.d/rc.conf")"
+		done
+		date="$(date +%d.%m.%Y\ %H:%M:%S -d @$(stat -c %Y "$rootdir/etc/version"))"
+		version="$major.$version"
+	else
+		for var in version subversion date; do
+			eval "$($bb sed -n -e "s/^export FIRMWARE_$(uppercase $var)=\"\?\([^\"]*\)\"\?\$/$var=\"\1\"/p" "$rootdir/etc/version" | $bb sed -e "s/CONFIG_VERSION_MAJOR/version_major/")"
+		done
+		[ ${#subversion} -eq 0 ] && subversion="$($bb sed -n -e "/--project)/N;s|\n||p" "$rootdir/etc/version" | $bb sed -n -e "s|.*echo \(.*\)|-\1|p")"
+	fi
 	debug "get_system_version: version=\"$version\", subversion=\"$subversion\", date=\"$date\", rc=$rc"
 	echo "${version}${subversion}"
 }
