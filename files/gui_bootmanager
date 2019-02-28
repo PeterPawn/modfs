@@ -7,13 +7,13 @@
 #                                                                                                     #
 ###################################################################################################VER#
 #                                                                                                     #
-# gui_bootmanager, version 0.5                                                                        #
+# gui_bootmanager, version 0.6                                                                        #
 #                                                                                                     #
 # This script is a part of the YourFritz project from https://github.com/PeterPawn/YourFritz.         #
 #                                                                                                     #
 ###################################################################################################CPY#
 #                                                                                                     #
-# Copyright (C) 2014-2018 P.Haemmerlein (peterpawn@yourfritz.de)                                      #
+# Copyright (C) 2014-2019 P.Haemmerlein (peterpawn@yourfritz.de)                                      #
 #                                                                                                     #
 ###################################################################################################LIC#
 #                                                                                                     #
@@ -57,10 +57,16 @@
 #                the original reboot.lua page (tested up to version 07.01)                            #
 #              - if the second parameter is 'nocache', an existing cache file (where those data is    #
 #                stored otherwise - ready to be displayed on next call) gets ignored                  #
+#              - the data for 'get_values' is cached at the same time, if 'nocache' wasn't specified  #
 # switch_to    - switches to the 'running' or 'alternative' system (2nd parameter) and (optionally)   #
 #                sets the OEM name to the 3rd parameter (which isn't checked any further)             #
 # get_values   - provide a list of relevant values for implementers of other interfaces, without the  #
 #                needs to implement the full logic once again                                         #
+#              - if the second parameter is 'nocache', an existing cache file (where those data is    #
+#                stored otherwise - ready for output on next call) gets ignored                       #
+#              - while the call for 'html_display' creates the cache file for this function too, this #
+#                one doesn't create a cached HTML output and any later call to 'html_display' w/o the #
+#                'nocache' parameter will refresh the cached data of this function again              #
 # debug        - this operation is intended only for diagnose, it shows some settings and their       #
 #                current values on STDOUT to provide information about the current system             #
 # clear_cache  - remove cached HTML output from an earlier 'html_display' call without 'nocache'      #
@@ -78,76 +84,81 @@
 # common values                                                                                       #
 #                                                                                                     #
 #######################################################################################################
-html_cache_file="/var/tmp/gui_bootmanager.html"
-html_cache_error="/var/tmp/gui_bootmanager.rc"
-urlader_environment="/proc/sys/urlader/environment"
-system_select_name="linux_fs_start"
-active_name="active"
-inactive_name="inactive"
-branding_name="firmware_version"
-proc_mtd="/proc/mtd"
-proc_devices="/proc/devices"
-mtd_prefix="mtd"
-mtdblock_prefix="/dev/mtdblock"
-mtdblock_mask="${mtdblock_prefix}%u"
-proc_cpuinfo="/proc/cpuinfo"
-proc_mountinfo="/proc/self/mountinfo"
-kernel_name="kernel"
-filesystem_name="filesystem"
-reserved_prefix="reserved"
-alt_root_mount_name="alt_root"
-defaults_dir="etc/default.$CONFIG_PRODUKT"
-sysfs_block_dir="/sys/block"
-loop_driver_name="loop"
-backing_file_name="backing_file"
-tmpdir="${TMPDIR:-/var/tmp}"
-avm_rcconf="etc/init.d/rc.conf"
-semafile="/var/run/gui_bootmanager.sem"
-fdt_chosen="/proc/device-tree/chosen"
-saved_environment="/var/env"
-version_components="VERSION SUBVERSION DATE"
-radio_button_checked=" checked=\\\"checked\\\""
+readonly html_cache_file="/var/tmp/gui_bootmanager.html"
+readonly html_cache_error="/var/tmp/gui_bootmanager.rc"
+readonly data_cache_file="/var/tmp/gui_bootmanager.data"
+readonly boot_cache_file="/var/tmp/gui_bootmanager.boot"
+readonly urlader_environment="/proc/sys/urlader/environment"
+readonly system_select_name="linux_fs_start"
+readonly active_name="active"
+readonly inactive_name="inactive"
+readonly branding_name="firmware_version"
+readonly proc_mtd="/proc/mtd"
+readonly proc_devices="/proc/devices"
+readonly mtd_prefix="mtd"
+readonly mtdblock_prefix="/dev/mtdblock"
+readonly mtdblock_mask="${mtdblock_prefix}%u"
+readonly proc_cpuinfo="/proc/cpuinfo"
+readonly proc_mountinfo="/proc/self/mountinfo"
+readonly kernel_name="kernel"
+readonly filesystem_name="filesystem"
+readonly reserved_prefix="reserved"
+readonly alt_root_mount_name="alt_root"
+readonly defaults_dir="etc/default.$CONFIG_PRODUKT"
+readonly sysfs_block_dir="/sys/block"
+readonly loop_driver_name="loop"
+readonly backing_file_name="backing_file"
+readonly tmpdir="${TMPDIR:-/var/tmp}"
+readonly avm_rcconf="etc/init.d/rc.conf"
+readonly semafile="/var/run/gui_bootmanager.sem"
+readonly fdt_chosen="/proc/device-tree/chosen"
+readonly radio_button_checked=" checked=\\\"checked\\\""
 #######################################################################################################
 #                                                                                                     #
 # various sources for version numbers                                                                 #
 #                                                                                                     #
 #######################################################################################################
-yourfritz_version_file="etc/.yourfritz_version"
-freetz_version_file="etc/.freetz-version"
-modfs_version_file="etc/.modfs_version"
-avm_version_file="etc/version"
-version_files="$yourfritz_version_file $freetz_version_file $modfs_version_file $avm_version_file"
-modified_by="YourFritz Freetz modfs -"
+readonly yourfritz_version_file="etc/.yourfritz_version"
+readonly freetz_version_file="etc/.freetz-version"
+readonly modfs_version_file="etc/.modfs_version"
+readonly avm_version_file1="etc/version"
+readonly avm_version_file1_prefix="FIRMWARE_"
+readonly avm_version_file2="etc/init.d/rc.conf"
+readonly avm_version_file2_prefix="CONFIG_"
+readonly avm_version_main_components="VERSION SUBVERSION"
+readonly avm_version_date="DATE"
+readonly version_files="$yourfritz_version_file $freetz_version_file $modfs_version_file"
+readonly modified_by="YourFritz Freetz modfs -"
 #######################################################################################################
 #                                                                                                     #
 # GRX5 and VR9 specific settings                                                                      #
 #                                                                                                     #
 #######################################################################################################
-mtd_filesystem_name_active="${filesystem_name}"
-mtd_filesystem_name_inactive="${reserved_prefix}-${filesystem_name}"
-mtd_kernel_name_active="${kernel_name}"
-mtd_kernel_name_inactive="${reserved_prefix}-${kernel_name}"
+readonly mtd_filesystem_name_active="${filesystem_name}"
+readonly mtd_filesystem_name_inactive="${reserved_prefix}-${filesystem_name}"
+readonly mtd_kernel_name_active="${kernel_name}"
+readonly mtd_kernel_name_inactive="${reserved_prefix}-${kernel_name}"
 #######################################################################################################
 #                                                                                                     #
 # VR9 specific settings                                                                               #
 #                                                                                                     #
 #######################################################################################################
-wrapper_mount_name="wrapper"
-vr9_wrapper_dir="/wrapper"
-vr9_rootfs_name="/filesystem_core.squashfs"
-vr9_image_source_active="${vr9_wrapper_dir}${vr9_rootfs_name}"
-vr9_image_source_inactive="mount:%s:${vr9_rootfs_name}"
+readonly wrapper_mount_name="wrapper"
+readonly vr9_wrapper_dir="/wrapper"
+readonly vr9_rootfs_name="/filesystem_core.squashfs"
+readonly vr9_image_source_active="${vr9_wrapper_dir}${vr9_rootfs_name}"
+readonly vr9_image_source_inactive="mount:%s:${vr9_rootfs_name}"
 ########################################################################################################
 #                                                                                                     #
 # Puma6 / Puma7 specific settings                                                                     #
 #                                                                                                     #
 #######################################################################################################
-puma_helper="/etc/puma6_helper.sh"
-puma_partitions="/proc/avm_partitions"
-puma_filesystem_name_active="${filesystem_name}_ATOM"
-puma_filesystem_name_inactive="${filesystem_name}_${reserved_prefix}_ATOM"
-puma_kernel_name_active="${kernel_name}_ATOM"
-puma_kernel_name_inactive="${kernel_name}_${reserved_prefix}_ATOM"
+readonly puma_helper="/etc/puma6_helper.sh"
+readonly puma_partitions="/proc/avm_partitions"
+readonly puma_filesystem_name_active="${filesystem_name}_ATOM"
+readonly puma_filesystem_name_inactive="${filesystem_name}_${reserved_prefix}_ATOM"
+readonly puma_kernel_name_active="${kernel_name}_ATOM"
+readonly puma_kernel_name_inactive="${kernel_name}_${reserved_prefix}_ATOM"
 #######################################################################################################
 #                                                                                                     #
 # sub-functions                                                                                       #
@@ -267,12 +278,17 @@ get_partition()
 	if is_puma_based_device; then
 		get_puma_partition "$1" "$2"
 		rc=$?
-	elif [ "$(get_system_type)" = "VR9" ] || [ "$(get_system_type)" = "AR10" ]; then
-		[ "$1" = "$kernel_name" ] && get_mtd_partition "$1" "$2" || get_vr9_image "$1" "$2"
-	elif [ "$(get_system_type)" = "GRX500" ]; then
-		get_mtd_partition "$1" "$2"
 	else
-		rc=1
+		st="$(get_system_type)"
+		if [ "$st" = "VR9" ] || [ "$st" = "AR10" ]; then
+			[ "$1" = "$kernel_name" ] && get_mtd_partition "$1" "$2" || get_vr9_image "$1" "$2"
+			rc=$?
+		elif [ "$st" = "GRX500" ] || [ "$st" = "GRX350" ]; then
+			get_mtd_partition "$1" "$2"
+			rc=$?
+		else
+			rc=1
+		fi
 	fi
 	exit $rc
 )
@@ -365,14 +381,12 @@ compare_strings()
 	trap "rm -r $t 2>/dev/null" EXIT HUP INT
 	printf "%s\377" "$1" >"$t/left"
 	printf "%s\377" "$2" >"$t/right"
-	cmp -l "$t/left" "$t/right" 2>/dev/null >"$t/cmp"
-	v=0
-	while read pos left right; do
-		[ $left -lt $right ] && v=$(( v - 1 )) || v=$(( v + 1 ))
-		break
-	done <"$t/cmp"
-	printf "%d" $v
-	exit 0
+	cmp -l "$t/left" "$t/right" 2>/dev/null | read pos left right 2>/dev/null
+	if [ -z "$left" ] || [ -z "$right" ]; then
+		printf "0"
+	else
+		[ $left -lt $right ] && printf "-1" || printf "1"
+	fi
 )
 #######################################################################################################
 #                                                                                                     #
@@ -406,7 +420,7 @@ is_kernel_present()
 	__read_bytes()
 	{
 		while read line left right; do
-			[ $left -ne 377 -a $left -ne 0 ] && return 0
+			[ $left -ne 377 ] && [ $left -ne 0 ] && return 0
 		done
 		return 1
 	}
@@ -418,7 +432,7 @@ is_kernel_present()
 #                                                                                                     #
 # - if a FDT exists, the started system may be found there                                            #
 # - if a saved environment exists, we take the value from there and treat it as the original one      #
-# - if neither of the places above contain a valid value, the partition of 'kernel' type with the     #
+# - if neither of the places above contains a valid value, the partition of 'kernel' type with the    #
 #   lowest device index is assumed to be from system selector value 0                                 #
 #                                                                                                     #
 #######################################################################################################
@@ -427,8 +441,8 @@ is_switched()
 	if [ -d "$fdt_chosen" ]; then
 		! [ "$(cat "$fdt_chosen/$system_select_name")" = "$(get_system_switch)" ]
 	else
-		if [ -f "$saved_environment" ]; then
-			! [ "$(get_system_switch)" = "$(get_system_switch "$saved_environment")" ]
+		if [ -f "$boot_cache_file" ]; then
+			! [ "$(get_system_switch)" = "$(get_system_switch "$boot_cache_file")" ]
 		else
 			k1="$(get_partition "$kernel_name" "$active_name")"
 			k2="$(get_partition "$kernel_name" "$inactive_name")"
@@ -483,17 +497,72 @@ get_brandings()
 )
 #######################################################################################################
 #                                                                                                     #
-# extract firmware variables from AVM's version file                                                  #
+# extract firmware variables from AVM's firmware info source                                          #
+#                                                                                                     #
+# $1 - info source file                                                                               #
+# $2 - values prefix in this file                                                                     #
+#                                                                                                     #
+#######################################################################################################
+get_version_main_values()
+(
+	for v in $avm_version_main_components; do
+		sed -n -e "s|^[ \t]*export $2$v=\"\?\([^\"]*\)\"\?\$|$v=\"\1\"|p" "$1"
+	done
+)
+#######################################################################################################
+#                                                                                                     #
+# extract firmware variables from AVM's firmware new info source                                      #
+#                                                                                                     #
+# $1 - system root directory                                                                          #
+#                                                                                                     #
+#######################################################################################################
+get_new_version_main_values()
+(
+	path="${1:-/}${1:+/}$avm_version_file2"
+	prefix="$avm_version_file2_prefix"
+	get_version_main_values "$path" "$prefix"
+)
+#######################################################################################################
+#                                                                                                     #
+# extract firmware variables from AVM's firmware old info source                                      #
+#                                                                                                     #
+# $1 - system root directory                                                                          #
+#                                                                                                     #
+#######################################################################################################
+get_old_version_main_values()
+(
+	path="${1:-/}${1:+/}$avm_version_file1"
+	prefix="$avm_version_file1_prefix"
+	get_version_main_values "$path" "$prefix"
+)
+#######################################################################################################
+#                                                                                                     #
+# check, if version info is specified in the older or newer place                                     #
+#                                                                                                     #
+# $1 - system root directory                                                                          #
+#                                                                                                     #
+#######################################################################################################
+has_old_version_info()
+(
+	path="${1:-/}${1:+/}$avm_version_file1"
+	set -- $avm_version_main_components
+	[ -z "$(sed -n -e "s|^[ \t]*export $avm_version_file1_prefix$1=\"\?\([^\"]*\)\"\?\$|\1|p" "$path")" ] \
+		&& exit 1 || exit 0
+)
+#######################################################################################################
+#                                                                                                     #
+# get system version from specified system root                                                       #
 #                                                                                                     #
 # $1 - system root directory                                                                          #
 #                                                                                                     #
 #######################################################################################################
 get_version_values()
 (
-	path="${1:-/}${1:+/}$avm_version_file"
-	for v in $version_components; do
-		sed -n -e "s|^export FIRMWARE_$v=\"\?\([^\"]*\)\"\?\$|$v=\"\1\"|p" "$path" | sed -e 's| |\ |g'
-	done
+	if has_old_version_info "$1"; then
+		get_old_version_main_values "$1"
+	else
+		get_new_version_main_values "$1"
+	fi
 )
 #######################################################################################################
 #                                                                                                     #
@@ -505,7 +574,7 @@ get_version_values()
 get_system_version()
 (
 	eval $(get_version_values "$1")
-	printf '%s%s' "$VERSION" "$SUBVERSION"
+	has_old_version_info "$1" && printf '%s%s' "$VERSION" "$SUBVERSION" || printf '%s.%s%s' "$CONFIG_VERSION_MAJOR" "$VERSION" "$SUBVERSION"
 )
 #######################################################################################################
 #                                                                                                     #
@@ -523,15 +592,20 @@ parse_date_value()
 )
 #######################################################################################################
 #                                                                                                     #
-# get system build date from specified system root                                                    #
+# get system build date from specified root, it's a file modification time in the newer versions      #
 #                                                                                                     #
 # $1 - system root directory                                                                          #
 #                                                                                                     #
 #######################################################################################################
 get_system_date()
 (
-	eval $(get_version_values "$1")
-	v=$(parse_date_value "$DATE")
+	path="${1:-/}${1:+/}$avm_version_file1"
+	if has_old_version_info "$1"; then
+		d="$(sed -n -e "s|^[ \t]*export $avm_version_file1_prefix$avm_version_date=\"\?\([^\"]*\)\"\?\$|\1|p" "$path")"
+		v=$(parse_date_value "$d")
+	else
+		v=$(stat -c %Y "$path")
+	fi
 	printf '%s' "$(get_localized_date "$v")"
 )
 #######################################################################################################
@@ -662,7 +736,7 @@ dismount_alternative_system()
 #######################################################################################################
 get_localized_date()
 {
-	[ "$Language" = "de" ] && date +"%d.%m.%Y, %H:%M:%S Uhr" -d @$1 || date +"%d.%m.%Y %H:%M:%S" -d @$1
+	[ "$Language" = "de" ] && date +"%d.%m.%Y, %H:%M:%S Uhr" -d @$1 || date +"%m/%d/%Y %r" -d @$1
 }
 #######################################################################################################
 #                                                                                                     #
@@ -789,7 +863,7 @@ generate_html_lang_de()
 	html '<label for=\"radioRunning\">\n'
 	html '<b>das aktuell laufende System</b> (%s=%s)\n' "$system_select_name" "$current_system_switch"
 	html '<br><br>Version %s vom %s<br>\n' "$running_version" "$running_date"
-	[ "$running_modified" = "-" ] || \
+	[ -z "$running_modified" ] || \
 		html 'zuletzt modifiziert am %s durch \"%s\"\n' "$running_fsdate" "$running_modified"
 	html '</label>\n'
 	html '<br><br>\n'
@@ -803,7 +877,7 @@ generate_html_lang_de()
 		else
 			html '<br><br>Version %s vom %s<br>\n' \
 					"${alternative_version:-unbekannt}" "${alternative_date:-unbekannt}"
-			[ "$alternative_modified" = "-" ] || \
+			[ -z "$alternative_modified" ] || \
 				html 'zuletzt modifiziert am %s durch \"%s\"\n' \
 					"${alternative_fsdate:-unbekannt}" "${alternative_modified:-unbekannt}"
 		fi
@@ -876,7 +950,7 @@ generate_html_lang_en()
 	html '<label for=\"radioRunning\">\n'
 	html '<b>the currently running system</b> (%s=%s)\n' "$system_select_name" "$current_system_switch"
 	html '<br><br>version %s built on %s<br>\n' "$running_version" "$running_date"
-	[ "$running_modified" = "-" ] || \
+	[ -z "$running_modified" ] || \
 		html 'last modified on %s using \"%s\"\n' "$running_fsdate" "$running_modified"
 	html '</label>\n'
 	html '<br><br>\n'
@@ -891,7 +965,7 @@ generate_html_lang_en()
 		else
 			html '<br><br>version %s built on %s<br>\n' \
 				"${alternative_version:-unbekannt}" "${alternative_date:-unbekannt}"
-			[ "$alternative_modified" = "-" ] || \
+			[ -z "$alternative_modified" ] || \
 				html 'last modified on %s using \"%s\"\n' \
 					"${alternative_fsdate:-unbekannt}" "${alternative_modified:-unbekannt}"
 		fi
@@ -1001,10 +1075,10 @@ not_supported()
 #######################################################################################################
 collect_data()
 {
-	running_version="$(get_system_version)"
-	running_date="$(get_system_date)"
-	running_fsdate="$(get_modified_date)"
-	running_modified="$(get_modified_by)"
+	readonly running_version="$(get_system_version)"
+	readonly running_date="$(get_system_date)"
+	readonly running_fsdate="$(get_modified_date)"
+	readonly running_modified="$(get_modified_by)"
 	chg_running_branding=0
 	running_branding_fixed=0
 	if change_branding_support; then
@@ -1013,7 +1087,7 @@ collect_data()
 		[ -z "$(get_fixed_branding)" ] || running_branding_fixed=1
 		[ $(count_of_items "$running_brandings") -gt 1 ] && chg_running_branding=1
 	fi
-	current_system_switch=$(get_system_switch)
+	readonly current_system_switch=$(get_system_switch)
 	alternative_is_missing=1
 	chg_alternative_branding=0
 	alternative_branding_fixed=0
@@ -1021,17 +1095,15 @@ collect_data()
 		alternative_is_missing=0
 		spinlock get 10 && mp="$(mount_alternative_system)"
 		if ! [ -z "$mp" ]; then
-			alternative_version="$(get_system_version "$mp")"
+			readonly alternative_version="$(get_system_version "$mp")"
 			if ! [ -z "$alternative_version" ]; then
-				alternative_date="$(get_system_date "$mp")"
-				alternative_fsdate="$(get_modified_date "$mp")"
-				alternative_modified="$(get_modified_by "$mp")"
-				if ! [ -z "$alternative_fsdate" ]; then
-					if change_branding_support; then
-						alternative_brandings="$(get_brandings "$mp")"
-						[ -z "$(get_fixed_branding "$mp")" ] && alternative_branding_fixed=0 || alternative_branding_fixed=1
-						[ $(count_of_items "$alternative_brandings") -gt 1 ] && chg_alternative_branding=1
-					fi
+				readonly alternative_date="$(get_system_date "$mp")"
+				readonly alternative_fsdate="$(get_modified_date "$mp")"
+				readonly alternative_modified="$(get_modified_by "$mp")"
+				if change_branding_support; then
+					readonly alternative_brandings="$(get_brandings "$mp")"
+					[ -z "$(get_fixed_branding "$mp")" ] && alternative_branding_fixed=0 || alternative_branding_fixed=1
+					[ $(count_of_items "$alternative_brandings") -gt 1 ] && chg_alternative_branding=1
 				fi
 			fi
 			dismount_alternative_system
@@ -1050,6 +1122,50 @@ collect_data()
 }
 #######################################################################################################
 #                                                                                                     #
+# implement 'get_values' action, if no cached data exists                                             #
+#                                                                                                     #
+#######################################################################################################
+get_values()
+{
+	printf "active_version=\"%s\"\n" "$running_version"
+	printf "active_date=\"%s\"\n" "$running_date"
+	printf "active_modified_by=\"%s\"\n" "$running_modified"
+	printf "active_modified_at=\"%s\"\n" "$running_fsdate"
+	printf "active_brandings=\"%s\"\n" "$running_brandings"
+	if [ $alternative_is_missing -eq 1 ]; then
+		printf "inactive_version=\"%s\"\n" "missing"
+	else
+		printf "inactive_version=\"%s\"\n" "$alternative_version"
+		printf "inactive_date=\"%s\"\n" "$alternative_date"
+		printf "inactive_modified_by=\"%s\"\n" "$alternative_modified"
+		printf "inactive_modified_at=\"%s\"\n" "$alternative_fsdate"
+		printf "inactive_brandings=\"%s\"\n" "$alternative_brandings"
+	fi
+	printf "current_branding=\"%s\"\n" "$current_branding"
+	cb_support=$(( alternative_branding_fixed + running_branding_fixed ))
+	if [ $cb_support -eq 2 ]; then
+		cb_supported="both_fixed"
+	else
+		if change_branding_support; then
+			if [ $cb_support -eq 1 ]; then
+				if [ $running_branding_fixed -eq 1 ]; then
+					cb_supported="running_fixed"
+				else
+					cb_supported="alternative_fixed"
+				fi
+			else
+				cb_supported="true"
+			fi
+		else
+			cb_supported="false"
+		fi
+	fi
+	printf "switch_branding_support=%s\n" "$cb_supported"
+	printf "current_switch_value=%s\n" "$current_system_switch"
+	printf "system_is_switched=%s\n" $(is_switched && printf "true" || printf "false")
+}
+#######################################################################################################
+#                                                                                                     #
 # check dual-boot support                                                                             #
 #                                                                                                     #
 #######################################################################################################
@@ -1062,12 +1178,21 @@ is_dualboot_supported()
 )
 #######################################################################################################
 #                                                                                                     #
+# save initial environment at first call                                                              #
+#                                                                                                     #
+#######################################################################################################
+save_environment()
+(
+	[ -f "$boot_cache_file" ] || cat "$urlader_environment" > "$boot_cache_file" 2>/dev/null
+)
+#######################################################################################################
+#                                                                                                     #
 # prepare a temporary directory and a clean exit routine                                              #
 #                                                                                                     #
 #######################################################################################################
 exec 2>&1
 set -e
-tempdir="$tmpdir/$$_$(date +%s)"
+readonly tempdir="$tmpdir/$$_$(date +%s)"
 mkdir -p "$tempdir" 2>/dev/null
 trap cleanup HUP EXIT INT TERM
 rc=127
@@ -1120,44 +1245,14 @@ case "$1" in
 		;;
 	("get_values")
 		if is_dualboot_supported; then
-			spinlock_pid=$$
-			collect_data
-			printf "active_version=\"%s\"\n" "$running_version"
-			printf "active_date=\"%s\"\n" "$running_date"
-			printf "active_modified_by=\"%s\"\n" "$running_modified"
-			printf "active_modified_at=\"%s\"\n" "$running_fsdate"
-			printf "active_brandings=\"%s\"\n" "$running_brandings"
-			if [ $alternative_is_missing -eq 1 ]; then
-				printf "inactive_version=\"%s\"\n" "missing"
-			else
-				printf "inactive_version=\"%s\"\n" "$alternative_version"
-				printf "inactive_date=\"%s\"\n" "$alternative_date"
-				printf "inactive_modified_by=\"%s\"\n" "$alternative_modified"
-				printf "inactive_modified_at=\"%s\"\n" "$alternative_fsdate"
-				printf "inactive_brandings=\"%s\"\n" "$alternative_brandings"
+			if [ "$2" = "nocache" ] || ! [ -f "$data_cache_file" ]; then
+				spinlock_pid=$$
+				collect_data
+				[ "$2" = "nocache" ] && get_values ||  get_values >"$data_cache_file"
 			fi
-			printf "current_branding=\"%s\"\n" "$current_branding"
-			cb_support=$(( alternative_branding_fixed + running_branding_fixed ))
-			if [ $cb_support -eq 2 ]; then
-				cb_supported="both_fixed"
-			else
-				if change_branding_support; then
-					if [ $cb_support -eq 1 ]; then
-						if [ $running_branding_fixed -eq 1 ]; then
-							cb_supported="running_fixed"
-						else
-							cb_supported="alternative_fixed"
-						fi
-					else
-						cb_supported="true"
-					fi
-				else
-					cb_supported="false"
-				fi
-			fi
-			printf "switch_branding_support=%s\n" "$cb_supported"
-			printf "current_switch_value=%s\n" "$current_system_switch"
-			rc=$?
+			[ "$2" = "nocache" ] || cat "$data_cache_file" 2>/dev/null
+			rc=0
+			save_environment
 		else
 			rc=1
 		fi
@@ -1180,6 +1275,7 @@ case "$1" in
 				[ "$Language" = "de" ] || Language="en"
 				spinlock_pid=$$
 				collect_data
+				[ "$2" = "nocache" ] || get_values >"$data_cache_file"
 				eval generate_html_lang_$Language
 				generate_javascript
 				rc=$?
@@ -1193,10 +1289,12 @@ case "$1" in
 				printf "%u" "$rc" >"$html_cache_error"
 				cat "$html_cache_file"
 			fi
+			save_environment
 		fi
 		;;
 	("clear_cache")
 		[ -f "$html_cache_file" ] && rm "$html_cache_file" "$html_cache_error" 2>/dev/null
+		[ -f "$data_cache_file" ] && rm "$data_cache_file" 2>/dev/null
 		rc=0
 		;;
 	("switch_to")
