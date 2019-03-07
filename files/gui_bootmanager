@@ -381,7 +381,8 @@ compare_strings()
 	trap "rm -r $t 2>/dev/null" EXIT HUP INT
 	printf "%s\377" "$1" >"$t/left"
 	printf "%s\377" "$2" >"$t/right"
-	cmp -l "$t/left" "$t/right" 2>/dev/null | read pos left right 2>/dev/null
+	cmp -l "$t/left" "$t/right" 2>/dev/null >"$t/out"
+	read pos left right 2>/dev/null <"$t/out"
 	if [ -z "$left" ] || [ -z "$right" ]; then
 		printf "0"
 	else
@@ -470,7 +471,11 @@ switch_system()
 #######################################################################################################
 switch_system_to()
 (
-	is_switched && ( [ "$1" = "running" ] && switch_system ) || ( [ "$1" = "alternative" ] && switch_system )
+	if is_switched; then
+		[ "$1" = "running" ] && switch_system
+	else
+		[ "$1" = "alternative" ] && switch_system
+	fi
 	[ -z "$2" ] || change_branding "$2"
 )
 #######################################################################################################
