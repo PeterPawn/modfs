@@ -1164,7 +1164,7 @@ modify_rootfs()
 	# short stop to ensure an unique temporary directory name (contains the unix time)
 	$bb sleep 1
 	debug "modify_rootfs: starting, target=$target, scripts=$scripts, contribs=$contribs"
-	MODSCRIPT_ENV="$KERNEL_VERSION $FRITZOS_VERSION TARGET_BRANDINGS=\"$BRANDINGS\" TARGET_BRANDING=\"$BRANDING\""
+	MODSCRIPT_ENV="$KERNEL_VERSION $FRITZOS_VERSION TARGET_BRANDINGS=\"$BRANDINGS\" TARGET_BRANDING=\"$BRANDING\" TMP=\"$tmpdir\" TMPDIR=\"$tmpdir\""
 	prepare_custom_modscripts_selection
 	list="$tmpdir/scriptfiles"
 	filelist="$tmpdir/scripts"
