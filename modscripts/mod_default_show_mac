@@ -19,11 +19,33 @@ step=$4
 #
 rc=0
 check_filename="$rootdir/usr/www/$TARGET_BRANDING/net/net_overview.js"
-unchanged="newclasses \?= \?\"port ip properties four_column\";"
+unchanged_old="newclasses \?= \?\"port ip properties four_column\";"
+unchanged_new="{prefId:\"mac\",head:\"[^\"]*\",sortable:true,dyn:2,sortBy:sortMac,switchable:true,width:5,hide:true}"
 #
 # apply
 #
-patch_file()
+check_version()
+{
+	local major=$(expr "$1" : "0*\([1-9]*[0-9]\)")
+	local minor=$(expr "$2" : "0*\([1-9]*[0-9]\)")
+	local wanted_major=$(expr "$3" : "0*\([1-9]*[0-9]\)")
+	local wanted_minor=$(expr "$4" : "0*\([1-9]*[0-9]\)")
+
+	[ $major -lt $wanted_major ] && return 0
+	[ $major -gt $wanted_major ] && return 1
+	[ $minor -lt $wanted_minor ] && return 0
+	return 1
+}
+patch_file_new()
+{
+	local home=$(pwd)
+	cd $rootdir
+	$home/bin/$HWRevision/busybox sed -e \
+		's|\(refId:"mac",head:"[^"]*",sortable:true,dyn:2,sortBy:sortMac,switchable:true,width:5\),hide:true\(}\)|\1\2|' \
+		-i usr/www/$TARGET_BRANDING/net/net_overview.js
+	cd $home
+}
+patch_file_old()
 {
 	local home=$(pwd)
 	cd $rootdir
@@ -35,6 +57,19 @@ patch_file()
 #
 # execute steps
 #
+major=$(( $(expr "$TARGET_SYSTEM_VERSION" : "[0-9]*\.0*\([1-9]*[0-9]\)\.[0-9]*") + 0 ))
+minor=$(( $(expr "$TARGET_SYSTEM_VERSION" : "[0-9]*\.[0-9]*\.0*\([1-9]*[0-9]\)") + 0 ))
+if check_version $major $minor 7 8; then
+	mode=old
+	precheck_found=0
+	postcheck_found=1
+else
+	mode=new
+	precheck_found=0
+	postcheck_found=1
+fi
+eval unchanged="\$unchanged_$mode"
+eval patchfile="patch_file_$mode"
 case $step in
 	precheck)
 		grep -q "$unchanged" $check_filename 2>/dev/null 1>&2
@@ -72,7 +107,7 @@ case $step in
 		;;
 	install)
 		for TARGET_BRANDING in $TARGET_BRANDINGS; do
-			patch_file	
+			$patchfile	
 		done
 		rc=0
 		;;
