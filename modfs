@@ -163,7 +163,7 @@ nativefilesystems="tmpfs ext2 ext3 ext4 yaffs2"
 #
 # our "internal" constants
 #
-modfs_version=0.5.4-160320190007
+modfs_version=0.5.4-030520191656
 modfs_comment="please look at https://github.com/PeterPawn/modfs for further info"
 bindirname="bin"
 localedirname="locale"
@@ -2675,7 +2675,7 @@ get_version_from_manufacturer()
 		fi
 	fi
 	debug "get_version_from_manufacturer: exiting, rc=$rc"
-	[ $rc -eq 0 ] && printf "DownloadURL=%s\nNewVersion=%s\n" "$URL" "$NewVersion"
+	[ $rc -eq 0 ] && printf "DownloadURL=%s\nNewVersion=\"%s\"\n" "$URL" "$NewVersion"
 	return $rc
 }
 #
@@ -2694,33 +2694,40 @@ cleanup()
 # $1 - working directory to build the needed FIFO
 #
 spinner()
-{
+(
 	run_spinner()
-	{
-	    local index=0 positions="|/-\\"
-	    while read line; do
-	        char=${positions:$index:1}
-	        echo -ne "\x1B[1D$char" 1>&2
-	        let index+=1
-	        [ $index -eq ${#positions} ] && index=0
-	    done
-	}
-    local dir="$1" rc spin_from spinpid
-    shift
+	(
+		i=1
+		IFS='' set -- '|' '/' '-' '\'
+		while read l; do
+			eval c="\$$i"
+			printf "\x1B[1D$c" 1>&2
+			i=$(( ( i % 4 ) + 1 ))
+		done
+	)
+	
+	dir="$1"
+	shift
 	debug "run_spinner: dir=$dir, command=$@"
-	echo -ne "  " 1>&2
+	printf "  " 1>&2
 	spin_from="$dir/$($bb date +%s)_$$"
-    $bb mkfifo "$spin_from"
-    run_spinner <"$spin_from" &
+	$bb mkfifo "$spin_from"
+	run_spinner <"$spin_from" &
 	spinpid=$!
-    "$@" >"$spin_from" 2>/dev/null
-    rc=$?
+	stderr="$dir/$($bb date +%s)_$$_stderr"
+	"$@" >"$spin_from" 2>"$stderr"
+	rc=$?
 	wait $spinpid
-    $bb rm "$spin_from"
-	echo -ne "\x1B[2D" 1>&2
+	$bb rm "$spin_from"
+	printf "\x1B[2D" 1>&2
 	debug "run_spinner: exiting, rc=$rc"
-    return $rc
-}
+	if [ $rc -ne 0 ]; then
+		debug "run_spinner: stderr output follows"
+		$debugoutput <"$stderr"
+	fi
+	rm -f "$stderr" 2>/dev/null
+	return $rc
+)
 #
 # init ring buffer file
 #
