@@ -1,8 +1,12 @@
-#! /bin/bash
+#! /bin/sh
+# SPDX-License-Identifier: GPL-2.0-or-later
 [ -z "$TARGET_BRANDING" ] && printf "TARGET_BRANDING value is not set.\a\n" 1>&2 && exit 1
-[ -z "$TARGET_SYSTEM_VERSION" ] && printf "TARGET_SYSTEM_VERSION value is not set.\a\n" 1>&2 && exit 1
-JsFile=usr/www/$TARGET_BRANDING/system/reboot.js
-LuaFile=usr/www/$TARGET_BRANDING/system/reboot.lua
+
+TargetDir="${TARGET_DIR:+$TARGET_DIR/}"
+
+JsFile="usr/www/$TARGET_BRANDING/system/reboot.js"
+LuaFile="usr/www/$TARGET_BRANDING/system/reboot.lua"
+
 check_version()
 {
 	local major=$(expr "$1" : "0*\([1-9]*[0-9]\)")
@@ -15,7 +19,19 @@ check_version()
 	[ $minor -lt $wanted_minor ] && return 0
 	return 1
 }
-function getJsPatchText_0708()
+
+if [ "$TARGET_SYSTEM_VERSION" = "autodetect" ]; then
+	[ -z "$TARGET_SYSTEM_VERSION_DETECTOR" ] && printf "TARGET_SYSTEM_VERSION_DETECTOR value is not set.\a\n" 1>&2 && exit 1
+	TARGET_SYSTEM_VERSION="$($TARGET_SYSTEM_VERSION_DETECTOR $TARGET_DIR -m | sed -n -e 's|^Version="\(.*\)"|\1|p')"
+	printf "Autodetection of target system version: %s\n" "$TARGET_SYSTEM_VERSION" 1>&2
+fi
+
+[ -z "$TARGET_SYSTEM_VERSION" ] && printf "TARGET_SYSTEM_VERSION value is not set.\a\n" 1>&2 && exit 1
+major=$(( $(expr "$TARGET_SYSTEM_VERSION" : "[0-9]*\.0*\([1-9]*[0-9]\)\.[0-9]*") + 0 ))
+minor=$(( $(expr "$TARGET_SYSTEM_VERSION" : "[0-9]*\.[0-9]*\.0*\([1-9]*[0-9]\)") + 0 ))
+[ "$major" -eq 0 ] && [ "$minor" -eq 0 ] && printf "TARGET_SYSTEM_VERSION value is invalid.\a\n" 1>&2 && exit 1
+
+getJsPatchText_0708()
 {
 cat <<'EndOfPatch'
 /^TableCalls/i \
@@ -25,7 +41,7 @@ function buildBootmanager(data){function gv(src,id){var r=src.filter(function(e)
 if(data.bootmanager){html2.add(content,buildBootmanager(data.bootmanager));}
 EndOfPatch
 }
-function getLuaPatchText_0708()
+getLuaPatchText_0708()
 {
 cat <<'EndOfPatch'
 /^local function data_actions()/i \
@@ -104,7 +120,7 @@ os.execute("/usr/bin/gui_bootmanager switch_to '"..linux_fs_start.."' '"..brandi
 end
 EndOfPatch
 }
-function getLuaPatchText_pre0708()
+getLuaPatchText_pre0708()
 {
 cat <<'EndOfPatch'
 /^local savecookie = {}/a \
@@ -125,19 +141,17 @@ box.out(line)\
 </div>
 EndOfPatch
 }
-major=$(( $(expr "$TARGET_SYSTEM_VERSION" : "[0-9]*\.0*\([1-9]*[0-9]\)\.[0-9]*") + 0 ))
-minor=$(( $(expr "$TARGET_SYSTEM_VERSION" : "[0-9]*\.[0-9]*\.0*\([1-9]*[0-9]\)") + 0 ))
 if check_version $major $minor 7 8; then
-	printf "Patching file '%s' ...\n" "$LuaFile" 1>&2
+	printf "      Patching file '%s' ...\n" "$LuaFile" 1>&2
 	getLuaPatchText_pre0708 > "$TMP/gui_bootmanager_0_6_tmp"
-	sed -f "$TMP/gui_bootmanager_0_6_tmp" -i "$LuaFile"
+	sed -f "$TMP/gui_bootmanager_0_6_tmp" -i "$TargetDir$LuaFile"
 	rm "$TMP/gui_bootmanager_0_6_tmp"
 else
-	printf "Patching file '%s' ...\n" "$JsFile" 1>&2
+	printf "      Patching file '%s' ...\n" "$JsFile" 1>&2
 	getJsPatchText_0708 > $TMP/gui_bootmanager_0_6_tmp
-	sed -f "$TMP/gui_bootmanager_0_6_tmp" -i "$JsFile"
-	printf "Patching file '%s' ...\n" "$LuaFile" 1>&2
+	sed -f "$TMP/gui_bootmanager_0_6_tmp" -i "$TargetDir$JsFile"
+	printf "      Patching file '%s' ...\n" "$LuaFile" 1>&2
 	getLuaPatchText_0708 > $TMP/gui_bootmanager_0_6_tmp
-	sed -f "$TMP/gui_bootmanager_0_6_tmp" -i "$LuaFile"
+	sed -f "$TMP/gui_bootmanager_0_6_tmp" -i "$TargetDir$LuaFile"
 	rm "$TMP/gui_bootmanager_0_6_tmp"
 fi

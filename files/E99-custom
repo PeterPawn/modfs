@@ -1,6 +1,7 @@
 #! /bin/false
 # avoid to be called without explicit shell invocation
 # vim: set syntax=sh tabstop=2 shiftwidth=2 highlight=on
+# SPDX-License-Identifier: GPL-2.0-or-later
 #################################################################################
 #                                                                               #
 # E99-custom                                                                    #
@@ -136,7 +137,7 @@
 # to /dev/console                                                               #
 #                                                                               #
 #################################################################################
-exec 1>>/var/tmp/E99-custom.out 2>&1
+exec 2>>/var/tmp/E99-custom.error 1>>/var/tmp/E99-custom.out
 #################################################################################
 #                                                                               #
 # set some initial variables to ensure a defined state                          #
@@ -355,6 +356,7 @@ add_script()
 	local script="$1" package="$2" image="$3" mountedimage="$4" basedir="$5" 
 	local mode="$6" fstype="$7" tmpfs="$8" debug
 	local scriptname="${script##*/}"
+	scriptname="${scriptname%$custom_extension}"
 	cat >${basedir}.${scriptname}.environ <<EOT
 PKG_${package}_SCRIPT="$script"
 PKG_${package}_IMAGE="$image"
@@ -366,9 +368,9 @@ PKG_${package}_IMAGE_IS_VOLATILE="$tmpfs"
 EOT
 	if is_in_list "$package" "$debug_list"; then
 		lf="/tmp/${script##*/}"
-		echo "/bin/busybox env PKG_NAME=\"$package\" sh -x \"$script\" \$1 >>${lf}.out 2>>${lf}.error &" >>$startscript
+		echo "/bin/busybox env PKG_NAME=\"$package\" sh -x \"$script\" start >${lf}.out 2>${lf}.error &" >>$startscript
 	else
-		echo "/bin/busybox env PKG_NAME=\"$package\" sh \"$script\" \$1 &" >>$startscript
+		echo "/bin/busybox env PKG_NAME=\"$package\" sh \"$script\" start &" >>$startscript
 	fi
 }
 #################################################################################
@@ -407,11 +409,11 @@ for p in $custom; do
 			;;
 		path)
 			custom_sources="$(get_list "$v")"
-			echo "Extension search path changed to '$custom_sources'" 
+			echo "Extension search path changed to '$custom_sources'" 1>&2
 			[ $? -ne 0 ] && rc=1
 			;;
 		normal)
-			echo "Starting customization, no 'custom' entry found in our command line"
+			echo "Starting customization, no 'custom' entry found in our command line" 1>&2
 			;;
 		*)
 			echo "Unknown keyword '$p' in 'custom' variable" 1>&2
@@ -433,19 +435,19 @@ for name in $(find $custom_sources -maxdepth 1 -name "*$custom_extension"); do
 	package="${package##*/}"
 	package="${package%%_*}"
 	if is_in_list "$package" "$ignore_list"; then
-		echo "Package '$package' found ($name), but it's in the ignore list." 
+		echo "Package '$package' found ($name), but it's in the ignore list." 1>&2
 	else
 		if [ -d $varbase/$package ]; then
 			if ! is_in_list "$package" "$packages"; then
-				echo "The package name '$package' cannot be used, there's a directory with this name in the stock firmware." 
+				echo "The package name '$package' cannot be used, there's a directory with this name in the stock firmware." 1>&2
 			else
-				echo "The package name '$package' is duplicate, only the first package with this name will be started." 
+				echo "The package name '$package' is duplicate, only the first package with this name will be started." 1>&2
 			fi
 		else
 			mkdir $varbase/$package
 			packages="$packages $package"
 			eval image_$package=$name
-			echo "Found package '$package' with image file '$name'."
+			echo "Found package '$package' with image file '$name'." 1>&2
 		fi
 	fi
 done
@@ -518,25 +520,13 @@ for p in $packages; do
 done
 #################################################################################
 #                                                                               #
-# now we make our settings subsystem writable and start the monitor instance    #
-#                                                                               #
-#################################################################################
-if [ ${#YF_CONFIG_EXPORTS} -gt 0 ]; then
-	if [ -f $YF_CONFIG_EXPORTS ]; then
-		source $YF_CONFIG_EXPORTS
-		touch $YF_CONFIG_SEMAPHORE_FILE
-		delay -d 0 CCMON "$YF_CONFIG_MONITOR >$YF_CONFIG_LOGDIR/monitor.log 2>&1"
-	fi
-fi
-#################################################################################
-#                                                                               #
-# finally we have to start our temporary shell file ... we use 'nohup' applet   #
-# here to create an instance, which is running as a detached process            #
+# finally we have to start our temporary shell file ... we use nohup command    #
+# here to create an instance, which continues to run after we've finished       #
 #                                                                               #
 #################################################################################
 echo "wait" >>$startscript
 chmod 555 $startscript
-$startscript start >/tmp/E99-custom-startup.log 2>&1 
+nohup /bin/busybox sh -c "$startscript >/dev/console 2>&1" &
 #################################################################################
 #                                                                               #
 # end of script                                                                 #

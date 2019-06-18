@@ -1,4 +1,5 @@
 # MODFS_MODSCRIPT
+# SPDX-License-Identifier: GPL-2.0-or-later
 # SUPPORTS precheck postcheck install language(en,de)
 # NAME enable telnet daemon
 # DESCRIPTION en

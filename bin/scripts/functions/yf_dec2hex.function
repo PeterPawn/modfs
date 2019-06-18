@@ -1,5 +1,6 @@
 #! /bin/true
 # vi: set tabstop=4 syntax=sh : # colorize it in 'vi' and use shorter tabstops
+# SPDX-License-Identifier: GPL-2.0-or-later
 #######################################################################################
 #                                                                                     #
 # dec2hex - convert decimal value to hexadecimal string of the specified length       #
@@ -41,7 +42,7 @@ yf_dec2hex()
 	else
 		yf_is_decimal "$len" || return 1	
 	fi
-	len=$(( len << 1 ))
+	len=$(( len * 2 ))
 	mask="%0${len}x"
 	printf "$mask" $val
 	return 0

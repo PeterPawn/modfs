@@ -1,5 +1,6 @@
 #! /bin/true
 # vi: set tabstop=4 syntax=sh : # colorize it in 'vi' and use shorter tabstops
+# SPDX-License-Identifier: GPL-2.0-or-later
 #######################################################################################
 #                                                                                     #
 # hex2bin - convert hexadecimal string to binary data                                 #
@@ -70,7 +71,7 @@ yf_hex2bin()
 				fi
 				h=1
 			else
-				v=$(( c << 4 ))
+				v=$(( c * 16 ))
 				h=0
 			fi
 		done

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-2.0-or-later
 if [ x"$MODFS_DEBUG_SHELL" == x"1" ]; then
 	echo '<<<<<<<<<<' $* '>>>>>>>>>>' >>$MODFS_DEBUG_SHELL_FILE
 	$SHELL -x $* 2>>$MODFS_DEBUG_SHELL_FILE
