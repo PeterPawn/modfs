@@ -20,6 +20,8 @@ step=$4
 #
 rc=0
 symlink=/usr/sbin/telnetd
+startscript=/usr/sbin/telnetd_by_avm
+callablefile=/usr/bin/system_status
 case $step in
 	precheck)
 		[ -L $rootdir$symlink ]
@@ -57,6 +59,8 @@ case $step in
 		;;
 	install)
 		ln -s ../../bin/busybox $rootdir$symlink
+		cp -a files/telnetd_by_avm $rootdir$startscript
+		sed -e "\$iecho -e '<br><br>\\\\n'" -e "\$i/bin/sh $startscript '<br>'" -i $rootdir$callablefile
 		rc=0
 		;;
 	*)
