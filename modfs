@@ -52,18 +52,18 @@ hwrevname="HWRevision"
 hwrevs_supported="175 185 193 203 212 209 218 192 198"
 # AVM's binary to modify the NAND based partitions (busybox has it's own tools, but not ooB on a device with original firmware)
 update_kernel_binary="/sbin/update_kernel"
-# where is the wrapper mounted at the running system ?
+# where is the wrapper mounted at the running system ? (if any)
 wrapperdir="/wrapper"
-# the file name of the root file system image
+# the file name of the root file system image, if a wrapper YAFFS2 image exists
 rootfsname="filesystem_core.squashfs"
 # the name of a firmware image, it will be renamed during download
 firmwarestoragename="firmware.image"
 # the kernel image name within a firmware image
 firmware_kernel_image="./var/tmp/kernel.image"
-# the wrapper file system image name within a firmware image
+# the (outer) file system image name within a firmware image
 firmware_filesystem_image="./var/tmp/filesystem.image"
-# wrapper file system image file name
-wrapperimagename="filesystem.image"
+# (outer) file system image file name
+outerimagename="filesystem.image"
 # kernel image file name
 kernelfilename="kernel.image"
 # the name of the busybox to be used, will be changed later
@@ -85,7 +85,7 @@ custom_selection_file="custom_modscripts"
 #
 # 128MB ext3 image plus 5 percent
 free_space_for_unpack="134M"
-# 32 MB (23 MB at this time) for packed and double space for unpacked image
+# 48 MB for packed and double space for unpacked image
 free_space_for_unpack_tmpfs="96M"
 # even with a small amount of RAM at all, there should be a minimum of free space
 free_space_at_tmpfs="24M"
@@ -97,19 +97,19 @@ free_space_at_nand="134M"
 # to predict a correct value, because the available 48 MB of a filesystem partition
 # may contain a much much larger "expanded" structure due to automatic avoidance of
 # compression for identical files - so we use a value usually large enough to contain
-# up to four different brandings 
+# up to four different brandings
 warning_space_at_nand="96M"
 # the estimated space needed to download a firmware image from the FTP server,
 # computed as filesystem partition size + kernel partition size + security surcharge
 # for additional files in the tar archive - currently the images are uncompressed
 download_space_needed="54M"
-# the estimated space needed to extract a wrapper file system from a firmware image,
-# the extracted image cannot be larger than a filesystem partition
+# the estimated space needed to extract an outer file system from a firmware image,
+# the extracted tree may be be larger than the size of a filesystem partition
 extract_space_needed="48M"
-# the estimated space needed to store a kernel image, a wrapper image and the      
+# the estimated space needed to store a kernel image, an outer image (if used) and the
 # extracted SquashFS image - at least during the modify_rootfs execution,
 # computed as kernel partition size + 2x filesystem partition size, because it's
-# possible, that (in worst case) the ext2 image with the pseudo SquashFS header
+# possible, that (in worst case) the (outer) ext2 image with the pseudo SquashFS header
 # exists together with the "cutted" image (during "dd" execution) for a short time,
 # the extracted SquashFS image will be smaller than the second ext2 copy
 fullimage_space_needed="100M"
@@ -129,13 +129,13 @@ nativefilesystems="tmpfs ext2 ext3 ext4 yaffs2"
 #  36 - unsupported hardware revision
 #  37 - system modified already, restart needed
 #  38 - specified squashfs source file not found
-#  39 - unable to extract wrapper image from firmware archive
-#  40 - unable to mount wrapper file system
-#  41 - unable to copy root image from wrapper
+#  39 - unable to extract outer image from firmware archive
+#  40 - unable to mount outer file system
+#  41 - unable to copy root image from outer filesystem
 #  42 - unable to download firmware image from manufacturer
 #  43 - error downloading firmware image (file size is 0)
 #  44 - error copying kernel image to alternative partition
-#  45 - error copying wrapper file system to alternative partition
+#  45 - error copying outer file system to alternative partition
 #  46 - unknown error copying running system to inactive partitions
 #  47 - unable to get hardware revision
 #  48 - unable to find file system MTD partition
@@ -295,8 +295,8 @@ debug()
 #
 # get next system index from environment
 #
-get_system_switch() 
-{ 
+get_system_switch()
+{
 	local fsvar
 	fsvar=$($bb sed -n -e "s/^$fsvarname\t\([01]\)/\1/p" $envpathname)
 	[ -z "$fsvar" ] && fsvar="0"
@@ -568,7 +568,7 @@ detect_image_filesystem()
 				if [ $? -eq 0 ]; then
 					fstype="sqfs_dummy256_$sig"
 				fi
-			fi	
+			fi
 		fi
 	else
 		sig=$($testvalue "$src" 2 $(( offset + 1080 )))
@@ -600,7 +600,7 @@ copy_kernel_image()
 	return $rc
 }
 #
-# copy wrapper file system to alternative partition
+# copy outer file system to alternative partition
 #
 copy_filesystem()
 {
@@ -610,7 +610,7 @@ copy_filesystem()
 	debug "copy_filesystem: /dev/$mtdprefix$target cleared"
 	tmp=$(get_temp_dir)
 	$bb mount -t yaffs2 /dev/$mtdblockname$target "$tmp"
-	$bb cp -R /wrapper/* $tmp/
+	$bb cp -R $wrapperdir/* $tmp/
 	rc=$?
 	debug "copy_filesystem: copied everything from $tmp, rc=$rc"
 	$bb umount "$tmp"
@@ -644,11 +644,11 @@ copy_running_system()
 	return $rc
 }
 #
-# copy new wrapper file system
+# copy new outer file system
 # $1 - source file system image
 # $2 - root file system image name to be excluded from copying
 #
-copy_wrapper_filesystem()
+copy_outer_filesystem()
 {
 	local rc target src="$1" tmp fstype mrc=0 kernelversion
 	target=$(get_mtd_by_name $reservedprefix$filesystemname)
@@ -658,27 +658,27 @@ copy_wrapper_filesystem()
 	# prevent unwanted watchdog restarts, may be necessary but update is very fast
 	# echo "disable" > /dev/watchdog
 	# clear filesystem first
-	debug "copy_wrapper_filesystem: src=$src, rootfs=$rootfsname"
+	debug "copy_outer_filesystem: src=$src, rootfs=$rootfsname"
 	$update_kernel_binary -o /dev/$mtdprefix$target >/dev/null 2>&1
 	rc=$?
-	debug "copy_wrapper_filesystem: clearing target device /dev/$mtdprefix$target, rc=$rc"
+	debug "copy_outer_filesystem: clearing target device /dev/$mtdprefix$target, rc=$rc"
 	if [ $rc -ne 0 ]; then
 		rc=44
 	else
 		fstype=$(detect_image_filesystem "$src")
 		rc=$?
 		if [ $rc -eq 0 ]; then
-			# mount squashfs and yaffs2 wrapper and copy from one to the other
+			# mount squashfs and yaffs2 partition and copy from one to the other
 			tmp="$(get_temp_dir)"
-			$bb mkdir -p $tmp/yaffs $tmp/wrapperfs
-			$bb mount -t yaffs2 /dev/$mtdblockname$target $tmp/yaffs
+			$bb mkdir -p "$tmp/yaffs" "$tmp/outerfs"
+			$bb mount -t yaffs2 /dev/$mtdblockname$target "$tmp/yaffs"
 			if [ "$fstype" == "ext2" -o "$fstype" == "sqfs_dummy256_ext2" ]; then
 				# ext2 image with AVM's dummy header
-				mount_ext2_image "$src" "$tmp/wrapperfs" "$fstype"
+				mount_ext2_image "$src" "$tmp/outerfs" "$fstype"
 				rc=$?
 				mrc=$rc
 			else
-				$bb mount "$src" $tmp/wrapperfs 2>/dev/null
+				$bb mount "$src" "$tmp/outerfs" 2>/dev/null
 				rc=$?
 				mrc=$rc
 				if [ $rc -ne 0 ]; then
@@ -690,41 +690,41 @@ copy_wrapper_filesystem()
 						unpack_squashfs "$src" "$tmp" 2>&1 >/dev/null
 						rc=$?
 						if [ $rc -eq 0 ]; then
-						 	$bb rmdir "$tmp/wrapperfs"
-							$bb mv "$tmp/$squashfsdirname" "$tmp/wrapperfs"
+							$bb rmdir "$tmp/outerfs"
+							$bb mv "$tmp/$squashfsdirname" "$tmp/outerfs"
 							rc=$?
-							$bb rm "$tmp/wrapperfs/$rootfsname"
+							$bb rm "$tmp/outerfs/$rootfsname"
 						fi
 					fi
 				fi
 			fi
 			if [ $rc -eq 0 ]; then
-				$bb tar -c -O -C $tmp/wrapperfs --exclude=$rootfsname . | $bb tar -x -C $tmp/yaffs
+				$bb tar -c -O -C "$tmp/outerfs" --exclude=$rootfsname . | $bb tar -x -C "$tmp/yaffs"
 				rc=$?
-				debug "copy_wrapper_filesystem: copying done, rc=$rc"
+				debug "copy_outer_filesystem: copying done, rc=$rc"
 				if [ -n "$ADD_TO_WRAPPER" ]; then
 					ADD_TO_WRAPPER="$(eval printf "%s" "$ADD_TO_WRAPPER")"
 					if [ -d "$ADD_TO_WRAPPER" ]; then
-						debug "copy_wrapper_filesystem: subdirectory '$ADD_TO_WRAPPER' exists, copying content to the new wrapper partition"
+						debug "copy_outer_filesystem: subdirectory '$ADD_TO_WRAPPER' exists, copying content to the new wrapper partition"
 						cp -a $ADD_TO_WRAPPER/* $tmp/yaffs/
 						rc=$?
-						debug "copy_wrapper_filesystem: add_to_wrapper directory '$ADD_TO_WRAPPER' copied, rc=$rc"
+						debug "copy_outer_filesystem: add_to_wrapper directory '$ADD_TO_WRAPPER' copied, rc=$rc"
 					else
-						debug "copy_wrapper_filesystem: add_to_wrapper directory '$ADD_TO_WRAPPER' not found"
+						debug "copy_outer_filesystem: add_to_wrapper directory '$ADD_TO_WRAPPER' not found"
 					fi
 				fi
-				[ $mrc -eq 0 ] && $bb umount -d $tmp/wrapperfs
-				$bb umount $tmp/yaffs
+				[ $mrc -eq 0 ] && $bb umount -d "$tmp/outerfs"
+				$bb umount "$tmp/yaffs"
 				remove_directory "$tmp"
 				rc=0
 			fi
 		fi
 	fi
-	debug "copy_wrapper_filesystem: exiting, rc=$rc"
+	debug "copy_outer_filesystem: exiting, rc=$rc"
 	return $rc
 }
 #
-# copy new root file system to alternative wrapper partition
+# copy new root file system to alternative YAFFS2 partition
 # $1 - file name of new root file system image
 #
 copy_new_root_filesystem()
@@ -1220,7 +1220,7 @@ extract_rootfs_from_firmware()
 	local src="$1" target="$2" tmp rc mp tmpdir
 	debug "extract_rootfs_from_firmware: src=$src, target=$target"
 	tmpdir="$(get_temp_dir)"
-	tmp="$tmpdir/wrapperfs"
+	tmp="$tmpdir/outerfs"
 	extract_filesystem "$src" "$tmp"
 	rc=$?
 	if [ $rc -ne 0 ]; then
@@ -1341,14 +1341,14 @@ mount_ext2_image()
 	return $rc
 }
 #
-# extract squash file system from wrapper image
+# extract squash file system from outer image
 # $1 - source image
 # $2 - target file name and path (path has to be a valid directory)
 #
-extract_rootfs_from_wrapper()
+extract_rootfs_from_outer_filesystem()
 {
 	local src="$1" target="$2" tmp rc mp tmpdir version kernelversion
-	debug "extract_rootfs_from_wrapper: src=$src, target=$target"
+	debug "extract_rootfs_from_outer_filesystem: src=$src, target=$target"
 	fstype=$(detect_image_filesystem "$src")
 	rc=$?
 	if [ $rc -eq 0 ]; then
@@ -1373,7 +1373,7 @@ extract_rootfs_from_wrapper()
 						rc=$?
 						$bb rmdir "${target%/*}/$squashfsdirname"
 						remove_directory "$tmpdir"
-						debug "extract_rootfs_from_wrapper: exiting, rc=$rc"
+						debug "extract_rootfs_from_outer_filesystem: exiting, rc=$rc"
 						return $rc
 					fi
 				fi
@@ -1391,7 +1391,7 @@ extract_rootfs_from_wrapper()
 		fi
 		remove_directory "$tmpdir"
 	fi
-	debug "extract_rootfs_from_wrapper: exiting, rc=$rc"
+	debug "extract_rootfs_from_outer_filesyste: exiting, rc=$rc"
 	return $rc
 }
 #
@@ -2653,10 +2653,10 @@ get_version_from_manufacturer()
 				echo "$(get_localized $lang 187)" 1>&2
 				rc=187
 			fi
-		fi		
+		fi
 	else
 		eval "$res"
-		if [ $target == current ]; then 
+		if [ $target == current ]; then
 			debug "get_version_from_manufacturer: found current version $NewVersion, URL=$URL"
 			compare_versions "$NewVersion" "$(get_system_version)"
 			comp=$?
@@ -2706,7 +2706,7 @@ spinner()
 			i=$(( ( i % 4 ) + 1 ))
 		done
 	)
-	
+
 	dir="$1"
 	shift
 	debug "run_spinner: dir=$dir, command=$@"
@@ -3192,7 +3192,7 @@ case $source in
 				else
 					progress 3 96
 					progress 1 63
-					extract_filesystem "$download_directory/$firmwarestoragename" "$image_directory/$wrapperimagename"
+					extract_filesystem "$download_directory/$firmwarestoragename" "$image_directory/$outerimagename"
 					rc=$?
 					if [ $rc -ne 0 ]; then
 						progress 3 97
@@ -3201,7 +3201,7 @@ case $source in
 					else
 						progress 3 96
 						progress 1 64
-						extract_rootfs_from_wrapper "$image_directory/$wrapperimagename" "$image_directory/$rootfsname"
+						extract_rootfs_from_outer_filesystem "$image_directory/$outerimagename" "$image_directory/$rootfsname"
 						rc=$?
 						if [ $rc -ne 0 ]; then
 							progress 3 97
@@ -3211,7 +3211,7 @@ case $source in
 							progress 3 96
 							baseimage="$image_directory/$rootfsname"
 							newkernelimage="$image_directory/$kernelfilename"
-							wrapperimage="$image_directory/$wrapperimagename"
+							outerimage="$image_directory/$outerimagename"
 							progress 1 133
 							remove_directory "$download_directory"
 							progress 3 96
@@ -3221,7 +3221,7 @@ case $source in
 			fi
 			debug "modfs: baseimage=$baseimage"
 			debug "modfs: newkernelimage=$newkernelimage"
-			debug "modfs: wrapperimage=$wrapperimage"
+			debug "modfs: outerimage=$outerimage"
 			debug "modfs: download_update selection done"
 		fi
 		;;
@@ -3277,7 +3277,7 @@ case $source in
 			else
 				progress 3 96
 				progress 1 63
-				extract_filesystem "$firmware_update_file" "$image_directory/$wrapperimagename"
+				extract_filesystem "$firmware_update_file" "$image_directory/$outerimagename"
 				rc=$?
 				if [ $rc -ne 0 ]; then
 					progress 3 97
@@ -3286,7 +3286,7 @@ case $source in
 				else
 					progress 3 96
 					progress 1 64
-					extract_rootfs_from_wrapper "$image_directory/$wrapperimagename" "$image_directory/$rootfsname"
+					extract_rootfs_from_outer_filesystem "$image_directory/$outerimagename" "$image_directory/$rootfsname"
 					rc=$?
 					if [ $rc -ne 0 ]; then
 						progress 3 97
@@ -3296,13 +3296,13 @@ case $source in
 						progress 3 96
 						baseimage="$image_directory/$rootfsname"
 						newkernelimage="$image_directory/$kernelfilename"
-						wrapperimage="$image_directory/$wrapperimagename"
+						outerimage="$image_directory/$outerimagename"
 					fi
 				fi
 			fi
 			debug "modfs: baseimage=$baseimage"
 			debug "modfs: newkernelimage=$newkernelimage"
-			debug "modfs: wrapperimage=$wrapperimage"
+			debug "modfs: outerimage=$outerimage"
 			debug "modfs: file_update selection done"
 		fi
 		;;
@@ -3489,9 +3489,9 @@ if [ $create_image_only -eq 1 ]; then
 	fi
 else
 	if [ $rc -eq 0 -a $noversioncheck -eq 1 -a $install_no_wrapper -eq 0 ]; then
-		# update wrapper file system too, it should match the expected version for the new kernel
+		# update outer file system too, it should match the expected version for the new kernel
 		progress 1 196
-		copy_wrapper_filesystem "$wrapperimage"
+		copy_outer_filesystem "$outerimage"
 		rc=$?
 		if [ $rc -eq 0 ]; then
 			progress 3 96
@@ -3499,7 +3499,7 @@ else
 			progress 3 97
 			echo -e "$(get_localized $lang $rc)" 1>&2
 		fi
-		debug "modfs: update wrapper filesystem done, rc=$rc"
+		debug "modfs: update outer filesystem done, rc=$rc"
 	fi
 	if [ $rc -eq 0 ]; then
 		# copy new root file system
