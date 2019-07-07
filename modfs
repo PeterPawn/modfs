@@ -47,7 +47,7 @@ envpathname="/proc/sys/urlader/environment"
 fsvarname="linux_fs_start"
 # hardware revision variable name
 hwrevname="HWRevision"
-# supported hardware revisions
+# supported hardware revisions as "modfs" host
 # 3370, 7490, 3390, 7362SL, 3490, 7430, 7412, 7272, 3272
 hwrevs_supported="175 185 193 203 212 209 218 192 198"
 # AVM's binary to modify the NAND based partitions (busybox has it's own tools, but not ooB on a device with original firmware)
@@ -786,7 +786,7 @@ unpack_squashfs()
 	if [ -r "$src" ]; then
 		sq_version=$(get_squashfs_tools_version "$src")
 		debug "unpack_squashfs: using SquashFS version $sq_version"
-		[ -z $files ] || files="-e $files"
+		[ -z "$files" ] || files="-e $files"
 		popd="$(pwd)"
 		cd "$target"
 		sq_unsquashfs -info "$src" $files
@@ -2477,7 +2477,7 @@ check_prerequisites()
 check_swap_space()
 {
 	local required="$1" msg space_required space_available=0 rc device devtype size more
-	msg="$(get_localized $lang 224 $hwrevname)" 1>&2
+	msg="$(get_localized $lang 224)" 1>&2
 	echo -n -e "$msg" 1>&2
 	if [ "$MODFS_WITHOUT_SWAP" = "i_am_sure" ]; then
 		progress 3 95
@@ -2778,7 +2778,7 @@ scriptname="${scriptfile##*/}"
 # switch to our own version of Busybox
 bb="$(bindir)/busybox"
 shl="$bb sh"
-if [ x"$MODFS_RUN_SHELL" != x"1" ]; then
+if ! [ "$MODFS_RUN_SHELL" = "1" ]; then
 	tgt="$(readlink "$(bindir)")"
 	tgtsuf="${tgt%%_*}"
 	if ! [ "$tgtsuf" = "$tgt" ]; then
@@ -2816,7 +2816,7 @@ fi
 #
 ringbufferfile=$(eval echo $ringbufferfile)
 debugoutput=$(eval echo $debugoutput)
-if [ x"$MODFS_DEBUG" != x"0" ]; then
+if ! [ "$MODFS_DEBUG" = "0" ]; then
 	echo -n "Using debug mode " 1>&2
 	DEBUG_BUFSIZE=${MODFS_BUFSIZE:-64}
 	debugfile="$(eval echo $ringbufferfile)"
@@ -2829,7 +2829,7 @@ fi
 # include / exclude NAS NAND flash as working directory
 #
 INCLUDE_NAND=${INCLUDE_NAND:-0}
-! ( [ "$INCLUDE_NAND" = "0" ] && [ "$INCLUDE_NAND" = "1" ] ) && INCLUDE_NAND=0
+! [ "$INCLUDE_NAND" = "0" ] && ! [ "$INCLUDE_NAND" = "1" ] && INCLUDE_NAND=0
 [ $INCLUDE_NAND -eq 0 ] && nand="nonand" || nand="nand"
 #
 # FRITZ!Box language environment setting
@@ -2885,7 +2885,7 @@ debug "modfs: cleanup trap set"
 # check for 'undo' request, which is the only argument, what we expect
 #
 debug "modfs: invoked with: $@"
-if [ x$1 == xundo ]; then
+if [ "$1" = "undo" ]; then
 	undo_switch=1
 	check_prerequisites
 	rc=$?
@@ -2921,39 +2921,55 @@ else
 	case $1 in
 		update)
 			noversioncheck=1
-			if ! [ -z $2 ]; then
+			if ! [ -z "$2" ]; then
 				firmware_update_file="$2"
 				update_file_provided=1
-				if ! [ -z $3 ]; then
+				if ! [ -z "$3" ]; then
 					create_image_only=1
 					target_image_name="$3"
 				fi
 			fi
 			;;
+
 		install|installfs|installroot)
 			update_file_provided=1
 			noversioncheck=1
 			install_image_only=1
-			if [ -z $2 ]; then
+			if [ -z "$2" ]; then
 				echo "Missing name of image file to be installed." 1>&2
 				exit 1
 			else
 				firmware_update_file="$2"
 			fi
-			if [ x$1 == xinstallfs -o x$1 == xinstallroot ]; then
+			if [ "$1" = "installfs" ] || [ "$1" = "installroot" ]; then
 				install_no_kernel=1
 			fi
-			if [ x$1 == xinstallroot ]; then
+			if [ "$1" = "installroot" ]; then
 				install_no_wrapper=1
 			fi
 			;;
+
+		installimage)
+			update_file_provided=1
+			noversioncheck=1
+			install_image_only=1
+			if [ -z "$2" ]; then
+				echo "Missing name of image file to be installed." 1>&2
+				exit 1
+			else
+				firmware_update_file="$2"
+			fi
+			install_no_kernel=0
+			install_no_wrapper=1
+			;;
+
 		'')
 			: # no parameter specified
 			;;
+
 		*)
 			echo "Unknown parameter '$1'." 1>&2
 			exit 1
-
 	esac
 	debug "modfs: noversioncheck=$noversioncheck, update_file_provided=$update_file_provided"
 	[ $update_file_provided -eq 1 ] && debug "modfs: firmware_update_file=$firmware_update_file"
