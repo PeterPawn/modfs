@@ -544,7 +544,7 @@ switch_system_to()
 }
 #
 # detect filesystem image type
-# types supported: squashfs3, squashfs4, ext2, sqfs_dummy256_{type}
+# types supported: squashfs3, squashfs4, ext2, sqfs_dummy256_{type}, with "-de" suffix if different endianess detected
 # $1 - source image
 #
 detect_image_filesystem()
@@ -569,6 +569,11 @@ detect_image_filesystem()
 					fstype="sqfs_dummy256_$sig"
 				fi
 			fi
+		fi
+	elif [ $sig == 1752396147 ]; then
+		# different endian signature found at offset 0
+		if [ $major -ne 0 ]; then
+			fstype="squashfs${major}-de"
 		fi
 	else
 		sig=$($testvalue "$src" 2 $(( offset + 1080 )))
