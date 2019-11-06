@@ -1,0 +1,104 @@
+# MODFS_MODSCRIPT
+# SPDX-License-Identifier: GPL-2.0-or-later
+# SUPPORTS precheck postcheck install language(en,de)
+# NAME swap sort direction icons \(for FRITZ!OS \< 07.08\)
+# DESCRIPTION en
+# swaps the used icons for sort direction display to the 'usual presentation' used by most other software,
+# AVM has corrected this starting with labor 07.08
+# DESCRIPTION de
+# Austausch der Anzeige der Sortierrichtung in Listendarstellung; AVM verwendet ab Laborversion 07.08 auch
+# die übliche Darstellung aus vielen anderen Programmen
+# EOH
+#
+# process parameters
+#
+language=$1
+rootdir=$2
+mode=$3
+step=$4
+[ ${#4} -eq 0 ] && exit 59 # invalid call
+#
+# variables
+#
+rc=0
+check_filename="$rootdir/usr/www/\$TARGET_BRANDING/css/default/images/sort_no.gif"
+check_reference="$rootdir/etc/version"
+swap_filenames="$rootdir/usr/www/\$TARGET_BRANDING/css/default/images/sort_down.gif $rootdir/usr/www/\$TARGET_BRANDING/css/default/images/sort_up.gif"
+#
+# apply
+#
+apply_patch()
+{
+	eval set -- $swap_filenames
+	mv "$1" "$1.swap"
+	mv "$2" "$1"
+	mv "$1.swap" "$2"
+	touch "$(eval echo "$check_filename")" 2>/dev/null
+}
+#
+# execute steps
+#
+case $step in
+	precheck)
+		TARGET_BRANDING=$(set -- $TARGET_BRANDINGS; echo "$1")
+		if ! [ -f "$(eval echo "$check_filename")" ]; then
+			case "$language" in
+				de)
+					echo "Diese Modifikation ist nur bis FRITZ!OS 07.08 sinnvoll."
+					;;
+				*)
+					echo "This modification isn't useful for FRITZ!OS versions above or equal 07.08."
+					;;
+			esac
+			rc=1
+		else
+			filetime1=$(stat -c %Y "$(eval echo "$check_filename")")
+			filetime2=$(stat -c %Y "$(eval echo "$check_reference")")
+			[ $filetime1 -gt $filetime2 ] && difference=$(( filetime1 - filetime2 )) || difference=$(( filetime2 - filetime1 ))
+			[ $difference -gt 60 ] && rc=1 || rc=0
+			if [ $rc -ne 0 ]; then
+				case "$language" in
+					de)
+						echo "Die Modifikation wurde vermutlich bereits angewendet."
+						;;
+					*)
+						echo "Looks like the modification was applied already."
+						;;
+				esac
+				rc=1
+			else
+				rc=0
+			fi
+		fi
+		;;
+	postcheck)
+		TARGET_BRANDING=$(set -- $TARGET_BRANDINGS; echo "$1")
+		filetime1=$(stat -c %Y "$(eval echo "$check_filename")")
+		filetime2=$(stat -c %Y "$(eval echo "$check_reference")")
+		[ $filetime1 -gt $filetime2 ] && difference=$(( filetime1 - filetime2 )) || difference=$(( filetime2 - filetime1 ))
+		[ $difference -gt 60 ] && rc=0 || rc=1
+		if [ $rc -ne 0 ]; then
+			case "$language" in
+				de)
+					echo "Die Modifikation war nicht erfolgreich."
+					;;
+				*)
+					echo "The modification wasn't applied successfully."
+					;;
+			esac
+			rc=1
+		else
+			rc=0
+		fi
+		;;
+	install)
+		for TARGET_BRANDING in $TARGET_BRANDINGS; do
+			apply_patch
+		done
+		rc=0
+		;;
+	*)
+		rc=59
+		;;
+esac
+exit $rc
