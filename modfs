@@ -3563,10 +3563,11 @@ else
 				progress 3 96
 				echo -e "$(get_localized $lang 149)" 1>&2
 				if [ -x /usr/bin/gui_bootmanager ]; then
-					/usr/bin/gui_bootmanager clear_cache
+					$SHELL -c '/usr/bin/gui_bootmanager clear_cache'
 					debug "modfs: gui_bootmanager found, cached data cleared, trying to refresh cache:"
-					/usr/bin/gui_bootmanager html_display 2>/dev/null | $debugoutput
-					/usr/bin/gui_bootmanager get_values 2>/dev/null | $debugoutput
+					$SHELL -c '/usr/bin/gui_bootmanager html_display' 2>/dev/null 1>&2
+					$SHELL -c '/usr/bin/gui_bootmanager get_values' 2>/dev/null 1>&2
+					$SHELL -c '/usr/bin/gui_bootmanager debug' 2>/dev/null | $debugoutput
 					rc=0
 				fi
 			else
