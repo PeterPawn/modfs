@@ -1,5 +1,6 @@
 #! /bin/sh
 # SPDX-License-Identifier: GPL-2.0-or-later
+# vim: set tabstop=4 syntax=bash :
 #######################################################################################################
 #                                                                                                     #
 # get version information from unpacked firmware files                                                #
@@ -12,7 +13,7 @@
 #                                                                                                     #
 ###################################################################################################CPY#
 #                                                                                                     #
-# Copyright (C) 2017-2019 P.Haemmerlein (peterpawn@yourfritz.de)                                      #
+# Copyright (C) 2017-2020 P.Haemmerlein (peterpawn@yourfritz.de)                                      #
 #                                                                                                     #
 ###################################################################################################LIC#
 #                                                                                                     #
@@ -32,9 +33,9 @@
 usage()
 (
 	printf "Extract version information from an unpacked filesystem tree of FRITZ!OS.\n\n"
-	printf "Copyright (C) 2017-2019 P. Haemmerlein (peterpawn@yourfritz.de)\n\n"
+	printf "Copyright (C) 2017-2020 P. Haemmerlein (peterpawn@yourfritz.de)\n\n"
 	printf "Usage:\n\n"
-	printf "\033[1m%s\033[0m <local_directory> [ -q | -m ]\n\n" "${0##*/}"
+	printf "\033[1m%s\033[0m <local_directory> [ -q | -m ] [ prefix ]\n\n" "${0##*/}"
 	printf "Version information will be extracted from the specified tree. If no '-q'\n"
 	printf "option was specified, some info for the contained FRITZ!OS will be put out\n"
 	printf "on STDERR, while the values needed for database generator get written to\n"
@@ -44,6 +45,8 @@ usage()
 	printf "If the '-m' option was specified, no data for key generator will be written\n"
 	printf "to STDOUT, instead the STDERR info gets redirected to STDOUT and the script\n"
 	printf "shows the version info there.\n"
+	printf "If a 'prefix' value is specified, each value key from output is prefixed with\n"
+	printf "this value to avoid collisions with other variable names while 'eval'-uating.\n"
 )
 
 [ -z "$1" ] && usage && exit 0
@@ -60,8 +63,21 @@ else
 	redirect=0
 	if [ "$1" = "-m" ]; then
 		redirect=1
+		shift
 	fi
 fi
+
+
+[ -z "$1" ] && output_prefix="" || output_prefix="$1"
+
+src="${src%/}"
+
+for cmd in sed grep find strings dd cmp date readlink expr; do
+	if ! command -v $cmd >/dev/null 2>&1; then
+		printf "Missing '%s' command, needed for this script.\a\n" "$cmd" 1>&2
+		exit 1
+	fi
+done
 
 files=$(find "$src" -maxdepth 3 -type f | wc -l)
 [ "$files" -lt 2 ] && printf "Unsupported filesystem format.\n" 1>&2 && exit 1
@@ -135,6 +151,56 @@ product="$(sed -n -e "s|^export CONFIG_PRODUKT_NAME=\"\?\([^\"]*\)\"\?\$|\1|p" "
 
 HWRevision="$(( version_major + 72 ))"
 
+# install type, used to detect architecture and flash size
+install_type="$(sed -n -e "s|^export CONFIG_INSTALL_TYPE=\"\?\([^\"]*\)\"\?\$|\1|p" "$src/etc/init.d/rc.conf" | sed -n -e "\$p")"
+
+[ -f "$src/etc/boot.d/1" ] && boot_type="systemd" || boot_type="rc.S"
+
+kernel_version="$(find "$src/lib/modules" -type d | sed -n -e "s|^$src/lib/modules/\([^/]*\)/kernel\$|\1|p" | sed -n -e "1p")"
+
+libc_file="$(readlink -f "$src"/lib/libc.so*)"
+libc_version="$(printf "%s" "${libc_file##*/}" | sed -n -e "s|^libuClibc-\([0-9\.]*\)\.so.*\$|\1|p")"
+if [ -z "$libc_version" ]; then # no uClibc[-ng] used here
+	version_offset="$(strings -a -t d -n 5 "$libc_file" | sed -n -e "s|^[ \t]*\([0-9]*\)[ \t]glibc [0-9]*\.[0-9]*\$|\1|p")"
+	if [ -n "$version_offset" ] && [ "$(expr "$version_offset" : "\([0-9]*\)")" = "$version_offset" ]; then # only try to extract the string, if we got a single offset
+		libc_project="glibc"
+		libc_version="$(strings -a -t d -n 7 "$libc_file" | sed -n -e "s|^[ \t]*[0-9]*[ \t]glibc \([0-9\.]*\)\$|\1|p")"
+		libc_ident="glibc-$libc_version"
+	else
+		libc_project="musl"
+		libc_ident="musl-undetected"
+		libc_version="(undetectable)"
+		# - musl version detection is a bit wobbly ... version is stored as symbol __libc_version (it's a string), but AVM has stripped the lib
+		# - the version number consists of three groups of numbers/digits, delimited by a colon, optionally followed by a git commit spec,
+		#   if built from a git checkout
+		# - look into 'tools/version.sh' from musl project to find possible formats
+		# - let's assume for now, the main version number (first part) is always a "1"
+		# - the version number is stored as a C string, therefore it's terminated by a NUL byte for sure and on it's own line in 'strings' output
+		version_offset="$(strings -a -t d -n 5 "$libc_file" | sed -n -e "s|^[ \t]*\([0-9]*\)[ \t]*1\.[0-9]*\.[0-9]*\(-git.*\)\?\$|\1|p")"
+		if [ "$(expr "$version_offset" : "\([0-9]*\)")" = "$version_offset" ]; then # only try to extract the string, if we got a single offset
+			__bin_extract()
+			{
+				i=1
+				len=$( (dd if="$1" bs=1 skip=$2 count=32 2>/dev/null; printf "\377") | cmp -l -- /dev/zero 2>/dev/null |
+				while read line left right; do
+					[ $i -ne $line ] && printf "%u" $(( i - 1 )) && break
+					i=$(( i + 1 ))
+				done)
+				[ -n "$len" ] && [ $len -gt 0 ] && [ $len -lt 32 ] && dd if="$1" bs=1 skip=$2 count=$len 2>/dev/null && return 0
+				return 1
+			}
+			libc_version="$(__bin_extract "$libc_file" $version_offset)" || libc_version="(undetectable)"
+			if ! [ "$libc_version" = "(undetectable)" ]; then
+				libc_ident="musl-$libc_version"
+				[ "$(expr "$libc_version" : "\([0-9\.]*\)")" = "$libc_version" ] || libc_version="$(expr "$libc_version" : "\(1\.[0-9]*\.[0-9]*\).*")"
+			fi
+		fi
+	fi
+else
+	[ "$(expr "$libc_version" : "\(.\).*")" = "1" ] && libc_project="uClibc-ng" || libc_project="uClibc"
+	libc_ident="$libc_project-$libc_version"
+fi
+
 # log and output data
 if [ $quiet -eq 1 ]; then
 	exec 2>/dev/null
@@ -142,24 +208,30 @@ elif [ $redirect -eq 1 ]; then
 	exec 2>&1
 fi
 
-printf "Model=\"%s\"\n" "$model" 1>&2
-printf "Product=\"%s\"\n" "$product" 1>&2
-printf "Date=\"%s\"\n" "$date" 1>&2
-printf "Version=\"%s.%s\"\n" "$version_major" "$version" 1>&2
-printf "Subversion=\"%s\"\n" "$subversion" 1>&2
-printf "Buildnumber=\"%s\"\n" "$buildnumber" 1>&2
-printf "Buildtype=\"%s\"\n" "$buildtype" 1>&2
-printf "Brandings=\"%s\"\n" "$brandings" 1>&2
-printf "Release=\"%s\"\n" "$release" 1>&2
-printf "BetaRelease=\"%s\"\n" "$beta_release" 1>&2
-printf "LaborName=\"%s\"\n" "$labor_id_name" 1>&2
-printf "DirtyBuild=\"%s\"\n" "$build_dirty" 1>&2
+printf "%sModel=\"%s\"\n" "$output_prefix" "$model" 1>&2
+printf "%sProduct=\"%s\"\n" "$output_prefix" "$product" 1>&2
+printf "%sDate=\"%s\"\n" "$output_prefix" "$date" 1>&2
+printf "%sVersion=\"%s.%s\"\n" "$output_prefix" "$version_major" "$version" 1>&2
+printf "%sSubversion=\"%s\"\n" "$output_prefix" "$subversion" 1>&2
+printf "%sBuildnumber=\"%s\"\n" "$output_prefix" "$buildnumber" 1>&2
+printf "%sBuildtype=\"%s\"\n" "$output_prefix" "$buildtype" 1>&2
+printf "%sBrandings=\"%s\"\n" "$output_prefix" "$brandings" 1>&2
+printf "%sRelease=\"%s\"\n" "$output_prefix" "$release" 1>&2
+printf "%sBetaRelease=\"%s\"\n" "$output_prefix" "$beta_release" 1>&2
+printf "%sLaborName=\"%s\"\n" "$output_prefix" "$labor_id_name" 1>&2
+printf "%sDirtyBuild=\"%s\"\n" "$output_prefix" "$build_dirty" 1>&2
+printf "%sInstallType=\"%s\"\n" "$output_prefix" "$install_type" 1>&2
+printf "%sKernelVersion=\"%s\"\n" "$output_prefix" "$kernel_version" 1>&2
+printf "%sLibraryProject=\"%s\"\n" "$output_prefix" "$libc_project" 1>&2
+printf "%sLibraryVersion=\"%s\"\n" "$output_prefix" "$libc_version" 1>&2
+printf "%sLibraryIdent=\"%s\"\n" "$output_prefix" "$libc_ident" 1>&2
+printf "%sBootType=\"%s\"\n" "$output_prefix" "$boot_type" 1>&2
 for k in $src/etc/avm_firmware_public_key* $src/etc/plugin_global_key.pem; do
 	[ -f "$k" ] || continue
 	key="$(expr "$k" : ".*avm_firmware_public_key\(.*\)")"
 	[ -z "$key" ] && key="PluginKey" || key="PublicKey$key"
 	keyvalue="$(sed -n -e "1p" "$k")"
-	printf "%s=\"%s\"\n" "$key" "$keyvalue" 1>&2
+	printf "%s%s=\"%s\"\n" "$output_prefix" "$key" "$keyvalue" 1>&2
 
 	# output data
 	[ $redirect -eq 0 ] && printf "HWRevision='%s' VersionMajor='%s' Model='%s' Name='%s' Source='%s' Modulus='%s' Exponent='%s'\n" "$HWRevision" "$version_major" "$product" "${k##*/}" "vendor" "$keyvalue" "$(sed -n -e '2p' "$k")"
