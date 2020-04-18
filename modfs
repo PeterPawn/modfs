@@ -83,26 +83,26 @@ custom_selection_file="custom_modscripts"
 #
 # some more values which have to be changed, if AVM modifies its firmware
 #
-# 128MB ext3 image plus 5 percent
-free_space_for_unpack="134M"
+# 128MB ext3 image plus 10 percent
+free_space_for_unpack="285M"
 # 48 MB for packed and double space for unpacked image
-free_space_for_unpack_tmpfs="96M"
+free_space_for_unpack_tmpfs="512M"
 # even with a small amount of RAM at all, there should be a minimum of free space
-free_space_at_tmpfs="24M"
+free_space_at_tmpfs="128M"
 # that's really low on space, better restart the box again
-warning_space_at_tmpfs="10M"
+warning_space_at_tmpfs="64M"
 # one more time the space needed for our ext3 container + 5%
-free_space_at_nand="134M"
+free_space_at_nand="285M"
 # the estimated space needed to store an extracted squashfs image at NAND, it's hard
 # to predict a correct value, because the available 48 MB of a filesystem partition
 # may contain a much much larger "expanded" structure due to automatic avoidance of
 # compression for identical files - so we use a value usually large enough to contain
 # up to four different brandings
-warning_space_at_nand="96M"
+warning_space_at_nand="192M"
 # the estimated space needed to download a firmware image from the FTP server,
 # computed as filesystem partition size + kernel partition size + security surcharge
 # for additional files in the tar archive - currently the images are uncompressed
-download_space_needed="54M"
+download_space_needed="128M"
 # the estimated space needed to extract an outer file system from a firmware image,
 # the extracted tree may be be larger than the size of a filesystem partition
 extract_space_needed="48M"
@@ -112,9 +112,9 @@ extract_space_needed="48M"
 # possible, that (in worst case) the (outer) ext2 image with the pseudo SquashFS header
 # exists together with the "cutted" image (during "dd" execution) for a short time,
 # the extracted SquashFS image will be smaller than the second ext2 copy
-fullimage_space_needed="100M"
+fullimage_space_needed="256M"
 # needed swap space at all (MB)
-swap_space_needed="256"
+swap_space_needed="512"
 # the "normal" base for temporary files and directories
 tmpfsbasedir="/var/tmp"
 # known native file system types, we can use them without a container
@@ -164,7 +164,7 @@ nativefilesystems="tmpfs ext2 ext3 ext4 yaffs2"
 #
 # our "internal" constants
 #
-modfs_version=0.6.0-beta-210120202302
+modfs_version=0.6.0-beta-170420202247
 modfs_comment="please look at https://github.com/PeterPawn/modfs for further info"
 bindirname="bin"
 localedirname="locale"
@@ -172,7 +172,7 @@ filesdirname="files"
 scriptdirname="modscripts"
 contribdirname="contrib"
 tmpdirbase="/var/tmp"
-packedpartition="128MB_ext3.gz"
+packedpartition="256MB_ext3.gz"
 squashfsdirname="squashfs-root"
 scriptwrapper="wrap_script"
 modfsshelldebug="/var/tmp/modfs_debug_shell.log"
