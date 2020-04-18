@@ -20,8 +20,9 @@ step=$4
 #
 rc=0
 modfile="$rootdir/etc/init.d/rc.tail.sh"
+[ -f "$rootdir/$modfile" ] || modfile="$rootdir/etc/boot.d/core/tail"
 minor=98
-insertline="rcuser=/var/tmp/rc.user;mkconfigfile \$rcuser.tffs $minor;cat \$rcuser.tffs >\$rcuser;rm \$rcuser.tffs;test -s \$rcuser && delay -d 1 RCUSER \"/bin/sh \$rcuser\""
+insertline="rcuser=/var/tmp/rc.user;mkconfigfile \$rcuser.tffs $minor;cat \$rcuser.tffs >\$rcuser;rm \$rcuser.tffs;test -s \$rcuser && delay -d 1 RCUSER \"/bin/sh \$rcuser\" || true"
 find_line()
 {
 	local line rc=0
@@ -82,7 +83,7 @@ case $step in
 		fi
 		;;
 	install)
-		sed -e "\$i$insertline" -i "$modfile"
+		grep -q -- "^exit 0$" "$modfile" 2>/dev/null && sed -e "\$i$insertline" -i "$modfile" || sed -e "\$a$insertline" -i "$modfile"
 		rc=0
 		;;
 	*)

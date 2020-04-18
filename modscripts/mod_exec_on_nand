@@ -5,7 +5,7 @@
 # DESCRIPTION en
 # prevent mount with 'noexec' option for NAS flash
 # DESCRIPTION de
-# Mounten des NAS-Flash ohne 'noexec'-Option
+# Mounten des NAS-Flash-Speichers ohne 'noexec'-Option
 # EOH
 #
 # process parameters
@@ -21,6 +21,10 @@ step=$4
 init_script="etc/init.d/S15-filesys"
 search_string="-t \(yaffs2\|ext4\).*noexec"
 change_command="s:\(-t \(yaffs2\|ext4\).*\)noexec:\1exec:"
+boot_script1="etc/boot.d/yaffs_functions"
+boot_script2="etc/boot.d/ubi_functions"
+search_string2="\"sync,noexec\""
+change_command2="s:sync,noexec:sync,exec:"
 #
 # execute the requested step
 #
@@ -28,7 +32,25 @@ rc=0
 #
 case $step in
 	precheck)
-		grep -q -- "$search_string" "$rootdir/$init_script" 2>/dev/null
+		if [ -f "$rootdir/$init_script" ]; then
+			grep -q -- "$search_string" "$rootdir/$init_script" 2>/dev/null
+		else
+			if [ -f "$rootdir/$boot_script1" ]; then
+				grep -q -- "$search_string2" "$rootdir/$boot_script1" 2>/dev/null
+			elif [ -f "$rootdir/$boot_script2" ]; then
+				grep -q -- "$search_string2" "$rootdir/$boot_script2" 2>/dev/null
+			else
+				case "$language" in
+					de)
+						printf "Die zu ändernden Stellen wurden in der Firmware nicht gefunden.\n"
+						;;
+					*)
+						printf "Unable to locate the code to change, patching abandoned.\n"
+						;;
+				esac
+				exit 2
+			fi
+		fi
 		rc=$?
 		if [ $rc -eq 1 ]; then
 			case "$language" in
@@ -45,7 +67,25 @@ case $step in
 		fi
 		;;
 	postcheck)
-		grep -q -- "$search_string" "$rootdir/$init_script" 2>/dev/null
+		if [ -f "$rootdir/$init_script" ]; then
+			grep -q -- "$search_string" "$rootdir/$init_script" 2>/dev/null
+		else
+			if [ -f "$rootdir/$boot_script1" ]; then
+				grep -q -- "$search_string2" "$rootdir/$boot_script1" 2>/dev/null
+			elif [ -f "$rootdir/$boot_script2" ]; then
+				grep -q -- "$search_string2" "$rootdir/$boot_script2" 2>/dev/null
+			else
+				case "$language" in
+					de)
+						printf "Die zu ändernden Stellen wurden in der Firmware nicht gefunden.\n"
+						;;
+					*)
+						printf "Unable to locate the code to change, patching abandoned.\n"
+						;;
+				esac
+				exit 2
+			fi
+		fi
 		rc=$?
 		if [ $rc -eq 0 ]; then
 			case "$language" in
@@ -62,7 +102,12 @@ case $step in
 		fi
 		;;
 	install)
-		sed -e "$change_command" -i "$rootdir/$init_script"
+		if [ -f "$rootdir/$init_script" ]; then
+			sed -e "$change_command" -i "$rootdir/$init_script"
+		else
+			sed -e "$change_command2" -i "$rootdir/$boot_script1"
+			sed -e "$change_command2" -i "$rootdir/$boot_script2"
+		fi
 		rc=0
 		;;
 	*)

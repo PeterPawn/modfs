@@ -20,7 +20,7 @@ step=$4
 #
 rc=0
 modfile="$rootdir/usr/www/%s/net/net_settings.lua"
-lookfor="^if config.CHRONY and not general.is_ip_client() then\$"
+lookfor="^if config.CHRONY and not general.is_ip_client() *then\$"
 replacewith="if config.CHRONY then"
 #
 # helpers

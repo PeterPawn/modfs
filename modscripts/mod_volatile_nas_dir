@@ -19,6 +19,7 @@ step=$4
 # constants
 #
 init_script="etc/init.d/S15-filesys"
+boot_script="etc/boot.d/core/files"
 directory_name="${MOD_VOLATILE_NAS_DIR_DIRNAME:-volatile}"
 limit_space="${MOD_VOLATILE_NAS_DIR_LIMIT:-0}"
 [ "$limit_space" = "0" ] && limited="" || limited=" -o size=$limit_space"
@@ -32,7 +33,21 @@ rc=0
 #
 case $step in
 	precheck)
-		grep -q -- "$search_string" "$rootdir/$init_script" 2>/dev/null
+		if [ -f "$rootdir/$init_script" ]; then
+			grep -q -- "$search_string" "$rootdir/$init_script" 2>/dev/null
+		elif [ -f "$rootdir/$boot_script" ]; then
+			grep -q -- "$search_string" "$rootdir/$boot_script" 2>/dev/null
+		else
+			case "$language" in
+				de)
+					printf "Die zu modfifzierende Stelle wurde nicht gefunden in der Firmware.\n"
+					;;
+				*)
+					printf "Unable to locate the code to be patched.\n"
+					;;
+			esac
+			exit 2
+		fi
 		rc=$?
 		if [ $rc -eq 0 ]; then
 			case "$language" in
@@ -49,7 +64,21 @@ case $step in
 		fi
 		;;
 	postcheck)
-		grep -q -- "$search_string" "$rootdir/$init_script" 2>/dev/null
+		if [ -f "$rootdir/$init_script" ]; then
+			grep -q -- "$search_string" "$rootdir/$init_script" 2>/dev/null
+		elif [ -f "$rootdir/$boot_script" ]; then
+			grep -q -- "$search_string" "$rootdir/$boot_script" 2>/dev/null
+		else
+			case "$language" in
+				de)
+					printf "Die zu modfifzierende Stelle wurde nicht gefunden in der Firmware.\n"
+					;;
+				*)
+					printf "Unable to locate the code to be patched.\n"
+					;;
+			esac
+			exit 2
+		fi
 		rc=$?
 		if [ $rc -eq 1 ]; then
 			case "$language" in
@@ -63,7 +92,13 @@ case $step in
 		fi
 		;;
 	install)
-		printf "%s\n%s\n" "$mkdir_command" "$mount_command" >> "$rootdir/$init_script"
+		if [ -f "$rootdir/$init_script" ]; then
+			printf "%s\n%s\n" "$mkdir_command" "$mount_command" >> "$rootdir/$init_script"
+		elif [ -f "$rootdir/$boot_script" ]; then
+			printf "%s\n%s\n" "$mkdir_command" "$mount_command" >> "$rootdir/$boot_script"
+		else
+			exit 2
+		fi
 		case "$language" in
 			de)
 				printf "Unter dem NAS-Pfad '%s' wird zusätzlich ein flüchtiger Speicher%sverfügbar gemacht.\n" "$directory_name" "$([ -z "$limited" ] || printf " (Größe: %d) " "$limit_space")"

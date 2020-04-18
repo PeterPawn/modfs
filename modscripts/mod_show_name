@@ -55,6 +55,17 @@ patch_file()
  <nav id="menuBox" class="hidden" aria-live="off">
 --- usr/www/$TARGET_BRANDING/content.lua
 +++ usr/www/$TARGET_BRANDING/content.lua
+@@ -78,7 +78,7 @@
+ <?include "templates/head_tag_content.lua" ?>
+ <link rel="stylesheet" type="text/css" href="/css/rd/main.css">
+ <link rel="stylesheet" type="text/css" href="/css/box.css">
+-<title><?lua box.html(g_fb_type) ?></title>
++<title><?lua box.html(g_fb_name) ?></title>
+ </head>
+ <body class="hideMenu">
+ <nav id="menuBox" class="hidden" aria-live="off">
+--- usr/www/$TARGET_BRANDING/content.lua
++++ usr/www/$TARGET_BRANDING/content.lua
 @@ -85,8 +85,8 @@
  <header id="blueBarBox" class="hidden">
  <div id="blueBarLogo" class="blueBarLogo"></div>

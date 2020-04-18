@@ -24,6 +24,18 @@ check_trigger="\[\"night\"\] = config\.TIMERCONTROL"
 #
 # apply
 #
+check_version()
+{
+	local major=$(expr "$1" : "0*\([1-9]*[0-9]\)")
+	local minor=$(expr "$2" : "0*\([1-9]*[0-9]\)")
+	local wanted_major=$(expr "$3" : "0*\([1-9]*[0-9]\)")
+	local wanted_minor=$(expr "$4" : "0*\([1-9]*[0-9]\)")
+
+	[ $major -lt $wanted_major ] && return 0
+	[ $major -gt $wanted_major ] && return 1
+	[ $minor -lt $wanted_minor ] && return 0
+	return 1
+}
 patch_file()
 {
 	local home=$(pwd)
@@ -65,20 +77,34 @@ EOT
 #
 case $step in
 	precheck)
-		grep -q "$check_trigger" $check_filename 2>/dev/null 1>&2
-		rc=$?
-		if [ $rc -eq 0 ]; then
+		major=$(( $(expr "$TARGET_SYSTEM_VERSION" : "[0-9]*\.0*\([1-9]*[0-9]\)\.[0-9]*") + 0 ))
+		minor=$(( $(expr "$TARGET_SYSTEM_VERSION" : "[0-9]*\.[0-9]*\.0*\([1-9]*[0-9]\)") + 0 ))
+		if ! check_version $major $minor 7 19; then
 			case "$language" in
 				de)
-					echo "Die Modifikation wurde bereits angewendet."
+					echo "Diese Modifikation ist nur vor FRITZ!OS 07.19 verfügbar."
 					;;
 				*)
-					echo "The modification is already present."
+					echo "This modification is only available for FRITZ!OS versions below 07.19."
 					;;
 			esac
 			rc=1
 		else
-			rc=0
+			grep -q "$check_trigger" $check_filename 2>/dev/null 1>&2
+			rc=$?
+			if [ $rc -eq 0 ]; then
+				case "$language" in
+					de)
+						echo "Die Modifikation wurde bereits angewendet."
+						;;
+					*)
+						echo "The modification is already present."
+						;;
+				esac
+				rc=1
+			else
+				rc=0
+			fi
 		fi
 		;;
 	postcheck)
