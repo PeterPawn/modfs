@@ -1,7 +1,8 @@
 = t d
 1	Compress the current directory to be published on yourfritz.de
 	version=$(cat .version)
-	Files="bin files locale modscripts contrib LICENSE BOOTSELECTION* modfs"
+	rm -r bin/000 2>/dev/null
+	Files="bin files locale modscripts contrib LICENSE BOOTSELECTION* modfs run_modscripts"
 	chmod o-x modscripts/*
 	busybox tar -c --exclude=".git*" --exclude="contrib/custom" $Files | gzip -c9 > "modfs-$version.tgz"
 	cp modfs-$version.tgz /autofs/ssh/source/srv/www/vhosts/www.yourfritz.de/
@@ -23,7 +24,8 @@
 
 3	Compress the current directory to be published on yourfritz.de, but do not replace symlink
 	version=$(cat .version)
-	Files="bin files locale modscripts contrib LICENSE BOOTSELECTION* modfs"
+	rm -r bin/000 2>/dev/null
+	Files="bin files locale modscripts contrib LICENSE BOOTSELECTION* modfs run_modscripts"
 	chmod o-x modscripts/*
 	busybox tar -c --exclude=".git*" --exclude="contrib/custom" $Files | gzip -c9 > "modfs-$version.tgz"
 	cp modfs-$version.tgz /autofs/ssh/source/srv/www/vhosts/www.yourfritz.de/
