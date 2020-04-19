@@ -20,9 +20,10 @@ step=$4
 #
 rc=0
 modfile="$rootdir/etc/init.d/rc.tail.sh"
-[ -f "$rootdir/$modfile" ] || modfile="$rootdir/etc/boot.d/core/tail"
 minor=98
-insertline="rcuser=/var/tmp/rc.user;mkconfigfile \$rcuser.tffs $minor;cat \$rcuser.tffs >\$rcuser;rm \$rcuser.tffs;test -s \$rcuser && delay -d 1 RCUSER \"/bin/sh \$rcuser\" || true"
+insertline="rcuser=/var/tmp/rc.user;mkconfigfile \$rcuser.tffs $minor;cat \$rcuser.tffs >\$rcuser;rm \$rcuser.tffs;test -s \$rcuser && delay -d 1 RCUSER \"/bin/sh \$rcuser\""
+systemd_initfile="$rootdir/etc/boot.d/core/rcuser"
+systemd_servicefile="$rootdir/lib/systemd/system/rcuser.service"
 find_line()
 {
 	local line rc=0
@@ -30,10 +31,46 @@ find_line()
 	[ ${#line} -gt 0 ] && rc=0 || rc=1
 	return $rc
 }
+create_rc_user_file()
+{
+cat <<EOT
+#! /bin/sh
+. /etc/boot.d/msg
+. /etc/boot.d/major_nr
+grep -q "rcuser=n" /proc/cmdline 2>/dev/null && msg_warn "Skipping rc.user content due to kernel command line." && exit 0
+rcuser=/var/tmp/rc.user
+mknod \$rcuser.tffs c \$(major_nr tffs) $minor
+cat \$rcuser.tffs > \$rcuser
+rm \$rcuser.tffs
+if ! test -s \$rcuser; then
+msg_warn "rc.user file is empty."
+exit 0
+fi
+delay -d 1 RCUSER "/bin/sh \$rcuser"
+msg_info "rc.user content gets executed soon ..."
+exit 0
+EOT
+}
+create_rc_user_service()
+{
+cat <<EOT
+[Unit]
+ExecStart=/bin/sh ${systemd_initfile#$rootdir}
+Type=oneshot
+After=net.service
+[Install]
+WantedBy=multi-user.target
+EOT
+}
 case $step in
 	precheck)
-		find_line
-		rc=$?
+		if [ -f "$modfile" ]; then
+			find_line
+			rc=$?
+		else
+			test -f "$systemd_initfile"
+			rc=$?
+		fi
 		if [ $rc -eq 0 ]; then
 			case "$language" in
 				de)
@@ -49,9 +86,14 @@ case $step in
 		fi
 		;;
 	postcheck)
-		find_line
-		rc=$?
-		if [ $rc -eq 1 ]; then
+		if [ -f "$modfile" ]; then
+			find_line
+			rc=$?
+		else
+			test -f "$systemd_initfile"
+			rc=$?
+		fi
+		if [ $rc -ne 0 ]; then
 			case "$language" in
 				de)
 					echo "Die Modifikation war nicht erfolgreich."
@@ -62,29 +104,38 @@ case $step in
 			esac
 			rc=1
 		else
-			tmpdir=/var/tmp/${0##*/}_$$
-			mkdir -p "$tmpdir"
-			mknod "$tmpdir/tffs" c $(sed -n -e 's|\([0-9]*\) tffs|\1|p' /proc/devices) $minor
-			cat "$tmpdir/tffs" >"$tmpdir/content" 2>/dev/null
-			if [ ! -s "$tmpdir/content" ]; then
-				case "$language" in
-					de)
-						echo "eventadd 1 \"Die Datei rc.user (TFFS-Minor-ID $minor) wird abgearbeitet ...\"" >"$tmpdir/tffs"
-						echo -e "Die Datei 'rc.user/debug.cfg' war leer, es wurde ein Kommando zum Protokollieren\ndes Starts im Eventlog eingefügt."
-						;;
-					*)
-						echo "eventadd 1 \"The commands within the file 'rc.user' (TFFS minor id $minor) will be executed now ...\"" >"$tmpdir/tffs"
-						echo -e "Your command file 'rc.user/debug.cfg' was empty. A command to log the start of\nexecution was added to it."
-						;;
-				esac
+			if [ -d "/proc/sys/urlader" ]; then
+				tmpdir=/var/tmp/${0##*/}_$$
+				mkdir -p "$tmpdir"
+				mknod "$tmpdir/tffs" c $(sed -n -e 's|\([0-9]*\) tffs|\1|p' /proc/devices) $minor
+				cat "$tmpdir/tffs" >"$tmpdir/content" 2>/dev/null
+				if [ ! -s "$tmpdir/content" ]; then
+					case "$language" in
+						de)
+							echo "eventadd 1 \"Die Datei rc.user (TFFS-Minor-ID $minor) wird abgearbeitet ...\"" >"$tmpdir/tffs"
+							echo -e "Die Datei 'rc.user/debug.cfg' war leer, es wurde ein Kommando zum Protokollieren\ndes Starts im Eventlog eingefügt."
+							;;
+						*)
+							echo "eventadd 1 \"The commands within the file 'rc.user' (TFFS minor id $minor) will be executed now ...\"" >"$tmpdir/tffs"
+							echo -e "Your command file 'rc.user/debug.cfg' was empty. A command to log the start of\nexecution was added to it."
+							;;
+					esac
+				fi
+				rm -r $tmpdir
 			fi
-			rm -r $tmpdir
 			rc=0
 		fi
 		;;
 	install)
-		grep -q -- "^exit 0$" "$modfile" 2>/dev/null && sed -e "\$i$insertline" -i "$modfile" || sed -e "\$a$insertline" -i "$modfile"
-		rc=0
+		if [ -f "$modfile" ]; then
+			grep -q -- "^exit 0$" "$modfile" 2>/dev/null && sed -e "\$i$insertline" -i "$modfile" || sed -e "\$a$insertline" -i "$modfile"
+			rc=0
+		else
+			create_rc_user_file > "$systemd_initfile"
+			chmod 755 "$systemd_initfile"
+			create_rc_user_service > "$systemd_servicefile"
+			rc=0
+		fi
 		;;
 	*)
 		rc=59
