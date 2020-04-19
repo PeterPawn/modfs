@@ -5,7 +5,7 @@
 #                                                                              #
 # an alternative approach to modify firmware images for AVM FRITZ!Box routers  #
 #                                                                              #
-# Copyright (C) 2014-2019 P.Hämmerlein (http://www.yourfritz.de)               #
+# Copyright (C) 2014-2020 P.Hämmerlein (http://www.yourfritz.de)               #
 #                                                                              #
 # This program is free software; you can redistribute it and/or                #
 # modify it under the terms of the GNU General Public License                  #
@@ -164,7 +164,7 @@ nativefilesystems="tmpfs ext2 ext3 ext4 yaffs2"
 #
 # our "internal" constants
 #
-modfs_version=0.6.0-beta-170420202247
+modfs_version=0.6.0-beta-190420202317
 modfs_comment="please look at https://github.com/PeterPawn/modfs for further info"
 bindirname="bin"
 localedirname="locale"

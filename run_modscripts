@@ -1,0 +1,77 @@
+#! /bin/sh
+# vim: set tabstop=4 shiftwidth=4 syntax=sh highlight=on
+# SPDX-License-Identifier: GPL-2.0-or-later
+usage()
+{
+	printf "run_modscripts, version 0.1\n\n"
+	printf "(C) 2020 P. Haemmerlein (peterpawn@yourfritz.de)\n\n"
+	printf "Usage:\n"
+	printf "	${0##*/} fritzos_directory\n\n"
+	printf "Apply all 'modscript' files found in './modscripts' to the unpacked\n"
+	printf "FRITZ!OS firmware structure in the specified directory.\n\n"
+	printf "Access flags of 'modscript' files will be ignored and any existing\n"
+	printf "'custom_modscripts' file gets ignored, too.\n\n"
+	printf "Only the 'install' step will be executed for each found script, any\n"
+	printf "precheck or postcheck actions are skipped.\n\n"
+	printf "Remove any 'modscript' file, that should not get applied or was applied\n"
+	printf "already.\n\n"
+	printf "Additional scripts will be searched in './bin/scripts', ensure the\n"
+	printf "usual directory structure of the 'modfs' project is present.\n"
+}
+if [ -z "$1" ]; then
+	usage 1>&2
+	exit 1
+fi
+target_dir="$(readlink -f "$1")"
+if ! [ -d "$1" ]; then
+	printf "\"%s\" is not a valid directory.\a\n" "$target_dir" 1>&2
+	exit 1
+fi
+tempdir="${TMP:-${TMPDIR:-/tmp}}"
+if ! [ -x "$(command -v busybox 2>/dev/null)" ]; then
+	printf "Missing a BusyBox file for this system.\a\n" 1>&2
+	exit 1
+fi
+busybox="$(command -v busybox)"
+if ! [ -x "bin/scripts/extract_version_values" ]; then
+	printf "Missing support files, unpack/provide the whole directory structure from 'modfs' project.\a\n" 1>&2
+	exit 1
+fi
+version_values="$(bin/scripts/extract_version_values "$target_dir" -m MODFS_ 2>/dev/null)"
+if [ -z "$version_values" ]; then
+	printf "\"%s\" seems to be not an unpacked FRITZ!OS structure - so this script was unable to extract needed values from this directory.\a\n" "$target_dir" 1>&2
+	exit 1
+fi
+export TARGET_KERNEL_VERSION="$(printf "%s\n" "$version_values" | sed -n -e "s|^MODFS_KernelVersion=\"\(.*\)\"\$|\1|p")"
+export TARGET_SYSTEM_VERSION="$(printf "%s\n" "$version_values" | sed -n -e "s|^MODFS_Version=\"\(.*\)\"\$|\1|p")"
+export TARGET_SYSTEM_SUBVERSION="$(printf "%s\n" "$version_values" | sed -n -e "s|^MODFS_Subversion=\"\(.*\)\"\$|\1|p")"
+export TARGET_SYSTEM_DATE="$(printf "%s\n" "$version_values" | sed -n -e "s|^MODFS_Date=\"\(.*\)\"\$|\1|p")"
+export TARGET_BRANDINGS="$(printf "%s\n" "$version_values" | sed -n -e "s|^MODFS_Brandings=\"\(.*\)\"\$|\1|p")"
+set -- $TARGET_BRANDINGS
+while [ -n "$1" ]; do
+	if [ "$1" = "avm" ]; then
+		export TARGET_BRANDING="avm"
+		break
+	elif [ "$1" = "avme" ]; then
+		export TARGET_BRANDING="avme"
+		break
+	fi
+	shift
+done
+if [ -z "$TARGET_BRANDING" ]; then
+	set -- $TARGET_BRANDINGS
+	export TARGET_BRANDING="$1"
+fi
+export TMP="$tempdir"
+export TMPDIR="$tempdir"
+export HWRevision="000"
+mkdir -p "bin/000/" 2>/dev/null
+ln -sf "$busybox" "bin/000/busybox" 2>/dev/null
+export home=.
+for modscript in $(find modscripts -maxdepth 1 -type f | sort); do
+	printf "Running script '%s' ...\n" "${modscript##*/}" 1>&2
+	$busybox sh "$modscript" "de" "$target_dir" "auto" "install"
+	rc=$?
+	printf "Finished script '%s', rc=%d\n" "${modscript##*/}" "$rc" 1>&2
+done
+exit 0
