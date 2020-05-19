@@ -164,7 +164,7 @@ nativefilesystems="tmpfs ext2 ext3 ext4 yaffs2"
 #
 # our "internal" constants
 #
-modfs_version=0.6.1-160520201243
+modfs_version=0.6.1-190520201635
 modfs_comment="please look at https://github.com/PeterPawn/modfs for further info"
 bindirname="bin"
 localedirname="locale"
@@ -177,6 +177,7 @@ squashfsdirname="squashfs-root"
 scriptwrapper="wrap_script"
 modfsshelldebug="/var/tmp/modfs_debug_shell.log"
 scriptsdir="bin/scripts"
+getversionvaluesscript="$scriptsdir/extract_version_values"
 showprogress=0
 msgtext_clearscreen="\x1B[2J\x1B[0;0H"
 msgtext_normal="\x1B[0m"
@@ -845,15 +846,23 @@ is_supported()
 	return $rc
 }
 #
+# get version values from unpacked image
+# $1 - target directory
+#
+extract_values_from_image()
+{
+	$bb sh $getversionvaluesscript "$1" -m MODFS_
+}
+#
 # get the kernel version from target system
 # $1 - target directory
 get_target_kernel_version()
 {
-	local rootdir="$1" default_version="3.10.73" version rc=0
-	version="$(cd "$rootdir/lib/modules";$bb find -maxdepth 1 -type d | $bb sed -n -e "s|.*/\([0-9\.]\+\)\$|\1|p")"
-	rc=$?
-	[ $rc -ne 0 ] && version="$default_version"
-	debug "get_target_kernel_version: result=$version, rc=$rc"
+	local rootdir="$1"
+	local rc=0
+	local version
+	version="$(extract_values_from_image "$rootdir" | $bb sed -n -e "s|^MODFS_KernelVersion=\"\(.*\)\"\$|\1|p")"
+	debug "get_target_kernel_version: result=\"$version\", rc=$rc"
 	echo "TARGET_KERNEL_VERSION=\"$version\""
 }
 #
@@ -861,21 +870,16 @@ get_target_kernel_version()
 # $1 - target directory
 get_target_system_version()
 {
-	local rootdir="$1" version subversion date rc=0 var
-	version_major="$($bb sed -n -e "s/^export CONFIG_VERSION_MAJOR=\"\(.*\)\"\$/\1/p" "$rootdir/etc/init.d/rc.conf" | $bb sed -n -e "\$p")"
-	if [ -z "$($bb sed -n -e "/^[ \t]*export FIRMWARE_VERSION=/p" "$rootdir/etc/version")" ]; then
-		major="$($bb sed -n -e "s/^export CONFIG_VERSION_MAJOR=\"\?\([^\"]*\)\"\?\$/\1/p" "$rootdir/etc/init.d/rc.conf" | sed -e "/^10\$/d")"
-		for var in version subversion; do
-			eval "$($bb sed -n -e "s/^export CONFIG_$(uppercase $var)=\"\?\([^\"]*\)\"\?\$/$var=\"\1\"/p" "$rootdir/etc/init.d/rc.conf")"
-		done
-		date="$(date +%d.%m.%Y\ %H:%M:%S -d @$(stat -c %Y "$rootdir/etc/version"))"
-		version="$major.$version"
-	else
-		for var in version subversion date; do
-			eval "$($bb sed -n -e "s/^export FIRMWARE_$(uppercase $var)=\"\?\([^\"]*\)\"\?\$/$var=\"\1\"/p" "$rootdir/etc/version" | $bb sed -e "s/CONFIG_VERSION_MAJOR/version_major/")"
-		done
-		[ ${#subversion} -eq 0 ] && subversion="$($bb sed -n -e "/--project)/N;s|\n||p" "$rootdir/etc/version" | $bb sed -n -e "s|.*echo \(.*\)|\1|p")"
-	fi
+	local rootdir="$1"
+	local rc=0
+	local version
+	local subversion
+	local date
+	local values
+	values="$(extract_values_from_image "$rootdir")"
+	version="$(printf "%s\n" "$values" | $bb sed -n -e "s|^MODFS_Version=\"\(.*\)\"\$|\1|p")"
+	subversion="$(printf "%s\n" "$values" | $bb sed -n -e "s|^MODFS_Subversion=\"\(.*\)\"\$|\1|p")"
+	date="$(printf "%s\n" "$values" | $bb sed -n -e "s|^MODFS_Date=\"\(.*\)\"\$|\1|p")"
 	debug "get_target_system_version: version=\"$version\", subversion=\"$subversion\", date=\"$date\", rc=$rc"
 	echo "TARGET_SYSTEM_VERSION=\"$version\" TARGET_SYSTEM_SUBVERSION=\"$subversion\" TARGET_SYSTEM_DATE=\"$date\""
 }
@@ -884,10 +888,12 @@ get_target_system_version()
 # $1 - target directory
 get_target_brandings()
 {
-	local rootdir="$1" rc=0 path brandings
-	path=$($bb find $rootdir/etc -type d -name "default.*" | $bb sed -e "\|$rootdir/etc/default.[0-9]*\$|d")
-	brandings=$($bb find $path -maxdepth 1 -type d | $bb sed -n -e "s|$path[/]*||p" | $bb sed -e "/^\$/d")
-	echo $brandings
+	local rootdir="$1"
+	local rc=0
+	local brandings
+	brandings="$(extract_values_from_image "$rootdir" | $bb sed -n -e "s|^MODFS_Brandings=\"\(.*\)\"\$|\1|p")"
+	debug "get_target_brandings: brandings=\"$brandings\", rc=$rc"
+	printf "%s\n" "$brandings"
 }
 #
 # get the FRITZ!OS brandings from target system
@@ -896,7 +902,8 @@ get_first_branding()
 {
 	local brandings="$1"
 	for branding in $brandings; do
-		echo "$branding"
+		debug "get_first_branding: brandings=\"$brandings\", branding=\"$branding\", rc=$rc"
+		printf "%s\n" "$branding"
 		return
 	done
 }
@@ -1170,7 +1177,12 @@ modify_rootfs()
 	# short stop to ensure an unique temporary directory name (contains the unix time)
 	$bb sleep 1
 	debug "modify_rootfs: starting, target=$target, scripts=$scripts, contribs=$contribs"
-	MODSCRIPT_ENV="$KERNEL_VERSION $FRITZOS_VERSION TARGET_BRANDINGS=\"$BRANDINGS\" TARGET_BRANDING=\"$BRANDING\" TMP=\"$tmpdir\" TMPDIR=\"$tmpdir\""
+	FRITZOS_VERSION="$(get_target_system_version "$unpack_directory/$squashfsdirname")"
+	KERNEL_VERSION="$(get_target_kernel_version "$unpack_directory/$squashfsdirname")"
+	BRANDINGS="$(get_target_brandings "$unpack_directory/$squashfsdirname")"
+	BRANDING="$(get_first_branding "$BRANDINGS")"
+	gvv="$(extract_values_from_image "$target" | sed -e ":x;\$!N;s/\n/ /;tx")"
+	MODSCRIPT_ENV="$KERNEL_VERSION $FRITZOS_VERSION TARGET_BRANDINGS=\"$BRANDINGS\" TARGET_BRANDING=\"$BRANDING\" TMP=\"$tmpdir\" TMPDIR=\"$tmpdir\" $gvv"
 	prepare_custom_modscripts_selection
 	list="$tmpdir/scriptfiles"
 	filelist="$tmpdir/scripts"
@@ -3438,11 +3450,6 @@ if [ $rc -eq 0 -a $install_image_only -eq 0 ]; then
 	debug "modfs: unpacking SquashFS image done, rc=$rc"
 fi
 if [ $rc -eq 0 -a $install_image_only -eq 0 ]; then
-	FRITZOS_VERSION="$(get_target_system_version "$unpack_directory/$squashfsdirname")"
-	KERNEL_VERSION="$(get_target_kernel_version "$unpack_directory/$squashfsdirname")"
-	BRANDINGS="$(get_target_brandings "$unpack_directory/$squashfsdirname")"
-	BRANDING="$(get_first_branding "$BRANDINGS")"
-	eval $KERNEL_VERSION $FRITZOS_VERSION TARGET_BRANDINGS=\"$BRANDINGS\" TARGET_BRANDING=\"$BRANDING\"
 	# modify root file system
 	contribs="$(contribdir)"
 	files=0
