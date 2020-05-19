@@ -22,7 +22,7 @@ if [ -z "$1" ]; then
 	usage 1>&2
 	exit 1
 fi
-target_dir="$(readlink -f "$1")"
+target_dir="$(readlink -f -- "$1")"
 if ! [ -d "$1" ]; then
 	printf "\"%s\" is not a valid directory.\a\n" "$target_dir" 1>&2
 	exit 1
