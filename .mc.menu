@@ -2,8 +2,11 @@
 1	Compress the current directory to be published on yourfritz.de
 	version=$(cat .version)
 	rm -r bin/000 2>/dev/null
-	Files="bin files locale modscripts contrib LICENSE BOOTSELECTION* modfs run_modscripts"
+	Files="bin files locale modscripts contrib LICENSE BOOTSELECTION* modfs run_modscripts set_correct_flags.sh"
+	chown -R $(stat -c %%U .) .
+	chgrp -R $(stat -c %%G .) .
 	chmod o-x modscripts/*
+	sh bin/scripts/generate_flags_script.sh
 	busybox tar -c --exclude=".git*" --exclude="contrib/custom" $Files | gzip -c9 > "modfs-$version.tgz"
 	cp modfs-$version.tgz /autofs/ssh/source/srv/www/vhosts/www.yourfritz.de/
 	chown wwwrun:www /autofs/ssh/source/srv/www/vhosts/www.yourfritz.de/modfs-$version.tgz
@@ -25,10 +28,13 @@
 3	Compress the current directory to be published on yourfritz.de, but do not replace symlink
 	version=$(cat .version)
 	rm -r bin/000 2>/dev/null
-	Files="bin files locale modscripts contrib LICENSE BOOTSELECTION* modfs run_modscripts"
+	Files="bin files locale modscripts contrib LICENSE BOOTSELECTION* modfs run_modscripts set_correct_flags.sh"
+	chown -R $(stat -c %%U .) .
+	chgrp -R $(stat -c %%G .) .
 	chmod o-x modscripts/*
+	sh bin/scripts/generate_flags_script.sh
 	busybox tar -c --exclude=".git*" --exclude="contrib/custom" $Files | gzip -c9 > "modfs-$version.tgz"
-	cp modfs-$version.tgz /autofs/ssh/source/srv/www/vhosts/www.yourfritz.de/
-	chown wwwrun:www /autofs/ssh/source/srv/www/vhosts/www.yourfritz.de/modfs-$version.tgz
+	# cp modfs-$version.tgz /autofs/ssh/source/srv/www/vhosts/www.yourfritz.de/
+	# chown wwwrun:www /autofs/ssh/source/srv/www/vhosts/www.yourfritz.de/modfs-$version.tgz
 	echo "Created modfs version $version on yourfritz.de"
 	tar -t -v -f modfs-$version.tgz
