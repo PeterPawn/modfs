@@ -164,7 +164,7 @@ nativefilesystems="tmpfs ext2 ext3 ext4 yaffs2"
 #
 # our "internal" constants
 #
-modfs_version=0.6.0-beta-110520201827
+modfs_version=0.6.1-160520201243
 modfs_comment="please look at https://github.com/PeterPawn/modfs for further info"
 bindirname="bin"
 localedirname="locale"
@@ -2416,35 +2416,37 @@ check_prerequisites()
 									else
 										debug "check_prerequisites: alternative filesystem device is /dev/$mtdblockname$f2"
 										progress 3 96
-										# check free space at tmpfs
-										progress 1 117
-										check_free_tmpfs $free_space_at_tmpfs $warning_space_at_tmpfs
+										# find enough free local space to unpack the squashfs image
+										progress 1 119
+										[ $INCLUDE_NAND -eq 1 ] && local_nand="withnand" || local_nand="nonand"
+										path=$(find_free_storage_space $free_space_for_unpack $local_nand 2>/dev/null)
 										rc=$?
-										if [ $rc -gt 1 ]; then
-											debug "check_prerequisites: not enough free space found at tmpfs, memory pressure"
+										if [ $rc -ne 0 ]; then
+											debug "check_prerequisites: not enough free space for unpacking of images"
 											progress 3 97
-											msg="$(get_localized $lang 50)"
+											msg="$(get_localized $lang 51 $free_space_for_unpack)"
 											echo -e "$msg\n" 1>&2
-											rc=50
+											rc=51
 										else
-											if [ $rc -eq 1 ]; then
-												progress 3 118
-											else
-												progress 3 96
-											fi
-											# find enough free local space to unpack the squashfs image
-											progress 1 119
-											[ $INCLUDE_NAND -eq 1 ] && local_nand="withnand" || local_nand="nonand"
-											path=$(find_free_storage_space $free_space_for_unpack $local_nand 2>/dev/null)
-											rc=$?
-											if [ $rc -eq 0 ]; then
-												progress 3 96
-											else
-												debug "check_prerequisites: not enough free space for unpacking of images"
-												progress 3 97
-												msg="$(get_localized $lang 51 $free_space_for_unpack)"
-												echo -e "$msg\n" 1>&2
-												rc=51
+											progress 3 96
+											if [ "$CHECK_TMPFS_SPACE" = "1" ]; then
+												# check free space at tmpfs
+												progress 1 117
+												check_free_tmpfs $free_space_at_tmpfs $warning_space_at_tmpfs
+												rc=$?
+												if [ $rc -gt 1 ]; then
+													debug "check_prerequisites: not enough free space found at tmpfs, memory pressure"
+													progress 3 97
+													msg="$(get_localized $lang 50)"
+													echo -e "$msg\n" 1>&2
+													rc=50
+												else
+													if [ $rc -eq 1 ]; then
+														progress 3 118
+													else
+														progress 3 96
+													fi
+												fi
 											fi
 										fi
 									fi
