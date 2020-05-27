@@ -4,7 +4,6 @@ getflags()
 cat <<'EndOfFiles'
 755 modfs
 755 run_modscripts
-644 set_correct_flags.sh
 664 LICENSE
 664 BOOTSELECTION.ger
 644 bin/scripts/functions/yf_pack.function

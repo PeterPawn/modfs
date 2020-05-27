@@ -10,6 +10,7 @@ for f in modfs run_modscripts set_correct_flags.sh LICENSE BOOTSELECTION.ger $(f
 	[ "$(stat -c %F $f)" = "directory" ] && continue;
 	[ "$(stat -c %F $f)" = "symbolic link" ] && continue;
 	[ "$(expr "${f##*/}" : "\(.\).*")" = "." ] && continue;
+	[ "$f" = "set_correct_flags.sh" ] && continue;
 	stat -c "%a %n" $f
 done
 cat <<'EndOfCode'
