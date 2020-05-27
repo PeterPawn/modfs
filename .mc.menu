@@ -23,6 +23,7 @@
 	# calling date here needs to use double percent signs to prevent mc variable evaluation
 	date="$(date +%%d%%m%%Y%%H%%M)"
 	sed -e "s|^modfs_version=.*|modfs_version=$version-$date|" -i modfs
+	sed -e "s|^modfs_version=.*|modfs_version=$version-$date|" -i run_modscripts
 	echo "Updated version string to $version-$date"
 
 3	Compress the current directory to be published on yourfritz.de, but do not replace symlink
