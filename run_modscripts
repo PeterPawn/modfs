@@ -48,6 +48,7 @@ export TARGET_SYSTEM_VERSION="$(printf "%s\n" "$version_values" | sed -n -e "s|^
 export TARGET_SYSTEM_SUBVERSION="$(printf "%s\n" "$version_values" | sed -n -e "s|^MODFS_Subversion=\"\(.*\)\"\$|\1|p")"
 export TARGET_SYSTEM_DATE="$(printf "%s\n" "$version_values" | sed -n -e "s|^MODFS_Date=\"\(.*\)\"\$|\1|p")"
 export TARGET_BRANDINGS="$(printf "%s\n" "$version_values" | sed -n -e "s|^MODFS_Brandings=\"\(.*\)\"\$|\1|p")"
+eval export $(printf "%s\n" "$version_values" | sed -e ":x;\$!N;s/\n/ /;tx")
 set -- $TARGET_BRANDINGS
 while [ -n "$1" ]; do
 	if [ "$1" = "avm" ]; then
