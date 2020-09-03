@@ -21,7 +21,7 @@ step=$4
 #
 rc=0
 check_filename="$rootdir/usr/www/$TARGET_BRANDING/fon_devices/fax_send.lua"
-check_trigger="<input type=\"file\" id=\"uiFile\" size=\"70\" accept=\"image/.\">"
+check_trigger="<input type=\"file\" id=\"uiFile\" size=\"70\" accept=\"image/.\" multiple=\"multiple\">"
 #
 # apply
 #
