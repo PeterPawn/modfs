@@ -151,7 +151,7 @@ packages=""
 # some constants - makes it easier to adapt the script on different systems     #
 #                                                                               #
 #################################################################################
-custom_sources="/wrapper /var/media/ftp"
+custom_sources="/var/media/ftp/YourFritz /wrapper /var/media/ftp"
 custom_extension=".custom"
 custom_keyword="custom"
 copy_key="tmpfs"
