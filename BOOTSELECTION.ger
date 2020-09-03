@@ -20,7 +20,7 @@ Lötarbeiten und Bauteile (Pegelwandler), weil diese Schnittstelle bei einer FRI
 nicht bestückt ist und man sogar erst die passende Steckerleiste anbringen müßte, wenn man nicht 
 direkt das Kabel für die Schnittstelle fest anlöten will) oder - und das ist die leichtere Alternative
 - in den ersten 5 Sekunden nach dem "Einschalten" der FRITZ!Box (das ist ja in aller Regel das 
-Einstecken der Stromversorgung) regiert dieser Teil des Bootloaders auch auf den Start einer 
+Einstecken der Stromversorgung) reagiert dieser Teil des Bootloaders auch auf den Start einer 
 FTP-Sitzung über ein LAN-Kabel. Dabei ist es egal, an welchem LAN-Port das Kabel angeschlossen wird, 
 zu diesem Zeitpunkt wird da noch nicht in "Gastnetz" oder "VPN-Zugang" (ipsecbrX) oder "LAN" 
 unterschieden.
