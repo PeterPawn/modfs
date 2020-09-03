@@ -5,7 +5,7 @@ cat <<'EndOfFiles'
 755 modfs
 755 run_modscripts
 664 LICENSE
-664 BOOTSELECTION.ger
+644 BOOTSELECTION.ger
 644 bin/scripts/check_signed_image
 644 bin/scripts/wrap_script
 644 bin/scripts/check_image_signature
@@ -30,7 +30,7 @@ cat <<'EndOfFiles'
 755 bin/common/busybox.34kc.3.10.107
 755 bin/common/mke2fs.34kc.3.10.107
 755 bin/common/unsquashfs.34kc.3.10.107
-644 contrib/modscripts/mod_multiple_fax_pages
+755 contrib/modscripts/mod_multiple_fax_pages
 664 contrib/README.md
 460 contrib/custom/mod_custom
 660 files/128MB_ext3.gz

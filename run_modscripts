@@ -1,7 +1,7 @@
 #! /bin/sh
 # vim: set tabstop=4 shiftwidth=4 syntax=sh highlight=on
 # SPDX-License-Identifier: GPL-2.0-or-later
-modfs_version=0.6.2-150820202151
+modfs_version=0.6.2-030920201037
 usage()
 {
 	printf "run_modscripts, version 0.1\n\n"
