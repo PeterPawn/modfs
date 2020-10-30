@@ -46,8 +46,8 @@ if ! test -s \$rcuser; then
 msg_warn "rc.user file is empty."
 exit 0
 fi
-delay -d 1 RCUSER "/bin/sh \$rcuser"
-msg_info "rc.user content gets executed soon ..."
+msg_info "Execution of 'rc.user' is being started now ..."
+/bin/busybox nohup /bin/sh \$rcuser 1>\$rcuser.log 2>&1 </dev/null &
 exit 0
 EOT
 }
