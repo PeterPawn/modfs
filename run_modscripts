@@ -1,7 +1,7 @@
 #! /bin/sh
 # vim: set tabstop=4 shiftwidth=4 syntax=sh highlight=on
 # SPDX-License-Identifier: GPL-2.0-or-later
-modfs_version=0.6.2-311220201526
+modfs_version=0.6.2-311220201607
 usage()
 {
 	printf "run_modscripts, version 0.2\n\n"
@@ -33,7 +33,7 @@ if ! [ -d "$1" ]; then
 	printf "The spcified firmware directory (\"%s\") is invalid.\a\n" "$target_dir" 1>&2
 	exit 1
 fi
-scripts_dir="$(readlink -f -- "${2:./modscripts}")"
+scripts_dir="$(readlink -f -- "${2:-./modscripts}")"
 if ! [ -d "$1" ]; then
 	printf "Directory for modifications (\"%s\") is not a valid one.\a\n" "$scripts_dir" 1>&2
 	exit 1
