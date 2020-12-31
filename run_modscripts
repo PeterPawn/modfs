@@ -1,23 +1,28 @@
 #! /bin/sh
 # vim: set tabstop=4 shiftwidth=4 syntax=sh highlight=on
 # SPDX-License-Identifier: GPL-2.0-or-later
-modfs_version=0.6.2-301020202022
+modfs_version=0.6.2-311220201526
 usage()
 {
-	printf "run_modscripts, version 0.1\n\n"
+	printf "run_modscripts, version 0.2\n\n"
 	printf "(C) 2020 P. Haemmerlein (peterpawn@yourfritz.de)\n\n"
 	printf "Usage:\n"
-	printf "	${0##*/} fritzos_directory\n\n"
-	printf "Apply all 'modscript' files found in './modscripts' to the unpacked\n"
+	printf "	${0##*/} fritzos_directory [modscript_directory]\n\n"
+	printf "Apply all 'modscript' files found in the directory from 2nd argument\n"
+	printf "(or './modscripts', if the argument was omitted) to the unpacked\n"
 	printf "FRITZ!OS firmware structure in the specified directory.\n\n"
 	printf "Access flags of 'modscript' files will be ignored and any existing\n"
 	printf "'custom_modscripts' file gets ignored, too.\n\n"
-	printf "Only the 'install' step will be executed for each found script, any\n"
-	printf "precheck or postcheck actions are skipped.\n\n"
-	printf "Remove any 'modscript' file, that should not get applied or was applied\n"
-	printf "already.\n\n"
-	printf "Additional scripts will be searched in './bin/scripts', ensure the\n"
-	printf "usual directory structure of the 'modfs' project is present.\n"
+	printf "Only the 'install' and 'postcheck' steps will be executed for each found\n"
+	printf "script, any precheck action is skipped.\n\n"
+	printf "Provide only the 'modscript' files in the directory (from 2nd argument),\n"
+	printf "which you want to get applied. Duplicate invocations of a script (what\n"
+	printf "may lead to duplicate modifications and finally to misbehavior of the\n"
+	printf "modified firmware) are not handled here.\n"
+	printf "Additional required scripts will be searched in './bin/scripts', ensure\n"
+	printf "the usual directory structure of the 'modfs' project is present.\n"
+	printf "The final exit code of this script will be the maximum of any exit code\n"
+	printf "from 'postcheck' calls to the provided/applied scripts.\n"
 }
 if [ -z "$1" ]; then
 	usage 1>&2
@@ -25,7 +30,12 @@ if [ -z "$1" ]; then
 fi
 target_dir="$(readlink -f -- "$1")"
 if ! [ -d "$1" ]; then
-	printf "\"%s\" is not a valid directory.\a\n" "$target_dir" 1>&2
+	printf "The spcified firmware directory (\"%s\") is invalid.\a\n" "$target_dir" 1>&2
+	exit 1
+fi
+scripts_dir="$(readlink -f -- "${2:./modscripts}")"
+if ! [ -d "$1" ]; then
+	printf "Directory for modifications (\"%s\") is not a valid one.\a\n" "$scripts_dir" 1>&2
 	exit 1
 fi
 tempdir="${TMP:-${TMPDIR:-/tmp}}"
@@ -68,13 +78,18 @@ export TMP="$tempdir"
 export TMPDIR="$tempdir"
 export HWRevision="000"
 mkdir -p "bin/000/" 2>/dev/null
-ln -sf "$busybox" "bin/000/busybox" 2>/dev/null
+[ -x "bin/000/busybox" ] || ln -sf "$busybox" "bin/000/busybox" 2>/dev/null
 export home=.
-for modscript in $(find modscripts -maxdepth 1 -type f | sort); do
+maxpostrc=0
+for modscript in $(find "$scripts_dir" -maxdepth 1 -type f | sort); do
 	printf "Running script '%s' ...\n" "${modscript##*/}" 1>&2
 	$busybox sh "$modscript" "de" "$target_dir" "auto" "install"
 	rc=$?
+	$busybox sh "$modscript" "de" "$target_dir" "auto" "postcheck"
+	postrc=$?
 	printf "Finished script '%s', rc=%d\n" "${modscript##*/}" "$rc" 1>&2
+	[ $postrc -ne 0 ] && printf "\033[91mPost-check for script \"%s\" failed, rc=%d\n" "${modscript##*/}" "$postrc" 1>&2
+	[ $postrc -gt $maxpostrc ] && maxpostrc=$postrc
 done
 printf "%s\n" "$modfs_version" > "$target_dir/etc/.modfs_version"
-exit 0
+exit $maxpostrc
