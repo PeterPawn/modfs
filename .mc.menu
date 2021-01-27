@@ -3,6 +3,8 @@
 	version=$(cat .version)
 	rm -r bin/000 2>/dev/null
 	Files="bin files locale modscripts contrib LICENSE BOOTSELECTION* modfs run_modscripts set_correct_flags.sh"
+	uid_menu=$(stat -c %%u .mc.menu)
+	gid_menu=$(stat -c %%g .mc.menu)
 	sudo chown -R $(stat -c %%U .) .
 	sudo chgrp -R $(stat -c %%G .) .
 	chmod o-x modscripts/*
@@ -15,6 +17,8 @@
 	rm modfs.tgz
 	ln -s modfs-$version.tgz modfs.tgz
 	cd $opwd
+	sudo chgrp $gid_menu .mc.menu
+	sudo chown $uid_menu .mc.menu
 	echo "Created (and linked) modfs version $version on yourfritz.de"
 	tar -t -v -f modfs-$version.tgz
 
@@ -30,6 +34,8 @@
 	version=$(cat .version)
 	rm -r bin/000 2>/dev/null
 	Files="bin files locale modscripts contrib LICENSE BOOTSELECTION* modfs run_modscripts set_correct_flags.sh"
+	uid_menu=$(stat -c %%u .mc.menu)
+	gid_menu=$(stat -c %%g .mc.menu)
 	sudo chown -R $(stat -c %%U .) .
 	sudo chgrp -R $(stat -c %%G .) .
 	chmod o-x modscripts/*
@@ -37,5 +43,7 @@
 	busybox tar -c --exclude=".git*" --exclude="contrib/custom" $Files | gzip -c9 > "modfs-$version.tgz"
 	# cp modfs-$version.tgz /autofs/ssh/source/srv/www/vhosts/www.yourfritz.de/
 	# chown wwwrun:www /autofs/ssh/source/srv/www/vhosts/www.yourfritz.de/modfs-$version.tgz
+	sudo chgrp $gid_menu .mc.menu
+	sudo chown $uid_menu .mc.menu
 	echo "Created modfs version $version on yourfritz.de"
 	tar -t -v -f modfs-$version.tgz
