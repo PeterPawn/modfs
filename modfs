@@ -164,7 +164,7 @@ nativefilesystems="tmpfs ext2 ext3 ext4 yaffs2"
 #
 # our "internal" constants
 #
-modfs_version=0.6.2-311220201607
+modfs_version=0.6.2-270120210714
 modfs_comment="please look at https://github.com/PeterPawn/modfs for further info"
 bindirname="bin"
 localedirname="locale"
@@ -2864,6 +2864,8 @@ debug "modfs: using language $lang"
 #
 # initialize variables (unnecessary, only for the sake of good order and to get numeric instead of character values as needed)
 #
+base_directory="$(pwd)"
+export MODFS_DIR="$base_directory"
 working_directory=""
 unpack_directory=""
 loopback_host=""
@@ -2872,6 +2874,7 @@ loopback_used=0
 squashfs_blocksize=0
 squashfs_endianess=0
 rc=0
+debug "modfs: PWD=$base_directory"
 debug "modfs: PATH=$PATH"
 debug "modfs: SHELL=$SHELL"
 debug "modfs: SHLVL=$SHLVL"

@@ -1,7 +1,7 @@
 #! /bin/sh
 # vim: set tabstop=4 shiftwidth=4 syntax=sh highlight=on
 # SPDX-License-Identifier: GPL-2.0-or-later
-modfs_version=0.6.2-311220201607
+modfs_version=0.6.2-270120210714
 usage()
 {
 	printf "run_modscripts, version 0.2\n\n"
@@ -28,6 +28,7 @@ if [ -z "$1" ]; then
 	usage 1>&2
 	exit 1
 fi
+export MODFS_DIR="$(pwd)"
 target_dir="$(readlink -f -- "$1")"
 if ! [ -d "$1" ]; then
 	printf "The specified firmware directory (\"%s\") is invalid.\a\n" "$target_dir" 1>&2
@@ -81,14 +82,14 @@ mkdir -p "bin/000/" 2>/dev/null
 [ -x "bin/000/busybox" ] || ln -sf "$busybox" "bin/000/busybox" 2>/dev/null
 export home=.
 maxpostrc=0
-for modscript in $(find "$scripts_dir" -maxdepth 1 -type f | sort); do
+for modscript in $(find "$scripts_dir" -maxdepth 1 -type f -or -type l | sort); do
 	printf "Running script '%s' ...\n" "${modscript##*/}" 1>&2
 	$busybox sh "$modscript" "de" "$target_dir" "auto" "install"
 	rc=$?
 	$busybox sh "$modscript" "de" "$target_dir" "auto" "postcheck"
 	postrc=$?
 	printf "Finished script '%s', rc=%d\n" "${modscript##*/}" "$rc" 1>&2
-	[ $postrc -ne 0 ] && printf "\033[91mPost-check for script \"%s\" failed, rc=%d\n" "${modscript##*/}" "$postrc" 1>&2
+	[ $postrc -ne 0 ] && printf "\033[91mPost-check for script \"%s\" failed, rc=%d\n\033[0m" "${modscript##*/}" "$postrc" 1>&2
 	[ $postrc -gt $maxpostrc ] && maxpostrc=$postrc
 done
 printf "%s\n" "$modfs_version" > "$target_dir/etc/.modfs_version"
