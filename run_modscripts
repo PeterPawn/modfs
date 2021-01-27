@@ -30,7 +30,7 @@ if [ -z "$1" ]; then
 fi
 target_dir="$(readlink -f -- "$1")"
 if ! [ -d "$1" ]; then
-	printf "The spcified firmware directory (\"%s\") is invalid.\a\n" "$target_dir" 1>&2
+	printf "The specified firmware directory (\"%s\") is invalid.\a\n" "$target_dir" 1>&2
 	exit 1
 fi
 scripts_dir="$(readlink -f -- "${2:-./modscripts}")"
