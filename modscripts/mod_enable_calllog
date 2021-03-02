@@ -19,14 +19,19 @@ step=$4
 # constants and functions
 #
 startup_file="/etc/init.d/rc.voip"
+daemon_file="/usr/bin/telefon"
 target_prefix="^[ \t]*"
 target_suffix="telefon "
-private_var="CONFIG_RELEASE=0"
-search_line="$target_prefix$private_var $target_suffix"
+private_var_1="CONFIG_RELEASE=0"
+private_var_2="CONFIG_BUILDTYPE=998"
+search_line_mask="\$target_prefix\$private_var_%u \$target_suffix"
 #
 # execute the requested step
 #
 rc=0
+grep -a -q "CONFIG_BUILDTYPE" "$rootdir$daemon_file" && var=2 || var=1
+eval search_line="\"$(printf "$search_line_mask" "$var")\""
+eval private_var="\"$(printf "\$private_var_%u" "$var")\""
 case $step in
 	precheck)
 		grep -q "$search_line" "$rootdir$startup_file" 2>/dev/null
