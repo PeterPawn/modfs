@@ -35,7 +35,7 @@ cat <<'EndOfFiles'
 460 contrib/custom/mod_custom
 660 files/128MB_ext3.gz
 755 files/gui_bootmanager
-755 files/telnetd_by_avm
+644 files/telnetd_by_avm
 644 files/256MB_ext3.gz
 644 files/E99-custom
 644 files/add_to_system_reboot.sh
