@@ -23,7 +23,9 @@ step=$4
 #
 rc=0
 check_filename="$rootdir/usr/www/$TARGET_BRANDING/home/home.lua"
-check_trigger="get_Display_Vpn"
+check_trigger="eval_connection.get_Display_Vpn()"
+check_trigger_active_prefix="= "
+check_trigger_inactive_prefix="--- "
 #
 # apply
 #
@@ -43,38 +45,9 @@ patch_file()
 {
 	local home=$(pwd)
 	cd $rootdir
-	$home/bin/$HWRevision/busybox patch -p0 2>/dev/null 1>/dev/null <<EOT
---- usr/www/$TARGET_BRANDING/home/home.lua
-+++ usr/www/$TARGET_BRANDING/home/home.lua
-@@ -167,14 +167,7 @@
- return d
- end
- local function get_vpn(data)
--if not config.VPN or general.is_ip_client() then
- return nil
--end
--local d = {}
--d.title = TXT([[{?9042:115?}]])
--d.link = "shareVpn"
--d.elements = eval_connection.get_Display_Vpn()
--return d
- end
- local function get_plc(data)
- return nil
---- usr/www/$TARGET_BRANDING/home/home.js
-+++ usr/www/$TARGET_BRANDING/home/home.js
-@@ -443,10 +443,6 @@
- html2.add(list, create_MultilineItem(data.fonnum));
- anyEntry=true;
- }
--if (data.vpn && data.vpn.elements.length > 0) {
--html2.add(list, create_vpn_items(data.vpn))
--anyEntry = true;
--}
- if (data.webstorage) {
- /*Onlinespeicher*/
- html2.add(list, add_webStorage(data.webstorage));
-EOT
+	# replace table generator function with empty table to get zero elements to display, but
+	# keep anchor for a possibly later addition of own VPN connection data source
+	sed -e "s|$check_trigger_active_prefix\($check_trigger\)|= {} --- \1|" -i usr/www/$TARGET_BRANDING/home/home.lua
 	cd $home
 }
 #
@@ -95,7 +68,7 @@ case $step in
 			esac
 			rc=1
 		else
-			grep -q "$check_trigger" $check_filename 2>/dev/null 1>&2
+			grep -q -- "$check_trigger_active_prefix$check_trigger" $check_filename 2>/dev/null 1>&2
 			rc=$?
 			if [ $rc -eq 1 ]; then
 				case "$language" in
@@ -113,7 +86,7 @@ case $step in
 		fi
 		;;
 	postcheck)
-		grep -q "$check_trigger" $check_filename 2>/dev/null 1>&2
+		grep -q -- "$check_trigger_active_prefix$check_trigger" $check_filename 2>/dev/null 1>&2
 		rc=$?
 		if [ $rc -eq 0 ]; then
 			case "$language" in
@@ -131,7 +104,7 @@ case $step in
 		;;
 	install)
 		for TARGET_BRANDING in $TARGET_BRANDINGS; do
-			patch_file	
+			patch_file
 		done
 		rc=0
 		;;
