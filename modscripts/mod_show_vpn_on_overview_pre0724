@@ -1,0 +1,283 @@
+# MODFS_MODSCRIPT
+# SPDX-License-Identifier: GPL-2.0-or-later
+# SUPPORTS precheck postcheck install language(en,de)
+# NAME add VPN summary on overview page
+# DESCRIPTION en
+# show VPN connection count, state and a quick link to VPN settings on the entry page
+# DESCRIPTION de
+# Anzeige der VPN-Verbindungen auf der Startseite, inkl. Schnell-Link zur VPN-Konfiguration
+# EOH
+#
+# process parameters
+#
+language=$1
+rootdir=$2
+mode=$3
+step=$4
+[ ${#4} -eq 0 ] && exit 59 # invalid call
+#
+# variables
+#
+rc=0
+check_filename="$rootdir/usr/www/$TARGET_BRANDING/home/home.lua"
+check_trigger="get_vpn_connections"
+#
+# apply
+#
+check_version()
+{
+	local major=$(expr "$1" : "0*\([1-9]*[0-9]\)")
+	local minor=$(expr "$2" : "0*\([1-9]*[0-9]\)")
+	local wanted_major=$(expr "$3" : "0*\([1-9]*[0-9]\)")
+	local wanted_minor=$(expr "$4" : "0*\([1-9]*[0-9]\)")
+
+	[ $major -lt $wanted_major ] && return 0
+	[ $major -gt $wanted_major ] && return 1
+	[ $minor -lt $wanted_minor ] && return 0
+	return 1
+}#
+# the function to add to the lua file, only the anchor lines differ for currently known
+# versions
+#
+lua_function="\
+local function get_vpn_connections(data)
+if (not config.VPN) then
+-- VPN not supported
+return nil
+end
+if (general.is_ip_client() or not general.is_expert()) then
+-- wrong settings for VPN usage
+return nil
+end
+local query=\"vpn:settings/connection/list(name,activated,state)\"
+local vpn_conns=core.listquery(query)
+local connected_names=\"\"
+if (#vpn_conns == 0) then
+-- no VPN connection defined
+return nil
+end
+vpn={}
+vpn.title=[[{?577:732?}]]
+vpn.link=\"shareVpn\"
+vpn.led=\"led_gray\"
+vpn.count_all=#vpn_conns
+vpn.activated=0
+vpn.connected=0
+for i, conn in ipairs(vpn_conns) do
+if conn.activated == \"1\" then
+vpn.activated=vpn.activated + 1
+end
+if conn.state == \"ready\" then
+if vpn.connected > 0 then
+connected_names = connected_names..[[, ]]..conn.name
+else
+connected_names = conn.name
+-- switch to green on first connected peer
+vpn.led=\"led_green\"
+end
+vpn.connected=vpn.connected + 1
+end
+end
+if (vpn.count_all > 1) then
+if (config.language == \"de\") then
+allconns=[[ Verbindungen gesamt]]
+else
+allconns=[[ connections exist]]
+end
+else
+if (config.language == \"de\") then
+allconns=[[ Verbindung gesamt]]
+else
+allconns=[[ connection exists]]
+end
+end
+if (vpn.activated < vpn.count_all) then
+-- some connections are deactivated
+if (vpn.connected < vpn.activated) then
+-- at least one connection isn't established
+if (vpn.connected > 0) then
+-- at least one connection is established, one isn't it and another one is deactivated
+if (vpn.activated ~= vpn.connected) then
+if (config.language == \"de\") then
+vpn.txt=vpn.connected..[[ verbunden (]]..connected_names..[[), ]]..vpn.activated..[[ aktiviert, ]]..vpn.count_all..allconns
+else
+vpn.txt=vpn.connected..[[ active (]]..connected_names..[[), ]]..vpn.activated..[[ activated, ]]..vpn.count_all..allconns
+end
+else
+if (config.language == \"de\") then
+vpn.txt=vpn.connected..[[ verbunden (]]..connected_names..[[), ]]..vpn.count_all..allconns
+else
+vpn.txt=vpn.connected..[[ active (]]..connected_names..[[), ]]..vpn.count_all..allconns
+end
+end
+else
+-- no connection established, but at least one is active and another is deactivated
+vpn.txt=[[nicht verbunden, ]]..vpn.activated..[[ aktiviert, ]]..vpn.count_all..allconns
+end
+else
+-- all activated connections are established
+if (vpn.connected > 0) then
+if (config.language == \"de\") then
+vpn.txt=vpn.connected..[[ aktiviert und verbunden (]]..connected_names..[[), ]]..vpn.count_all..allconns
+else
+vpn.txt=vpn.connected..[[ activated and connected (]]..connected_names..[[), ]]..vpn.count_all..allconns
+end
+else
+if (config.language == \"de\") then
+vpn.txt=[[nicht verbunden, ]]..vpn.activated..[[ aktiviert, ]]..vpn.count_all..allconns
+else
+vpn.txt=[[no active connection, ]]..vpn.activated..[[ activated, ]]..vpn.count_all..allconns
+end
+end
+end
+else
+-- all defined connections activated
+if (vpn.connected > 0) then
+-- at least on connection established
+if (vpn.connected < vpn.count_all) then
+-- at least one connections isn't established
+if (config.language == \"de\") then
+vpn.txt=vpn.connected..[[ verbunden (]]..connected_names..[[), ]]..vpn.count_all..allconns..[[, alle aktiviert]]
+else
+vpn.txt=vpn.connected..[[ connected (]]..connected_names..[[), ]]..vpn.count_all..allconns..[[, all connections are activated]]
+end
+else
+-- all connections activated and established
+if (config.language == \"de\") then
+vpn.txt=[[alle verbunden (]]..connected_names..[[)]]
+else
+vpn.txt=[[all connections are active (]]..connected_names..[[)]]
+end
+end
+else
+-- all activated, none connected
+if (config.language == \"de\") then
+vpn.txt=[[nicht verbunden, ]]..vpn.count_all..allconns..[[ vorhanden]]
+else
+vpn.txt=[[no active connection, ]]..vpn.count_all..allconns
+end
+end
+end
+return vpn
+end"
+lua_function_anchor_for_insertion="^local function get_fonnum(data)"
+#
+# lua function call, here the anchor lines are the only difference, too
+#
+lua_function_call="vpnconn = get_vpn_connections(data),"
+lua_function_call_older="gDataRd.vpnconn = get_vpn_connections(data)"
+lua_function_call_anchor_for_addition="^usb = get_usb(data),"
+lua_function_call_anchor_for_addition_older="^gDataRd.usb = get_usb(data)"
+#
+# JS function to add
+#
+js_function="\
+/*---------------------- VPN-Verbindungen -----------------------*/
+/*###############################################################*/
+function create_vpnConnections(obj) {
+var item, subitem, obj_title, obj_link;
+item = html2.elem(\"div\", {class : \"item single\"});
+subitem = html2.elem(\"div\", {class : \"desc \" + obj.led || \"\"});
+html2.add(item, subitem);
+obj_title = html2.elem(\"div\", {class : \"desc title\"});
+html2.add(subitem, obj_title);
+obj_link = html2.elem(\"a\", {href : \"\"}, obj.title || \"\");
+html2.add(obj_title, obj_link);
+obj_link.onclick = redirect(obj.link);
+html2.add(subitem, html2.elem(\"div\", {class : \"details info\"}, obj.txt || \"\"));
+return item;
+}
+/*###############################################################*/"
+js_function_anchor_for_insertion="Onlinespiecher"
+#
+# JS function call
+#
+js_function_call="\
+if (data.vpnconn) {
+/* VPN connections are present */
+html2.add(list, create_vpnConnections(data.vpnconn));
+anyEntry = true;
+}"
+js_function_call_anchor_for_insertion="^if (data.fonnum) {"
+#
+# apply
+#
+patch_file()
+{
+	home=$(pwd)
+	echo "$lua_function" >$rootdir/../lua_function_to_add
+	echo "$js_function" >$rootdir/../js_function_to_add
+	echo "$js_function_call" >$rootdir/../js_function_call_to_add
+	echo -e "/$lua_function_anchor_for_insertion/ {\n\tr $rootdir/../lua_function_to_add\n\tN\n}" >$rootdir/../sedfile1
+	echo -e "/$lua_function_call_anchor_for_addition/ a$lua_function_call\n/$lua_function_call_anchor_for_addition_older/ a$lua_function_call_older" >$rootdir/../sedfile2
+	echo -e "/$js_function_anchor_for_insertion/ {\n\tr $rootdir/../js_function_to_add\n\tN\n}" >$rootdir/../sedfile3
+	echo -e "/$js_function_call_anchor_for_insertion/ {\n\tr $rootdir/../js_function_call_to_add\n\tN\n}" >$rootdir/../sedfile4
+	$home/bin/$HWRevision/busybox sed -f $rootdir/../sedfile1 -f $rootdir/../sedfile2 -i $rootdir/usr/www/$TARGET_BRANDING/home/home.lua
+	$home/bin/$HWRevision/busybox sed -f $rootdir/../sedfile3 -f $rootdir/../sedfile4 -i $rootdir/usr/www/$TARGET_BRANDING/home/home.js
+	rm $rootdir/../sedfile* $rootdir/../lua_function_to_add $rootdir/../js_function_to_add $rootdir/../js_function_call_to_add
+}
+#
+# check FRITZ!OS version first
+#
+major=$(( $(expr "$TARGET_SYSTEM_VERSION" : "[0-9]*\.0*\([1-9]*[0-9]\)\.[0-9]*") + 0 ))
+minor=$(( $(expr "$TARGET_SYSTEM_VERSION" : "[0-9]*\.[0-9]*\.0*\([1-9]*[0-9]\)") + 0 ))
+if ! check_version $major $minor 7 24; then
+	case "$language" in
+		de)
+			echo "Diese Modifikation ist nur bis FRITZ!OS 07.24 verfügbar. Ab 07.24 gibt es eine neue, diese dann bitte auch verwenden."
+			;;
+		*)
+			echo "This modification is only available below FRITZ!OS version 07.24. Starting with 07.24, another versions has to be used."
+			;;
+	esac
+	exit 1
+fi
+#
+# execute steps
+#
+case $step in
+	precheck)
+		grep -q "$check_trigger" $check_filename 2>/dev/null 1>&2
+		rc=$?
+		if [ $rc -eq 0 ]; then
+			case "$language" in
+				de)
+					echo "Die Modifikation wurde bereits angewendet."
+					;;
+				*)
+					echo "The modification is already present."
+					;;
+			esac
+			rc=1
+		else
+			rc=0
+		fi
+		;;
+	postcheck)
+		grep -q "$check_trigger" $check_filename 2>/dev/null 1>&2
+		rc=$?
+		if [ $rc -eq 1 ]; then
+			case "$language" in
+				de)
+					echo "Die Modifikation war nicht erfolgreich."
+					;;
+				*)
+					echo "The menu file seems to be unmodified."
+					;;
+			esac
+			rc=1
+		else
+			rc=0
+		fi
+		;;
+	install)
+		for TARGET_BRANDING in $TARGET_BRANDINGS; do
+			patch_file
+		done
+		rc=0
+		;;
+	*)
+		rc=59
+		;;
+esac
+exit $rc
