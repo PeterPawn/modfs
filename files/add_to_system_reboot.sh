@@ -116,7 +116,7 @@ end\
 \
 data.bootmanager = data_bootmanager()
 
-/^local savecookie = {}/a \
+/^local savecookie *= *{}/a \
 if box.post.linux_fs_start then\
 local linux_fs_start = string.gsub(box.post.linux_fs_start, "'", "")\
 local branding = box.post[linux_fs_start.."_branding"] ~= nil and string.gsub(box.post[linux_fs_start.."_branding"], "'", "") or ""\
