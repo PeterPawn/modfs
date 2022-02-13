@@ -33,11 +33,13 @@ cat <<'EndOfFiles'
 755 contrib/modscripts/mod_multiple_fax_pages
 664 contrib/README.md
 460 contrib/custom/mod_custom
+644 files/bootmanager.service
 660 files/128MB_ext3.gz
-755 files/gui_bootmanager
 644 files/telnetd_by_avm
+644 files/bootmanager_server
 644 files/256MB_ext3.gz
 644 files/E99-custom
+755 files/bootmanager
 644 files/add_to_system_reboot.sh
 464 locale/en
 464 locale/de
@@ -51,6 +53,7 @@ cat <<'EndOfFiles'
 754 modscripts/mod_yourfritz_key
 754 modscripts/mod_leddisplay
 754 modscripts/mod_default_show_mac
+754 modscripts/mod_show_vpn_on_overview_pre0724
 754 modscripts/mod_telnet_enable
 754 modscripts/mod_show_name
 754 modscripts/mod_rc_tail_sh
@@ -58,6 +61,7 @@ cat <<'EndOfFiles'
 754 modscripts/mod_volatile_nas_dir
 754 modscripts/mod_profile
 754 modscripts/mod_swapoff
+754 modscripts/gui_boot_manager_v0.7
 754 modscripts/mod_exec_on_nand
 644 modscripts/inactive/mod_custom_images
 644 modscripts/inactive/mod_telnet_start_as_dtrace
