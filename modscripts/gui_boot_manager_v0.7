@@ -1,0 +1,165 @@
+# MODFS_MODSCRIPT
+# SPDX-License-Identifier: GPL-2.0-or-later
+# SUPPORTS precheck postcheck install language(en,de)
+# NAME enable system and branding selection from GUI \(v0.6\)
+# DESCRIPTION en
+# extend the 'reboot' page of FRITZ!OS to select system version and branding
+# DESCRIPTION de
+# Auswahl des zu startenden Systems und des Brandings in der "Neustart"-Seite
+# EOH
+#
+# process parameters
+#
+language=$1
+rootdir=$2
+mode=$3
+step=$4
+[ ${#4} -eq 0 ] && exit 59 # invalid call
+#
+# execute the requested step
+#
+rc=0
+selector="linux_fs_start"
+environ="/proc/sys/urlader/environment"
+luafile="/usr/www/%s/system/reboot.lua"
+home="${MODFS_DIR:-./}${MODFS_DIR:+/}"
+srcdir="${home}files"
+tgtdir="/usr/bin/"
+srvdir="/lib/systemd/system/"
+integrate="files/add_to_system_reboot.sh"
+backenddir="$rootdir$tgtdir"
+backend="bootmanager"
+backend_server="bootmanager_server"
+services_dir="$rootdir$srvdir"
+backend_service="bootmanager.service"
+cache_from="/etc/init.d/S85-apps"
+cache_output_pre0708="html_display"
+#
+# some helpers
+#
+check_version()
+{
+	local major=$(expr "$1" : "0*\([1-9]*[0-9]\)")
+	local minor=$(expr "$2" : "0*\([1-9]*[0-9]\)")
+	local wanted_major=$(expr "$3" : "0*\([1-9]*[0-9]\)")
+	local wanted_minor=$(expr "$4" : "0*\([1-9]*[0-9]\)")
+
+	[ $major -lt $wanted_major ] && return 0
+	[ $major -gt $wanted_major ] && return 1
+	[ $minor -lt $wanted_minor ] && return 0
+	return 1
+}
+find_line()
+{
+	grep -q "$selector" "$rootdir$(eval printf "$luafile" "$TARGET_BRANDING")"
+}
+find_envvar()
+{
+	grep -q "^$selector" "$environ" 2>/dev/null
+}
+install_call()
+{
+	home="$(pwd)"
+	cd "$rootdir"
+	sh "$home/$integrate"
+	cd "$home"
+}
+install_backend()
+{
+	cp -a "$srcdir/$backend" "$backenddir" 2>/dev/null
+	chmod 755 "$backenddir$backend" 2>/dev/null
+	chown 0:0 "$backenddir$backend" 2>/dev/null
+}
+install_backend_server()
+{
+	cp -a "$srcdir/$backend_server" "$backenddir" 2>/dev/null
+	chmod 755 "$backenddir$backend_server" 2>/dev/null
+	chown 0:0 "$backenddir$backend_server" 2>/dev/null
+}
+install_backend_service()
+{
+	cp -a "$srcdir/$backend_service" "$services_dir" 2>/dev/null
+	chmod 644 "$services_dir$backend_service" 2>/dev/null
+	chown 0:0 "$services_dir$backend_service" 2>/dev/null
+}
+install_cache_output()
+{
+	grep -q "^$tgtdir$backend" "$rootdir/$cache_from" 2>/dev/null && return
+	printf "%s%s %s >/dev/null 2>/dev/null\n" "$tgtdir" "$backend" "$1" >>"$rootdir/$cache_from"
+}
+#
+# execute requested action
+#
+case $step in
+	precheck)
+		find_line
+		rc=$?
+		if [ $rc -eq 0 ]; then
+			case "$language" in
+				de)
+					printf "Die Modifikation wurde bereit angewendet.\n"
+					;;
+				*)
+					printf "The patch was applied already.\n"
+					;;
+			esac
+			rc=1
+		else
+			find_envvar
+			rc=$?
+			if [ $rc -ne 0 ]; then
+				case "$language" in
+					de)
+						printf "Dieses Gerät unterstützt keine 'dual boot'-Möglichkeit.\n"
+						;;
+					*)
+						printf "This device doesn't support booting the system software from an alternative partition set.\n"
+						;;
+				esac
+				rc=1
+			else
+				rc=0
+			fi
+		fi
+		;;
+
+	postcheck)
+		find_line
+		rc=$?
+		if [ $rc -eq 0 ]; then
+			[ "$(stat -c %a "$backenddir$backend" 2>/dev/null)" = "755" ] || rc=1
+		fi
+		if [ $rc -eq 1 ]; then
+			case "$language" in
+				de)
+					printf "Die Modifikation war NICHT erfolgreich.\n"
+					;;
+				*)
+					printf "The patch was NOT applied successfully.\n"
+					;;
+			esac
+			rc=1
+		fi
+		;;
+
+	install)
+		for TARGET_BRANDING in $TARGET_BRANDINGS; do
+			install_call
+		done
+		install_backend
+		major=$(( $(expr "$TARGET_SYSTEM_VERSION" : "[0-9]*\.0*\([1-9]*[0-9]\)\.[0-9]*") + 0 ))
+		minor=$(( $(expr "$TARGET_SYSTEM_VERSION" : "[0-9]*\.[0-9]*\.0*\([1-9]*[0-9]\)") + 0 ))
+		if check_version $major $minor 7 8; then
+			cache_output=$cache_output_pre0708
+			install_cache_output $cache_output
+		else
+			install_backend_server
+			install_backend_service
+		fi
+		rc=0
+		;;
+	*)
+		rc=59
+		;;
+esac
+exit $rc
