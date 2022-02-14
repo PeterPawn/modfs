@@ -3602,10 +3602,25 @@ else
 				if [ -x /usr/bin/gui_bootmanager ]; then
 					$SHELL /usr/bin/gui_bootmanager clear_cache 2>&1 | $debugoutput
 					debug "modfs: gui_bootmanager found, cached data cleared, trying to refresh cache files."
-					$SHELL /usr/bin/gui_bootmanager html_display 2>/dev/null 1>&2
 					$SHELL /usr/bin/gui_bootmanager get_values 2>/dev/null 1>&2
+					$SHELL /usr/bin/gui_bootmanager html_display 2>/dev/null 1>&2
 					$SHELL /usr/bin/gui_bootmanager debug 2>&1 | $debugoutput
 					rc=0
+				elif [ -x /usr/bin/bootmanager ]; then
+					if [ -d "/var/run/bootmanager" ]; then
+						debug "modfs: bootmanager service found"
+						printf "clear_cache\n" >/var/run/bootmanager/input
+						sleep 2
+						$debugoutput </var/run/bootmanager/output
+						rc=0
+					else
+						$SHELL /usr/bin/bootmanager clear_cache 2>&1 | $debugoutput
+						debug "modfs: bootmanager found, cached data cleared, trying to refresh cache files."
+						$SHELL /usr/bin/bootmanager get_values 2>/dev/null 1>&2
+						$SHELL /usr/bin/bootmanager html_display 2>/dev/null 1>&2
+						$SHELL /usr/bin/bootmanager debug 2>&1 | $debugoutput
+						rc=0
+					fi
 				fi
 			else
 				progress 3 97
