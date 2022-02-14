@@ -3593,6 +3593,8 @@ else
 		fi
 		if [ x$switch == xY ]; then
 			# switch system start partition
+			[ -x /usr/bin/gui_bootmanager ] && /usr/bin/gui_bootmanager is_locked
+			[ -x /usr/bin/bootmanager ] && /usr/bin/bootmanager is_locked
 			progress 1 148
 			switch_system_to alternative
 			rc=$?
