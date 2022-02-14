@@ -48,6 +48,8 @@ cat <<'EndOfFiles'
 754 modscripts/mod_remove_avm_vpn_from_overview
 754 modscripts/mod_show_vpn_on_overview
 754 modscripts/mod_prefer_fonnumber_name
+754 modscripts/mod_swap_mount
+754 modscripts/mod_squashfs_mount
 754 modscripts/mod_mount_by_label
 754 modscripts/mod_yourfritz_key
 754 modscripts/mod_leddisplay
