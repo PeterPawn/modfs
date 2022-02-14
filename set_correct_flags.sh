@@ -54,7 +54,7 @@ cat <<'EndOfFiles'
 754 modscripts/mod_yourfritz_key
 754 modscripts/mod_leddisplay
 754 modscripts/mod_default_show_mac
-754 modscripts/mod_show_vpn_on_overview_pre0724
+644 modscripts/mod_show_vpn_on_overview_pre0724
 754 modscripts/mod_telnet_enable
 754 modscripts/mod_show_name
 754 modscripts/mod_rc_tail_sh
