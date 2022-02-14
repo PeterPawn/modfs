@@ -3613,7 +3613,7 @@ else
 						debug "modfs: bootmanager service found"
 						printf "clear_cache\n" >/var/run/bootmanager/input
 						sleep 2
-						$debugoutput </var/run/bootmanager/output
+						cat /var/run/bootmanager/output | $debugoutput
 						rc=0
 					else
 						$SHELL /usr/bin/bootmanager clear_cache 2>&1 | $debugoutput
