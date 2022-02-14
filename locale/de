@@ -142,7 +142,7 @@
 204=Das neue root-Dateisystem wurde erfolgreich in die inaktive Partition kopiert.\n\n%{bold}Beim nächsten Start der Box wird weiterhin das aktuell laufende System benutzt.\n%{normal}
 205=Die Signatur der Datei konnte nicht erfolgreich verifiziert werden oder die Datei wurde verändert.
 206=Überprüfen der Signatur der geladenen Datei ...
-207=Ermitteln der Download-URL für die Version %s ... 
+207=Ermitteln der Download-URL für die Version %s ...
 208=Es wurde keine Quelle für den Download der Version %s gefunden.
 209=Fehler beim Ermitteln einer Download-URL für die Version %s, Abbruch.
 222=Fehler beim Ermitteln des Dateisystemtyps der Image-Datei.
@@ -150,3 +150,5 @@
 224=Überprüfen des verfügbaren Swap-Space ...
 225=\n%{error}Es steht kein Swap-Space auf diesem System zur Verfügung, die erfolgreiche Ausführung von '%{normal}%{bold}modfs%{normal}%{error}'\nist unwahrscheinlich. Deshalb wird die Ausführung abgebrochen.%{normal}
 226=\n%{error}Es steht nicht genug Swap-Space auf diesem System zur Verfügung (erforderlich: %{normal}%{bold}%s%{normal}%{error} MB, vorhanden: %{normal}%{bold}%s%{normal}%{error} MB),\ndie erfolgreiche Ausführung von '%{normal}%{bold}modfs%{error} ist unwahrscheinlich. Deshalb wird die Ausführung abgebrochen.%{normal}
+227=a
+228=%{bold}a%{normal}bbrechen

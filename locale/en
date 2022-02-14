@@ -142,7 +142,7 @@
 204=The new root file system has been installed into the inactive Partition.\n\n%{bold}Your device will still use the running system at next restart.\n%{normal}
 205=Signature verification failed due to missing components or the firmware image was manipulated.
 206=Try to verify image file signature ...
-207=Looking up download URL for version %s ... 
+207=Looking up download URL for version %s ...
 208=No download source for version %s could be found.
 209=Error looking up download source for version %s, aborted.
 222=Error detecting filesystem on image file.
@@ -150,3 +150,5 @@
 224=Check available swap space ...
 225=\n%{error}There is no swap space available on this system. A successful execution of '%{normal}%{bold}modfs%{normal}%{error}'\nis not really expected, therefore execution will be aborted now.%{normal}
 226=\n%{error}There is not enough swap space available on this system (required: %{normal}%{bold}%s%{normal}%{error} MB, available: %{normal}%{bold}%s%{normal}%{error} MB) and\nthe probability of a successful execution of '%{normal}%{bold}modfs%{error} is low. Therefore execution will be aborted now.%{normal}
+227=c
+228=%{bold}c%{normal}ancel

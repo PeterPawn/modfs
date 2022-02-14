@@ -385,8 +385,10 @@ ask_yes_or_no()
 	local def=$1 yes no p_yes p_no answer nl prompt="$2"
 	yes=$(get_localized $lang 129)
 	no=$(get_localized $lang 130)
+	cancel=$(get_localized $lang 227)
 	p_yes=$yes
 	p_no=$no
+	p_cancel="$(get_localized $lang 228)"
 	if [ $def == n ]; then
 		p_no=$(uppercase $no)
 	else
@@ -399,7 +401,7 @@ ask_yes_or_no()
 	while [ 1 -eq 1 ]; do
 		while read -n 10 -s -t 1; do :; done
 		echo -ne "$prompt" 1>&2
-		read -n 1 -s -p " ($p_yes/$p_no) " answer 1>&2
+		read -n 1 -s -p " ($p_yes/$p_no/$p_cancel) " answer 1>&2
 		nl="$answer\n"
 		[ ${#answer} -eq 0 ] && answer=$def && nl="\n"
 		debug "ask_yes_or_no: A=$answer"
@@ -407,14 +409,16 @@ ask_yes_or_no()
 			echo -n 'Y'
 			echo -e -n "$nl" 1>&2
 			return 0
+		elif [ "$answer" == $(uppercase $no) -o $answer == $no ]; then
+			echo -n  'N'
+			echo -e -n "$nl" 1>&2
+			return 0
+		elif [ "$answer" == $(uppercase $cancel) -o $answer == $cancel ]; then
+			echo -n  'C'
+			echo -e -n "$nl" 1>&2
+			return 1
 		else
-			if [ "$answer" == $(uppercase $no) -o $answer == $no ]; then
-				echo -n  'N'
-				echo -e -n "$nl" 1>&2
-				return 0
-			else
-				echo -e "$selection\n$(get_localized $lang 128)" 1>&2
-			fi
+			echo -e "$selection\n$(get_localized $lang 128)" 1>&2
 		fi
 	done
 	return 1
@@ -1100,6 +1104,7 @@ execute_optional_modscript()
 				msg="$(get_localized $lang 182 "$name" "%description%")"
 				msg="${msg//%description%/$desc}"
 				doit=$(ask_yes_or_no n "$msg")
+				[ "$doit" = "C" ] && exit 1
 				if [ x$doit == xY ]; then
 					execute_modscript "$script" "$rootdir" onrequest
 				fi
@@ -1118,7 +1123,7 @@ execute_optional_modscript()
 	return $rc
 }
 #
-# sort the list of modscripts to ensure orepare the executable flags of modscripts listed in a custom selection file
+# sort the list of modscripts to ensure execution in order, if a modifications depends on another
 # $1 - script list file
 #
 solve_modscript_dependencies()
@@ -1146,14 +1151,14 @@ prepare_custom_modscripts_selection()
 			# scriptname missing
 			[ ${#scriptname} -eq 0 ] && continue
 			# file exists?
-			[ -f "$scripts/$scriptname" ] || continue
+			[ -f "$scriptpath/$scriptname" ] || continue
 			flags="a-x"
 			if [ "$state" == "+" ]; then
 				flags="a+x"
 			elif [ "$state" == '?' ]; then
 				flags="ug+x,o-x"
 			fi
-			$bb chmod "$flags" "$scripts/$scriptname"
+			$bb chmod "$flags" "$scriptpath/$scriptname"
 			rc=$?
 			debug "prepare_custom_modscripts_selection: chmod done for '$scriptname' (flags='$flags'), rc=$rc"
 		done <"$scriptpath/$custom_selection_file"
@@ -1162,6 +1167,19 @@ prepare_custom_modscripts_selection()
 	else
 		debug "prepare_custom_modscripts_selection: done, no custom file found"
 	fi
+}
+#
+# filter to remove script files without ANY executable flag set from STDIN,
+# write other file names to STDOUT
+#
+remove_disabled_scripts()
+{
+	while read -r script; do
+		flags=$($bb stat -c %a $script)
+		execute=$(( ( ${flags:2:1} & 1 ) + ( ${flags:1:1} & 1 ) + ( ${flags:0:1} & 1 ) ))
+		[ $execute -lt 3 ] && continue
+		echo "$script"
+	done
 }
 #
 # execute modification scripts
@@ -1194,7 +1212,7 @@ modify_rootfs()
 		done
 	fi
 	[ -s "$list" ] && lines=$($bb sed -n -e "\$=" "$list") || lines=0
-	[ $lines -gt 0 ] && solve_modscript_dependencies "$list" "$scripts" >"$filelist" || touch "$filelist"
+	[ $lines -gt 0 ] && solve_modscript_dependencies "$list" "$scripts" | remove_disabled_scripts >"$filelist" || touch "$filelist"
 	debug "solve_dependencies: final modscripts list"
 	cat "$filelist" | $debugoutput
 	[ -s "$filelist" ] && lines=$($bb sed -n -e "\$=" "$filelist") || lines=0
@@ -3014,6 +3032,8 @@ if [ $prerc -eq 32 ]; then
 			echo -e "$(get_localized $lang 183)" 1>&2
 			prerc=0
 		fi
+	elif [ "$copypart" = "C" ]; then
+		exit 1
 	else
 		debug "modfs: continuing with a different kernel version"
 		prerc=0
@@ -3151,6 +3171,8 @@ case $source in
 							baseimage="$target"
 							remove_directory "$image_directory"
 						fi
+					elif [ "$copybase" = "C" ]; then
+						exit 1
 					fi
 				fi
 				debug "modfs: baseimage=$baseimage"
@@ -3472,13 +3494,14 @@ if [ $rc -eq 0 -a $install_image_only -eq 0 ]; then
 			debug "wait_for_key_before_pack: pause skipped due to environment setting"
 		else
 			# clear input buffer first
-			while read -n 10 -s -t 1; do :; done
 			echo -ne "$(get_localized $lang 150 $unpack_directory/$squashfsdirname)" 1>&2
 			while [ 1 -eq 1 ]; do
+				while read -n 10 -s -t 1; do :; done
 				if [ "$MODFS_ABORT_BEFORE_PACK" = "Q" ]; then
 					abort=$MODFS_ABORT_BEFORE_PACK
 				else
-					read abort
+					stty echo 2>/dev/null
+					read -n 1 abort
 				fi
 				if [ "$abort" = "q" ] || [ "$abort" = "Q" ]; then
 					echo -e "$(get_localized $lang 155)" 1>&2
@@ -3589,6 +3612,8 @@ else
 				echo -e "$(get_localized $lang $rc)" 1>&2
 			fi
 			debug "modfs: switching system done, rc=$rc"
+		elif [ "$switch" = "C" ]; then
+			exit 1
 		else
 			echo -e "$(get_localized $lang 204)" 1>&2
 		fi
