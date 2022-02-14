@@ -27,13 +27,13 @@ unchanged="squashfs"
 #
 patch_file()
 {
-	exec_or_noexec="$(sed -n -e "s:if mount -t [^\(antfs\|vfat\)].*\(noexec\|[^n][^o]exec\).*:\1:p" "$check_filename")"
-	sed -e "/^case \$filesystem_type in/a\
-squashfs)\
-echo "MOUNT: mount -t 'squashfs' $DEVNODE $MNTPATH" >/dev/console\
-if mount -t squashfs -o ro,${exec_or_noexec} \$DEVNODE "\$MNTPATH"; then\
-new_filesystem=true\
-fi\
+	exec_or_noexec="$(sed -n -e "s:if mount -t [^\(antfs\|vfat\)].*\([ \t,]\(noexec\)\|[ \t,]\(exec\)\).*:\2\3:p" "$check_filename")"
+	sed -e "/^case \$filesystem_type in/a \
+squashfs)\n\
+echo \"MOUNT: mount -t 'squashfs' \$DEVNODE \$MNTPATH\" >/dev/console\n\
+if mount -t squashfs -o ro,${exec_or_noexec} \$DEVNODE \"\$MNTPATH\"; then\n\
+new_filesystem=true\n\
+fi\n\
 ;;
 " -i "$check_filename"
 }
