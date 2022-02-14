@@ -19,8 +19,8 @@ step=$4
 # constants
 #
 init_script="etc/hotplug/udev-mount-sd"
-search_string="mount -t [^av].*noexec"
-change_command="s:\(mount -t [^av].*\)noexec:\1exec:"
+search_string="mount -t [^\(antfs\|vfat\)].*noexec"
+change_command="s:\(mount -t [^\([antfs\|vfat\)].*\)noexec:\1exec:"
 #
 # execute the requested step
 #
