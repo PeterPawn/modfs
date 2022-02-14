@@ -30,7 +30,7 @@ cat <<'EndOfFiles'
 755 bin/common/busybox.34kc.3.10.107
 755 bin/common/mke2fs.34kc.3.10.107
 755 bin/common/unsquashfs.34kc.3.10.107
-755 contrib/modscripts/mod_multiple_fax_pages
+754 contrib/modscripts/mod_multiple_fax_pages
 664 contrib/README.md
 460 contrib/custom/mod_custom
 644 files/bootmanager.service
@@ -49,7 +49,6 @@ cat <<'EndOfFiles'
 754 modscripts/mod_show_vpn_on_overview
 754 modscripts/mod_prefer_fonnumber_name
 754 modscripts/mod_mount_by_label
-754 modscripts/gui_boot_manager_v0.6
 754 modscripts/mod_yourfritz_key
 754 modscripts/mod_leddisplay
 754 modscripts/mod_default_show_mac
