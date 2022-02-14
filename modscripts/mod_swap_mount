@@ -1,0 +1,87 @@
+# MODFS_MODSCRIPT
+# SPDX-License-Identifier: GPL-2.0-or-later
+# SUPPORTS precheck postcheck install language(en,de)
+# NAME re-add mounting a swap partition found on USB devices
+# DESCRIPTION en
+# AVM has removed mounting of swap partitions, this will be reverted here.
+# DESCRIPTION de
+# Das von AVM entfernte Mounten von Swap-Partitionen auf USB-Geräten wird
+# wieder aktiviert.
+# EOH
+#
+# process parameters
+#
+language=$1
+rootdir=$2
+mode=$3
+step=$4
+[ ${#4} -eq 0 ] && exit 59 # invalid call
+#
+# variables
+#
+rc=0
+check_filename="$rootdir/etc/hotplug/udev-mount-sd"
+unchanged="swap"
+#
+# apply
+#
+patch_file()
+{
+	sed -e "/^case $filesystem_type in/a\
+swap)\
+echo "MOUNT: try to add swap" >/dev/console\
+if mkswap $DEVNODE ; then\
+swapon $DEVNODE\
+echo "MOUNT: swap added" >/dev/console\
+FAIL_EVENT=0\
+fi\
+;;
+" -i "$check_filename"
+}
+#
+# execute steps
+#
+case $step in
+	precheck)
+		grep -q "$unchanged" $check_filename 2>/dev/null 1>&2
+		rc=$?
+		if [ $rc -eq 0 ]; then
+			case "$language" in
+				de)
+					echo "Die Modifikation wurde bereits angewendet oder ist nicht erforderlich."
+					;;
+				*)
+					echo "The startup file is modified already or modification isn't necessary."
+					;;
+			esac
+			rc=1
+		else
+			rc=0
+		fi
+		;;
+	postcheck)
+		grep -q "$unchanged" $check_filename 2>/dev/null 1>&2
+		rc=$?
+		if [ $rc -ne 0 ]; then
+			case "$language" in
+				de)
+					echo "Die Modifikation war nicht erfolgreich."
+					;;
+				*)
+					echo "The startup file seems to be unmodified."
+					;;
+			esac
+			rc=1
+		else
+			rc=0
+		fi
+		;;
+	install)
+		patch_file
+		rc=0
+		;;
+	*)
+		rc=59
+		;;
+esac
+exit $rc
