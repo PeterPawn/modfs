@@ -1,11 +1,13 @@
 # MODFS_MODSCRIPT
 # SPDX-License-Identifier: GPL-2.0-or-later
 # SUPPORTS precheck postcheck install language(en,de)
-# NAME re-add mounting a swap partition found on USB devices
+# NAME automatic activation of swapping to file on USB storage volumes
 # DESCRIPTION en
-# AVM has removed mounting of swap partitions, this will be reverted here.
+# run 'mkswap' and 'swapon' for a file named 'swapfile' on a freshly mounted
+# USB storage volume
 # DESCRIPTION de
-# Das von AVM entfernte Mounten von Swap-Partitionen auf USB-Geräten wird
+# Für eine Datei 'swapfile' auf einem neu gemounteten USB-Volume werden auto-
+# matisch die Kommandos 'mkswap' und 'swapon' aufgerufen.
 # wieder aktiviert.
 # EOH
 #
@@ -21,7 +23,7 @@ step=$4
 #
 rc=0
 check_filename="$rootdir/etc/hotplug/udev-mount-sd"
-unchanged="swap)"
+unchanged="swapfile"
 #
 # apply
 #
@@ -29,15 +31,10 @@ unchanged="swap)"
 #
 patch_file()
 {
-	sed -e "/^case \$filesystem_type in/a\
-swap)\n\
-echo \"MOUNT: try to add swap\" >/dev/console\n\
-if mkswap \$DEVNODE ; then\n\
-swapon \$DEVNODE\n\
-echo \"MOUNT: swap added\" >/dev/console\n\
-FAIL_EVENT=0\n\
-fi\n\
-;;
+	sed -e "/^eventadd 147/a\
+elif [ -f \"\$MNTPATH/swapfile\" ]; then\n\
+echo \"MOUNT: found a 'swapfile' on \$MNTPATH, activate swapping to this file\" >/dev/console\n\
+mkswap \"\$MNTPATH\" && swapon \"\$MNTPATH\" && cat /proc/swaps >/dev/console
 " -i "$check_filename"
 }
 #

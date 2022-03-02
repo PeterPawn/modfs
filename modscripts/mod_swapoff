@@ -60,7 +60,7 @@ patch_file()
 +sf="$(sed -n -e "s|^\(/var/media/dump_partition/[^ ]*\) *.*|\1|p" /proc/swaps)"
 +[ ${#sf} -gt 0 ] && for f in $sf; do echo "Stop swapping to $f" >/dev/console; swapoff $f; done
 +# any swap _partition_ on the same block device as the partition mounted as $MPOINT
-+# dismounting the volume is the result of an "eject" requets, so swapping to this
++# dismounting the volume is the result of an "eject" request, so swapping to this
 +# device also has to be stopped
 +devs="$(sed -n -e "s|^\([^ ]*\) /var/media/dump_partition .*\$|\1|p" /proc/mounts)"
 +if [ ${#devs} -gt 0 ]; then
@@ -127,7 +127,7 @@ case $step in
 		fi
 		;;
 	install)
-		patch_file	
+		patch_file
 		rc=0
 		;;
 	*)
