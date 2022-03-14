@@ -54,6 +54,7 @@ cat <<'EndOfFiles'
 754 modscripts/mod_multi_annex
 754 modscripts/mod_remove_avm_vpn_from_overview
 754 modscripts/mod_prefer_fonnumber_name
+754 modscripts/mod_swap_file
 754 modscripts/mod_swap_mount
 754 modscripts/mod_squashfs_mount
 754 modscripts/mod_mount_by_label
