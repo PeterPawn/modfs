@@ -1,0 +1,86 @@
+# MODFS_MODSCRIPT
+# SPDX-License-Identifier: GPL-2.0-or-later
+# SUPPORTS precheck postcheck install language(en,de)
+# NAME automatic activation of swapping to file on USB storage volumes
+# DESCRIPTION en
+# run 'mkswap' and 'swapon' for a file named 'swapfile' on a freshly mounted
+# USB storage volume
+# DESCRIPTION de
+# Für eine Datei 'swapfile' auf einem neu gemounteten USB-Volume werden auto-
+# matisch die Kommandos 'mkswap' und 'swapon' aufgerufen.
+# wieder aktiviert.
+# EOH
+#
+# process parameters
+#
+language=$1
+rootdir=$2
+mode=$3
+step=$4
+[ ${#4} -eq 0 ] && exit 59 # invalid call
+#
+# variables
+#
+rc=0
+check_filename="$rootdir/etc/hotplug/udev-mount-sd"
+unchanged="swapfile"
+#
+# apply
+#
+# FAIL_EVENT was moved outside of 'case' handling, but it doesn't matter, if it's set twice
+#
+patch_file()
+{
+	sed -e "/^eventadd 147/a\
+elif [ -f \"\$MNTPATH/swapfile\" ]; then\n\
+echo \"MOUNT: found a 'swapfile' on \$MNTPATH, activate swapping to this file\" >/dev/console\n\
+mkswap \"\$MNTPATH\" && swapon \"\$MNTPATH\" && cat /proc/swaps >/dev/console
+" -i "$check_filename"
+}
+#
+# execute steps
+#
+case $step in
+	precheck)
+		grep -q "$unchanged" $check_filename 2>/dev/null 1>&2
+		rc=$?
+		if [ $rc -eq 0 ]; then
+			case "$language" in
+				de)
+					echo "Die Modifikation wurde bereits angewendet oder ist nicht erforderlich."
+					;;
+				*)
+					echo "The startup file is modified already or modification isn't necessary."
+					;;
+			esac
+			rc=1
+		else
+			rc=0
+		fi
+		;;
+	postcheck)
+		grep -q "$unchanged" $check_filename 2>/dev/null 1>&2
+		rc=$?
+		if [ $rc -ne 0 ]; then
+			case "$language" in
+				de)
+					echo "Die Modifikation war nicht erfolgreich."
+					;;
+				*)
+					echo "The startup file seems to be unmodified."
+					;;
+			esac
+			rc=1
+		else
+			rc=0
+		fi
+		;;
+	install)
+		patch_file
+		rc=0
+		;;
+	*)
+		rc=59
+		;;
+esac
+exit $rc
