@@ -6,7 +6,7 @@
 # initial display of device name as HTML title and in the headline
 # DESCRIPTION de
 # Start mit der Anzeige des Gerätenamens anstelle des Typs in der Kopfzeile und im HTML-Titel;
-# dann nützlich, wenn man mehrere Boxen desselben Typs verwaltet und sofort sehen will, auf 
+# dann nützlich, wenn man mehrere Boxen desselben Typs verwaltet und sofort sehen will, auf
 # welcher man gerade ist
 # EOH
 #
@@ -31,6 +31,15 @@ patch_file()
 	local home=$(pwd)
 	cd $rootdir
 	$home/bin/$HWRevision/busybox patch -p0 2>/dev/null 1>/dev/null <<EOT
+--- usr/www/$TARGET_BRANDING/content.lua
++++ usr/www/$TARGET_BRANDING/content.lua
+@@ -87,5 +87,5 @@
+ <link rel="stylesheet" type="text/css" href="/css/box.css">
+ <link rel="stylesheet" type="text/css" href="/css/rd/main.css">
+-<title><?lua box.html(g_fb_type) ?></title>
++<title><?lua box.html(g_fb_name) ?></title>
+ </head>
+ <body>
 --- usr/www/$TARGET_BRANDING/content.lua
 +++ usr/www/$TARGET_BRANDING/content.lua
 @@ -56,7 +56,7 @@
