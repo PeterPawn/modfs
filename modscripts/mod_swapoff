@@ -148,6 +148,9 @@ case $step in
 		;;
 	install)
 		patch_file
+		[ -L "$rootdir/sbin/mkswap" ] || ln -s ../bin/busybox "$rootdir/sbin/mkswap"
+		[ -L "$rootdir/sbin/swapon" ] || ln -s ../bin/busybox "$rootdir/sbin/swapon"
+		[ -L "$rootdir/sbin/swapoff" ] || ln -s ../bin/busybox "$rootdir/sbin/swapoff"
 		rc=0
 		;;
 	*)
