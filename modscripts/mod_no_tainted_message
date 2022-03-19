@@ -20,8 +20,9 @@ step=$4
 #
 rc=0
 modfile="$rootdir/usr/lua/retrieve_data.lua"
-lookfor="^d.FirmwareSigned = box.query(\"box:status/signed_firmware\")==\"1\"\$"
-changeto="d.FirmwareSigned = true"
+lookfor="^d.FirmwareSigned\( *\)=\1box.query(\"box:status/signed_firmware\")==\"1\"\$"
+changeto="d.FirmwareSigned\1=\1true"
+changed="d.FirmwareSigned\( *\)=\1true"
 #
 # run action
 #
@@ -54,7 +55,7 @@ case $step in
 		;;
 
 	postcheck)
-		if grep -q "^$changeto\$" "$modfile" 2>/dev/null; then
+		if grep -q "^$changed\$" "$modfile" 2>/dev/null; then
 			rc=0
 		else
 			case "$language" in
