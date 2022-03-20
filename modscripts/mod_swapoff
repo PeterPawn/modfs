@@ -38,7 +38,7 @@ patch_file()
  msgsend upnpd_srv plugin notify libmediasrv.so "lost_partition:$MPOINT"
 +# remaining swap _files_ below our $MPOINT
 +sf="$(sed -n -e "s|^\(/var/media/dump_partition/[^ ]*\) *.*|\1|p" /proc/swaps)"
-+[ ${#sf} -gt 0 ] && for f in $sf; do echo "Stop swapping to $f" >/dev/console; swapoff $f; done
++[ ${#sf} -gt 0 ] && for f in $sf; do echo "Stop swapping to $f" >/dev/console; /bin/swapoff $f; done
 +# any swap _partition_ on the same block device as the partition mounted as $MPOINT
 +# dismounting the volume is the result of an "eject" request, so swapping to this
 +# device also has to be stopped
@@ -46,7 +46,7 @@ patch_file()
 +if [ ${#devs} -gt 0 ]; then
 +for dev in $devs; do
 +sp="$(sed -n -e "s|^\(${dev%%[0-9]}[^ ]*\).*\$|\1|p" /proc/swaps)"
-+[ ${#sp} -gt 0 ] && for p in $sp; do echo "Stop swapping to $p" >/dev/console; swapoff $p; done
++[ ${#sp} -gt 0 ] && for p in $sp; do echo "Stop swapping to $p" >/dev/console; /bin/swapoff $p; done
 +done
 +fi
  if ls -l /proc/*/cwd /proc/*/fd/* 2> /dev/null |grep -q "$MPOINT" ; then
@@ -58,7 +58,7 @@ patch_file()
  msgsend upnpd plugin notify libmediasrv.so "lost_partition:$MPOINT"
 +# remaining swap _files_ below our $MPOINT
 +sf="$(sed -n -e "s|^\(/var/media/dump_partition/[^ ]*\) *.*|\1|p" /proc/swaps)"
-+[ ${#sf} -gt 0 ] && for f in $sf; do echo "Stop swapping to $f" >/dev/console; swapoff $f; done
++[ ${#sf} -gt 0 ] && for f in $sf; do echo "Stop swapping to $f" >/dev/console; /bin/swapoff $f; done
 +# any swap _partition_ on the same block device as the partition mounted as $MPOINT
 +# dismounting the volume is the result of an "eject" request, so swapping to this
 +# device also has to be stopped
@@ -66,7 +66,7 @@ patch_file()
 +if [ ${#devs} -gt 0 ]; then
 +for dev in $devs; do
 +sp="$(sed -n -e "s|^\(${dev%%[0-9]}[^ ]*\).*\$|\1|p" /proc/swaps)"
-+[ ${#sp} -gt 0 ] && for p in $sp; do echo "Stop swapping to $p" >/dev/console; swapoff $p; done
++[ ${#sp} -gt 0 ] && for p in $sp; do echo "Stop swapping to $p" >/dev/console; /bin/swapoff $p; done
 +done
 +fi
  if ls -l /proc/*/cwd /proc/*/fd/* 2> /dev/null |grep -q "$MPOINT" ; then
@@ -78,7 +78,7 @@ patch_file()
  msgsend upnpd plugin notify libmediasrv.so "lost_partition:$MPOINT"
 +# remaining swap _files_ below our $MPOINT
 +sf="$(sed -n -e "s|^\(/var/media/dump_partition/[^ ]*\) *.*|\1|p" /proc/swaps)"
-+[ ${#sf} -gt 0 ] && for f in $sf; do echo "Stop swapping to $f" >/dev/console; swapoff $f; done
++[ ${#sf} -gt 0 ] && for f in $sf; do echo "Stop swapping to $f" >/dev/console; /bin/swapoff $f; done
 +# any swap _partition_ on the same block device as the partition mounted as $MPOINT
 +# dismounting the volume is the result of an "eject" request, so swapping to this
 +# device also has to be stopped
@@ -86,7 +86,7 @@ patch_file()
 +if [ ${#devs} -gt 0 ]; then
 +for dev in $devs; do
 +sp="$(sed -n -e "s|^\(${dev%%[0-9]}[^ ]*\).*\$|\1|p" /proc/swaps)"
-+[ ${#sp} -gt 0 ] && for p in $sp; do echo "Stop swapping to $p" >/dev/console; swapoff $p; done
++[ ${#sp} -gt 0 ] && for p in $sp; do echo "Stop swapping to $p" >/dev/console; /bin/swapoff $p; done
 +done
 +fi
  msgsend upnpd plugin notify libcloudcds.so "lost_partition:$MPOINT"
@@ -101,7 +101,7 @@ patch_file()
 +# other partitions, only swap space (partition type 0x82)
 +# if other swap locations are also stopped, it's not a problem, because
 +# ALL storage devices will be stopped soon
-+[ -n "$(sed -e "1d" /proc/swaps)" ] && (echo "Stopping all swap devices" >/dev/console;cat /proc/swaps >/dev/console;swapoff -a;cat /proc/swaps >/dev/console)
++[ -n "$(sed -e "1d" /proc/swaps)" ] && (echo "Stopping all swap devices" >/dev/console;cat /proc/swaps >/dev/console;/bin/swapoff -a;cat /proc/swaps >/dev/console)
  /etc/hotplug/storage stop
  /etc/hotplug/aura stop
  /etc/init.d/rc.usbhost stop
@@ -148,9 +148,12 @@ case $step in
 		;;
 	install)
 		patch_file
-		[ -L "$rootdir/sbin/mkswap" ] || ln -s ../bin/busybox "$rootdir/sbin/mkswap"
-		[ -L "$rootdir/sbin/swapon" ] || ln -s ../bin/busybox "$rootdir/sbin/swapon"
-		[ -L "$rootdir/sbin/swapoff" ] || ln -s ../bin/busybox "$rootdir/sbin/swapoff"
+		for cmd in mkswap swapon swapoff; do
+			if ! [ -L "$rootdir/bin/$cmd" ]; then
+				ln -s busybox "$rootdir/bin/$cmd"
+				echo "-> linked 'busybox' to '/bin/$cmd'"
+			fi
+		done
 		rc=0
 		;;
 	*)

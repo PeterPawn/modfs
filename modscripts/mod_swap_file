@@ -32,9 +32,9 @@ unchanged="swapfile"
 patch_file()
 {
 	sed -e "/^eventadd 147/a\
-elif [ -f \"\$MNTPATH/swapfile\" ] && [ -x swapon ] && [ -x mkswap ]; then\n\
+elif [ -f \"\$MNTPATH/swapfile\" ] && [ -x /bin/swapon ] && [ -x /bin/mkswap ]; then\n\
 echo \"MOUNT: found a 'swapfile' on \$MNTPATH, activate swapping to this file\" >/dev/console\n\
-mkswap \"\$MNTPATH\" && swapon \"\$MNTPATH\" && cat /proc/swaps >/dev/console
+/bin/mkswap \"\$MNTPATH/swapfile\" && /bin/swapon \"\$MNTPATH/swapfile\" && cat /proc/swaps >/dev/console
 " -i "$check_filename"
 }
 #
@@ -77,9 +77,12 @@ case $step in
 		;;
 	install)
 		patch_file
-		[ -L "$rootdir/sbin/mkswap" ] || ln -s ../bin/busybox "$rootdir/sbin/mkswap"
-		[ -L "$rootdir/sbin/swapon" ] || ln -s ../bin/busybox "$rootdir/sbin/swapon"
-		[ -L "$rootdir/sbin/swapoff" ] || ln -s ../bin/busybox "$rootdir/sbin/swapoff"
+		for cmd in mkswap swapon swapoff; do
+			if ! [ -L "$rootdir/bin/$cmd" ]; then
+				ln -s busybox "$rootdir/bin/$cmd"
+				echo "-> linked 'busybox' to '/bin/$cmd'"
+			fi
+		done
 		rc=0
 		;;
 	*)
