@@ -6,7 +6,7 @@
 # initial display of device name as HTML title and in the headline
 # DESCRIPTION de
 # Start mit der Anzeige des Gerätenamens anstelle des Typs in der Kopfzeile und im HTML-Titel;
-# dann nützlich, wenn man mehrere Boxen desselben Typs verwaltet und sofort sehen will, auf 
+# dann nützlich, wenn man mehrere Boxen desselben Typs verwaltet und sofort sehen will, auf
 # welcher man gerade ist
 # EOH
 #
@@ -31,6 +31,15 @@ patch_file()
 	local home=$(pwd)
 	cd $rootdir
 	$home/bin/$HWRevision/busybox patch -p0 2>/dev/null 1>/dev/null <<EOT
+--- usr/www/$TARGET_BRANDING/content.lua
++++ usr/www/$TARGET_BRANDING/content.lua
+@@ -87,5 +87,5 @@
+ <link rel="stylesheet" type="text/css" href="/css/box.css">
+ <link rel="stylesheet" type="text/css" href="/css/rd/main.css">
+-<title><?lua box.html(g_fb_type) ?></title>
++<title><?lua box.html(g_fb_name) ?></title>
+ </head>
+ <body>
 --- usr/www/$TARGET_BRANDING/content.lua
 +++ usr/www/$TARGET_BRANDING/content.lua
 @@ -56,7 +56,7 @@
@@ -77,6 +86,19 @@ patch_file()
  </div>
  <div id="blueBarUserMenuIcon" class="blueBarUser <?lua if gUsername and "" ~= gUsername then box.html('showName') end ?>" role="button" aria-haspopup="true" aria-label="{?354:949?}" aria-expanded="false" aria-controls="userMenuBox">
  <?lua if gUsername then box.html(gUsername) end ?>
+--- usr/www/$TARGET_BRANDING/content.lua
++++ usr/www/$TARGET_BRANDING/content.lua
+@@ -93,9 +93,9 @@
+ <header id="blueBarBox" class="hidden">
+ <div id="blueBarLogo" class="blueBarLogo"></div>
+ <div id="blueBarRightBox" class="blueBarRightBox">
+ <div id="blueBarTitel" class="blue_bar_title focus-title-semibold">
+-<?lua box.html(g_fb_type) ?>
++<?lua box.html(g_fb_name) ?>
+ </div>
+ <div id="blueBarUserMenuIcon" class="blueBarUser" role="button" aria-haspopup="true" aria-label="{?354:568?}" aria-expanded="false" aria-controls="userMenuBox"></div>
+ </div>
+ </header>
 EOT
 	cd $home
 }
