@@ -52,6 +52,7 @@ cat <<'EndOfFiles'
 644 locale/de
 754 modscripts/mod_exec_on_usb
 754 modscripts/mod_multi_annex
+754 modscripts/mod_no_tainted_flag
 754 modscripts/mod_remove_avm_vpn_from_overview
 754 modscripts/mod_prefer_fonnumber_name
 754 modscripts/mod_swap_file
