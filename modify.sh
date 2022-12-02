@@ -59,7 +59,7 @@ tar -x -f avm.tar -O ./var/tmp/kernel.image >kernel
 dd of=kernel.bin if=kernel bs=8 count=$(( ( $(stat -c %s kernel) / 8 ) - 1 )) 2>/dev/null
 rm kernel
 tar -x -f avm.tar -O ./var/tmp/filesystem.image >fs.sqfs
-! [ -s fs.sqfs ] && printf "Error extracting kernel file from firmware image.\n\a" 1>&2 && exit 1
+! [ -s fs.sqfs ] && printf "Error extracting filesystem image from firmware image.\n\a" 1>&2 && exit 1
 ! [ -s kernel.bin ] && printf "Error extracting kernel file from firmware image.\n\a" 1>&2 && exit 1
 git clone https://github.com/PeterPawn/YourFritz.git
 git clone https://github.com/PeterPawn/yf_bin.git
