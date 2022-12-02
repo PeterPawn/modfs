@@ -24,7 +24,7 @@ modscripts()
 +modscripts/mod_enable_calllog
 +modscripts/mod_volatile_nas_dir
 +modscripts/mod_swap_file
-+modscripts/copy_binaries
+-modscripts/copy_binaries
 +modscripts/mod_rc_tail_sh
 -modscripts/mod_xchg_sort_icons
 +modscripts/mod_swap_mount
@@ -61,8 +61,11 @@ rm kernel
 tar -x -f avm.tar -O ./var/tmp/filesystem.image >fs.sqfs
 ! [ -s fs.sqfs ] && printf "Error extracting kernel file from firmware image.\n\a" 1>&2 && exit 1
 ! [ -s kernel.bin ] && printf "Error extracting kernel file from firmware image.\n\a" 1>&2 && exit 1
-git clone --recurse-submodules https://github.com/PeterPawn/YourFritz.git
-git clone --recurse-submodules https://github.com/PeterPawn/modfs.git
+git clone https://github.com/PeterPawn/YourFritz.git
+git clone https://github.com/PeterPawn/yf_bin.git
+git clone https://github.com/PeterPawn/modfs.git
+rm -rf YourFritz/bin
+ln -s ../yf_bin YourFritz/bin
 MAGIC=$(dd if=fs.sqfs count=4 bs=1 2>/dev/null)
 [ "$MAGIC" = "sqsh" ] && ENDIAN=be || ENDIAN=le
 sudo YourFritz/bin/squashfs/$(uname -m)/unsquashfs4-$ENDIAN -no-progress fs.sqfs
