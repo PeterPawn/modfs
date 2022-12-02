@@ -28,7 +28,7 @@ patch_file()
 {
 	local home=$(pwd)
 	cd $rootdir
-	$home/bin/$HWRevision/busybox patch -p0 2>/dev/null 1>/dev/null1>/dev/null <<EOT
+	$home/bin/$HWRevision/busybox patch -p0 2>/dev/null 1>/dev/null <<EOT
 --- usr/lua/foncalls.lua
 +++ usr/lua/foncalls.lua
 @@ -100,7 +100,12 @@
@@ -87,7 +87,7 @@ case $step in
 		fi
 		;;
 	install)
-		patch_file	
+		patch_file
 		rc=0
 		;;
 	*)
