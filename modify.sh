@@ -49,15 +49,18 @@ set -x
 MODEL=${1:-7590}
 VERSION=${2:-07.50}
 MYDIR="${TMPDIR:-/tmp}/$(id | sed -n -e "s|uid=[0-9]*(\([^)]*\)).*|\1|p" | sed -e "s|[ \t]|_|g")/yf_sample"
-[ -d "$MYDIR" ] && printf "Error creating working directory (already exists).\n\a" && exit 1
-! mkdir -p "$MYDIR" && printf "Error creating working directory.\n\a" && exit 1
+[ -d "$MYDIR" ] && printf "Error creating working directory (already exists).\n\a" 1>&2 && exit 1
+! mkdir -p "$MYDIR" && printf "Error creating working directory.\n\a" 1>&2 && exit 1
 cd "$MYDIR"
 URL="http://ftp.avm.de/fritzbox/fritzbox-$MODEL/deutschland/fritz.os/FRITZ.Box_$MODEL-$VERSION.image"
 wget -q -O avm.tar $URL
+! [ -s avm.tar ] && printf "Error loading firmware image: $URL\n\a" 1>&2 && exit 1
 tar -x -f avm.tar -O ./var/tmp/kernel.image >kernel
 dd of=kernel.bin if=kernel bs=8 count=$(( ( $(stat -c %s kernel) / 8 ) - 1 )) 2>/dev/null
 rm kernel
 tar -x -f avm.tar -O ./var/tmp/filesystem.image >fs.sqfs
+! [ -s fs.sqfs ] && printf "Error extracting kernel file from firmware image.\n\a" 1>&2 && exit 1
+! [ -s kernel.bin ] && printf "Error extracting kernel file from firmware image.\n\a" 1>&2 && exit 1
 git clone --recurse-submodules https://github.com/PeterPawn/YourFritz.git
 git clone --recurse-submodules https://github.com/PeterPawn/modfs.git
 MAGIC=$(dd if=fs.sqfs count=4 bs=1 2>/dev/null)
@@ -78,6 +81,6 @@ if [ "$modrc" -eq 0 ]; then
 	cat kernel.bin fs.sqfs >new.image
 	ls -l
 else
-	printf "At least one 'modscript' reported an error, packing skipped.\n\a"
+	printf "At least one 'modscript' reported an error, packing skipped.\n\a" 1>&2
 fi
 exit $modrc
