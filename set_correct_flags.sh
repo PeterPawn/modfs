@@ -45,6 +45,7 @@ cat <<'EndOfFiles'
 644 files/bootmanager/add_change_oem.sh
 644 files/bootmanager/lua_patch_0708.sed
 644 files/bootmanager/lua_patch_pre0708.sed
+644 files/bootmanager/bootmanager.service.old
 755 files/bootmanager/bootmanager
 644 files/bootmanager/add_to_system_reboot.sh
 644 files/bootmanager/yf_custom_environment.sh
