@@ -24,6 +24,9 @@ minor=98
 insertline="rcuser=/var/tmp/rc.user;mkconfigfile \$rcuser.tffs $minor;cat \$rcuser.tffs >\$rcuser;rm \$rcuser.tffs;test -s \$rcuser && delay -d 1 RCUSER \"/bin/sh \$rcuser\""
 systemd_initfile="$rootdir/etc/boot.d/core/rcuser"
 systemd_servicefile="$rootdir/lib/systemd/system/rcuser.service"
+after_targetfile="$rootdir/lib/systemd/system/network.target"
+after_old="net.service"
+after_new="network.target"
 find_line()
 {
 	local line rc=0
@@ -57,7 +60,7 @@ cat <<EOT
 [Unit]
 ExecStart=/bin/sh ${systemd_initfile#$rootdir}
 Type=oneshot
-After=net.service
+After=$after
 [Install]
 WantedBy=multi-user.target
 EOT
@@ -131,6 +134,7 @@ case $step in
 			grep -q -- "^exit 0$" "$modfile" 2>/dev/null && sed -e "\$i$insertline" -i "$modfile" || sed -e "\$a$insertline" -i "$modfile"
 			rc=0
 		else
+			[ -f "$after_targetfile" ] && after="$after_new" || after="$after_old"
 			create_rc_user_file > "$systemd_initfile"
 			chmod 755 "$systemd_initfile"
 			create_rc_user_service > "$systemd_servicefile"
